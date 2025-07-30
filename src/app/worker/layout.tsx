@@ -7,7 +7,7 @@ export default function WorkerLayout({
   children: React.ReactNode;
 }) {
   return (
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-secondary/30">
         <WorkspaceSwitcher />
         <div className="flex flex-1 flex-col">
           <WorkspaceHeader />

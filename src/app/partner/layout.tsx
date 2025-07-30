@@ -6,7 +6,7 @@ export default function PartnerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-secondary/30 text-foreground">
       <PartnerSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         {children}
