@@ -35,7 +35,7 @@ export default function WorkflowTemplates() {
           <Card key={template.id} className="flex flex-col hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
-                 <Badge variant="purple">{template.category}</Badge>
+                 <Badge variant="info">{template.category}</Badge>
                  <Badge variant={template.status === "active" ? "success" : "default"}>{template.status}</Badge>
               </div>
               <CardTitle className="font-headline pt-2">{template.title}</CardTitle>
@@ -49,11 +49,11 @@ export default function WorkflowTemplates() {
                     <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span>{template.estimatedTime}</span></div>
                 </div>
                  <div className="flex flex-wrap gap-1">
-                    {template.tags.map((tag) => (<Badge key={tag} variant="info" className="text-xs">{tag}</Badge>))}
+                    {template.tags.map((tag) => (<Badge key={tag} variant="purple" className="text-xs">{tag}</Badge>))}
                 </div>
             </CardContent>
-            <CardFooter className="flex flex-col items-stretch gap-2">
-                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+            <CardFooter className="flex-col items-stretch">
+                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
                     <span>Used {template.totalUses} times</span>
                     <span>Updated {template.lastUpdated}</span>
                 </div>

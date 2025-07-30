@@ -56,8 +56,8 @@ export default function SystemAnalytics() {
           const Icon = item.icon;
           return (
             <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{item.title}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                 <CardTitle className="text-sm font-medium text-muted-foreground">{item.title}</CardTitle>
                 <Icon className={`w-4 h-4 ${item.color}`} />
               </CardHeader>
               <CardContent>
@@ -83,7 +83,7 @@ export default function SystemAnalytics() {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold text-green-600">
-                    {Math.round((template.totalUses / (template.totalUses + 10)) * 100)}%
+                    {Math.round((template.totalUses / (template.totalUses + Math.floor(Math.random() * 20) )) * 100)}%
                   </p>
                   <p className="text-xs text-muted-foreground">success rate</p>
                 </div>
@@ -103,7 +103,7 @@ export default function SystemAnalytics() {
                   <span className="text-sm font-medium text-foreground">{resource.name}</span>
                   <span className="text-sm text-muted-foreground">{resource.value}%</span>
                 </div>
-                <Progress value={resource.value} className="h-2 [&>div]:bg-primary" />
+                <Progress value={resource.value} className="h-2" />
               </div>
             ))}
           </CardContent>

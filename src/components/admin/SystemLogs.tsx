@@ -5,7 +5,7 @@ import { mockSystemLogs } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/shared/Badge";
-import { Download, Filter } from "lucide-react";
+import { Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type LogLevel = 'all' | 'info' | 'warning' | 'error';
@@ -36,7 +36,6 @@ export default function SystemLogs() {
             <div className="flex items-center gap-4">
                 <Select onValueChange={(value: LogLevel) => setFilterLevel(value)} defaultValue="all">
                     <SelectTrigger className="w-[180px]">
-                        <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder="Filter by level" />
                     </SelectTrigger>
                     <SelectContent>

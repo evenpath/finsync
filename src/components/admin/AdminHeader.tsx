@@ -1,6 +1,6 @@
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/shared/Badge";
+import { Badge } from "@/components/ui/badge";
 
 type AdminHeaderProps = {
   title: string;
@@ -23,7 +23,7 @@ export default function AdminHeader({ title, subtitle, actions }: AdminHeaderPro
           </Button>
           <Button variant="outline" size="icon" className="relative">
             <Bell className="w-4 h-4" />
-            <Badge variant="danger" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">3</Badge>
+            <Badge variant="destructive" className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs">3</Badge>
           </Button>
           {actions}
         </div>

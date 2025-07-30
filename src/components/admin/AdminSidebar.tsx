@@ -30,8 +30,8 @@ export default function AdminSidebar() {
     <div className="w-64 bg-card border-r flex flex-col">
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6 text-primary-foreground" />
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+            <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-bold font-headline text-foreground">Flow Factory</h1>
@@ -51,7 +51,7 @@ export default function AdminSidebar() {
                   <div
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer ${
                       isActive
-                        ? "bg-primary/10 text-primary border border-primary/20"
+                        ? "bg-purple-50 text-purple-700 border border-purple-200"
                         : "text-muted-foreground hover:bg-secondary"
                     }`}
                   >
@@ -66,8 +66,8 @@ export default function AdminSidebar() {
       </nav>
 
       <div className="p-4 border-t">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
             SA
           </div>
           <div className="flex-1 min-w-0">

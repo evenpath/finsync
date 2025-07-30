@@ -57,6 +57,12 @@ export default function AdminSettings() {
                   </Label>
                   <Switch id="auditLog" defaultChecked />
                 </div>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                   <Label htmlFor="autoExpire" className="flex flex-col space-y-1">
+                    <span>Auto-expire inactive sessions</span>
+                  </Label>
+                  <Switch id="autoExpire" />
+                </div>
               </div>
             </div>
           </CardContent>
@@ -80,6 +86,19 @@ export default function AdminSettings() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+                <Label>Rate Limits</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <Label className="block text-xs text-muted-foreground mb-1">Requests per minute</Label>
+                    <Input type="number" defaultValue="1000" />
+                  </div>
+                  <div>
+                    <Label className="block text-xs text-muted-foreground mb-1">Tokens per day</Label>
+                    <Input type="number" defaultValue="1000000" />
+                  </div>
+                </div>
+              </div>
           </CardContent>
         </Card>
       </div>

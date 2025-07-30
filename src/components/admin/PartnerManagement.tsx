@@ -54,33 +54,47 @@ export default function PartnerManagement() {
                 {mockPartners.map((partner) => (
                   <div
                     key={partner.id}
-                    className={`p-4 md:p-6 hover:bg-secondary cursor-pointer transition-colors ${
+                    className={`p-6 hover:bg-secondary cursor-pointer transition-colors ${
                       selectedPartner?.id === partner.id
                         ? "bg-primary/10 border-l-4 border-primary"
                         : ""
                     }`}
                     onClick={() => setSelectedPartner(partner)}
                   >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center shrink-0">
-                            <Building className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-foreground">{partner.name}</h4>
-                            <p className="text-sm text-muted-foreground">{partner.email}</p>
-                          </div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                          <Building className="w-5 h-5 text-blue-600" />
                         </div>
-                        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4">
-                             <Badge variant={partner.status === "active" ? "success" : "warning"}>
-                                {partner.status}
-                            </Badge>
-                             <div className="grid grid-cols-3 gap-4 text-center text-sm w-full sm:w-auto">
-                                <div><span className="font-bold">{partner.members}</span><p className="text-xs text-muted-foreground">Members</p></div>
-                                <div><span className="font-bold">{partner.workflows}</span><p className="text-xs text-muted-foreground">Flows</p></div>
-                                <div><span className="font-bold">{partner.tasksCompleted}</span><p className="text-xs text-muted-foreground">Tasks</p></div>
-                            </div>
+                        <div>
+                          <h4 className="font-medium text-foreground">{partner.name}</h4>
+                          <p className="text-sm text-muted-foreground">{partner.email}</p>
                         </div>
+                      </div>
+                      <Badge variant={
+                        partner.status === 'active' ? 'success' :
+                        partner.status === 'pending' ? 'warning' : 'default'
+                      }>
+                        {partner.status}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4 text-sm text-muted-foreground">
+                      <div>
+                        <span className="font-medium">{partner.members}</span>
+                        <p className="text-xs">Members</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">{partner.workflows}</span>
+                        <p className="text-xs">Workflows</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">{partner.tasksCompleted}</span>
+                        <p className="text-xs">Tasks</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">{partner.plan}</span>
+                        <p className="text-xs">Plan</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -90,13 +104,15 @@ export default function PartnerManagement() {
         </div>
 
         <div>
-          <Card className="sticky top-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="font-headline">Partner Details</CardTitle>
-                <Button variant="ghost" size="icon"><Edit3 className="w-4 h-4" /></Button>
-            </CardHeader>
-            <CardContent>
-              {selectedPartner ? (
+          <Card className="sticky top-6 p-6">
+            {selectedPartner ? (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-foreground">Partner Details</h3>
+                  <Button variant="ghost" size="icon">
+                    <Edit3 className="w-4 h-4" />
+                  </Button>
+                </div>
                 <div className="space-y-4">
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">Organization</label>
@@ -124,13 +140,13 @@ export default function PartnerManagement() {
                         <Button variant="outline" className="w-full"><Settings className="w-4 h-4" />Manage Settings</Button>
                     </div>
                 </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-10">
-                  <Building className="w-12 h-12 mx-auto mb-4" />
-                  <p>Select a partner to view details</p>
-                </div>
-              )}
-            </CardContent>
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-10">
+                <Building className="w-12 h-12 mx-auto mb-4" />
+                <p>Select a partner to view details</p>
+              </div>
+            )}
           </Card>
         </div>
       </div>
