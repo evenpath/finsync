@@ -1,3 +1,6 @@
+// src/lib/mockData.ts
+import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users } from "lucide-react";
+
 // Mock Data for Admin
 export const mockPartners = [
   {
