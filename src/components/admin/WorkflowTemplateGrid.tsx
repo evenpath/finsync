@@ -1,4 +1,4 @@
-// This file is now WorkflowTemplateGrid.tsx
+// src/components/admin/WorkflowTemplateGrid.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -33,13 +33,13 @@ export default function WorkflowTemplateGrid({ templates, onTemplateSelect, onCr
 
   const filteredTemplates = templates.filter(template => {
     return (
-      template.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (template.title?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) &&
       (categoryFilter === 'all' || template.category === categoryFilter) &&
       (complexityFilter === 'all' || template.complexity === complexityFilter)
     );
   });
 
-  const categories = [...new Set(templates.map(t => t.category))];
+  const categories = [...new Set(templates.map(t => t.category).filter(Boolean))];
   const complexities = ['simple', 'medium', 'complex'];
 
   return (

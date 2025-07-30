@@ -39,61 +39,61 @@ export const mockPartners = [
 ];
 
 export const mockWorkflowTemplates = [
-  {
+   {
     id: 1,
-    title: "Document Review & Approval",
-    description: "Complete document review process with AI analysis and multi-level approval",
-    category: "Document Management",
-    steps: 6,
+    title: "Cafe Daily Operations",
+    description: "Complete daily workflow for cafe management from opening to closing",
+    category: "Hospitality",
+    complexity: "simple",
+    steps: 8,
     aiAgents: 2,
-    assignedPartners: 8,
-    totalUses: 245,
-    status: "active",
-    lastUpdated: "2024-07-28",
-    tags: ["AI Analysis", "Approval", "Document"],
-    estimatedTime: "2-4 hours"
+    estimatedTime: "8 hours",
+    usageCount: 45,
+    lastModified: "2024-07-30",
+    tags: ["Daily Operations", "Food Service", "Inventory"],
+    icon: "☕"
   },
   {
     id: 2,
-    title: "Customer Onboarding Flow",
-    description: "Automated customer onboarding with data collection and verification",
-    category: "Customer Management",
-    steps: 8,
-    aiAgents: 3,
-    assignedPartners: 12,
-    totalUses: 189,
-    status: "active",
-    lastUpdated: "2024-07-26",
-    tags: ["Onboarding", "Verification", "CRM"],
-    estimatedTime: "1-2 days"
+    title: "Customer Support AI Pipeline",
+    description: "Multi-stage AI-powered customer support with escalation and sentiment analysis",
+    category: "Customer Service",
+    complexity: "complex",
+    steps: 12,
+    aiAgents: 5,
+    estimatedTime: "2-6 hours",
+    usageCount: 128,
+    lastModified: "2024-07-28",
+    tags: ["AI Support", "Escalation", "Sentiment Analysis"],
+    icon: "🎧"
   },
   {
     id: 3,
-    title: "Invoice Processing Pipeline",
-    description: "AI-powered invoice processing with automated data extraction",
-    category: "Finance",
-    steps: 5,
-    aiAgents: 4,
-    assignedPartners: 6,
-    totalUses: 456,
-    status: "active",
-    lastUpdated: "2024-07-29",
-    tags: ["Finance", "AI Extraction", "Automation"],
-    estimatedTime: "30 minutes"
+    title: "Content Creation & Review",
+    description: "AI-assisted content creation workflow with human review and approval",
+    category: "Content",
+    complexity: "medium",
+    steps: 6,
+    aiAgents: 3,
+    estimatedTime: "2-4 hours",
+    usageCount: 89,
+    lastModified: "2024-07-29",
+    tags: ["Content AI", "Review", "Publishing"],
+    icon: "✍️"
   },
   {
     id: 4,
-    title: "Content Creation Workflow",
-    description: "AI-assisted content creation and review process",
-    category: "Content",
-    steps: 4,
-    aiAgents: 2,
-    assignedPartners: 0,
-    totalUses: 0,
-    status: "draft",
-    lastUpdated: "2024-07-30",
-    tags: ["Content", "AI Generation", "Review"],
-    estimatedTime: "1-3 hours"
+    title: "Financial Document Processing",
+    description: "Complex financial document analysis with multi-model AI verification",
+    category: "Finance",
+    complexity: "complex",
+    steps: 15,
+    aiAgents: 8,
+    estimatedTime: "1-3 hours",
+    usageCount: 67,
+    lastModified: "2024-07-27",
+    tags: ["Finance AI", "Document Analysis", "Compliance"],
+    icon: "💰"
   }
 ];
 
@@ -281,3 +281,34 @@ export const mockWorkspaceStats = {
   monthlyTasks: "+18%",
   teamEfficiency: "87%"
 };
+
+// Data for Workflow Builder
+export const aiProviders = [
+  { id: 'openai', name: 'OpenAI GPT', models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'], icon: '🤖' },
+  { id: 'anthropic', name: 'Claude', models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'], icon: '🧠' },
+  { id: 'google', name: 'Gemini', models: ['gemini-pro', 'gemini-pro-vision', 'gemini-ultra'], icon: '⭐' }
+];
+
+export const stepTypes = [
+  { id: 'ai_agent', name: 'AI Agent', description: 'Use AI to process, analyze, or generate content', icon: Bot, color: 'bg-blue-500' },
+  { id: 'human_input', name: 'Human Input', description: 'Collect information from users', icon: Users, color: 'bg-green-500' },
+  { id: 'approval', name: 'Approval', description: 'Require human approval before proceeding', icon: CheckCircle, color: 'bg-yellow-500' },
+  { id: 'notification', name: 'Notification', description: 'Send alerts via email, SMS, or chat', icon: Mail, color: 'bg-purple-500' },
+  { id: 'api_call', name: 'API Call', description: 'Connect to external services and APIs', icon: Globe, color: 'bg-indigo-500' },
+  { id: 'condition', name: 'Conditional', description: 'Branch workflow based on conditions', icon: Target, color: 'bg-orange-500' },
+  { id: 'data_processing', name: 'Data Processing', description: 'Transform, filter, or validate data', icon: Database, color: 'bg-gray-500' },
+  { id: 'file_handling', name: 'File Handling', description: 'Upload, download, or process files', icon: FileText, color: 'bg-pink-500' }
+];
+
+export const mockAssignedPartners = [
+    { id: 1, name: "TechCorp Industries", members: 45, tasksCompleted: 156, lastUsed: "2 hours ago" },
+    { id: 2, name: "Marketing Solutions", members: 28, tasksCompleted: 89, lastUsed: "1 day ago" },
+    { id: 3, name: "StartupHub", members: 12, tasksCompleted: 23, lastUsed: "3 days ago" }
+];
+
+export const mockStepOverview = [
+    { id: 1, name: "Collect Customer Information", type: "human_input", icon: Users, color: "bg-green-500" },
+    { id: 2, name: "AI Sentiment Analysis", type: "ai_agent", icon: Bot, color: "bg-blue-500", aiProvider: "OpenAI GPT-4" },
+    { id: 3, name: "Manager Approval", type: "approval", icon: CheckCircle, color: "bg-yellow-500" },
+    { id: 4, name: "Send Welcome Email", type: "notification", icon: Mail, color: "bg-purple-500" }
+];

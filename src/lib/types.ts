@@ -39,6 +39,22 @@ export interface PartnerSettings {
   maxWorkers: number
 }
 
+export type WorkflowTemplate = {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  complexity: 'simple' | 'medium' | 'complex';
+  steps: number | WorkflowStep[];
+  aiAgents: number;
+  estimatedTime: string;
+  usageCount: number;
+  lastModified: string;
+  tags: string[];
+  icon: string;
+};
+
+
 export interface Workflow {
   id: string
   title: string
@@ -58,13 +74,13 @@ export interface Workflow {
 
 export interface WorkflowStep {
   id: string
-  type: 'ai_agent' | 'manual_input' | 'approval' | 'notification' | 'api_call' | 'conditional'
+  type: 'ai_agent' | 'human_input' | 'approval' | 'notification' | 'api_call' | 'conditional' | 'data_processing' | 'file_handling';
   title: string
   description: string
   configuration: StepConfiguration
   order: number
-  conditions?: StepCondition[]
   isRequired: boolean
+  conditions?: StepCondition[]
 }
 
 export interface StepConfiguration {
@@ -72,24 +88,36 @@ export interface StepConfiguration {
   agentType?: 'summarize' | 'classify' | 'extract' | 'generate' | 'analyze'
   aiModel?: string
   prompt?: string
+  provider?: string;
+  temperature?: number;
+  maxTokens?: number;
+  systemPrompt?: string;
   
   // Manual Input Step
   inputType?: 'text' | 'file' | 'image' | 'form'
   fields?: FormField[]
+  required?: boolean;
+  placeholder?: string;
+  validation?: string;
   
   // Approval Step
   approverRole?: 'partner_admin' | 'specific_user'
   approverId?: string
+  autoApprove?: boolean;
+  timeoutHours?: number;
   
   // Notification Step
   notificationChannel?: 'email' | 'chat' | 'push'
+  channel?: 'email' | 'sms' | 'chat';
   template?: string
+  recipients?: string[];
+  urgent?: boolean;
   
   // API Call Step
   endpoint?: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   headers?: Record<string, string>
-  payload?: any
+  body?: any;
   
   // Conditional Step
   condition?: string
