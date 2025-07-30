@@ -7,12 +7,13 @@ import WorkflowTemplateGrid from "@/components/admin/WorkflowTemplateGrid";
 import WorkflowTemplateDetail from "@/components/admin/WorkflowTemplateDetail";
 import WorkflowBuilder from "@/components/admin/WorkflowBuilder";
 import { mockWorkflowTemplates } from '@/lib/mockData';
+import type { WorkflowTemplate } from '@/lib/types';
 
 export default function AdminWorkflowsPage() {
   const [currentView, setCurrentView] = useState('templates'); // 'templates', 'detail', or 'builder'
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
 
-  const handleTemplateSelect = (template: any) => {
+  const handleTemplateSelect = (template: WorkflowTemplate) => {
     setSelectedTemplate(template);
     setCurrentView('detail');
   };
@@ -22,7 +23,7 @@ export default function AdminWorkflowsPage() {
     setCurrentView('builder');
   };
 
-  const handleEditWorkflow = (template: any) => {
+  const handleEditWorkflow = (template: WorkflowTemplate) => {
     setSelectedTemplate(template);
     setCurrentView('builder');
   };
@@ -39,6 +40,12 @@ export default function AdminWorkflowsPage() {
   const handleSaveWorkflow = (workflowData: any) => {
     console.log('Saving workflow:', workflowData);
     // Here you would typically save the data to your backend
+    // For now, let's just update mock data for demonstration
+    if (workflowData.id) {
+        // update
+    } else {
+        // create
+    }
     setCurrentView('templates');
   };
 
@@ -51,6 +58,10 @@ export default function AdminWorkflowsPage() {
   const renderContent = () => {
     switch (currentView) {
       case 'detail':
+        if (!selectedTemplate) {
+            setCurrentView('templates'); // Fallback if no template is selected
+            return null;
+        }
         return (
           <TemplateDetailView
             template={selectedTemplate}
@@ -113,7 +124,7 @@ export default function AdminWorkflowsPage() {
   );
 }
 
-const TemplateDetailView = ({ template, onBack, onEdit, onSave }: any) => {
+const TemplateDetailView = ({ template, onBack, onEdit, onSave }: { template: WorkflowTemplate, onBack: () => void, onEdit: (template: WorkflowTemplate) => void, onSave: (template: WorkflowTemplate) => void }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: template.title,
