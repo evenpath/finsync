@@ -42,7 +42,7 @@ export default function WorkflowBuilder({ template, onBack, onSave }: WorkflowBu
     complexity: template?.complexity || 'simple',
     icon: template?.icon || '⚡',
     tags: template?.tags || [],
-    steps: template?.steps || []
+    steps: Array.isArray(template?.steps) ? template.steps : []
   });
   
   const [selectedStep, setSelectedStep] = useState<WorkflowStep | null>(null);
@@ -242,7 +242,7 @@ export default function WorkflowBuilder({ template, onBack, onSave }: WorkflowBu
                                 <div className="flex-1">
                                     <h3 className="font-semibold text-foreground">{step.title}</h3>
                                     <p className="text-sm text-muted-foreground">{step.description}</p>
-                                    {step.type === 'ai_agent' && (
+                                    {step.type === 'ai_agent' && step.configuration && (
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-xs text-primary font-medium">
                                         {step.configuration?.provider?.toUpperCase()} • {step.configuration?.model}
