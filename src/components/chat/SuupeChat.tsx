@@ -914,29 +914,26 @@ const TasksView = ({ activeWorkspace }: any) => {
     ? mockWorkspaceTasks
     : mockWorkspaceTasks.filter(task => task.status === filterStatus);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
+    const baseClasses = "px-2 py-1 text-xs font-bold rounded-full";
     switch (status) {
-      case 'completed': return 'bg-green-500 text-white';
-      case 'in_progress': return 'bg-blue-500 text-white';
-      case 'awaiting_approval': return 'bg-yellow-500 text-white';
-      case 'assigned': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'completed': return <div className={`${baseClasses} text-green-800 bg-green-200`}>COMPLETED</div>;
+      case 'in_progress': return <div className={`${baseClasses} text-blue-800 bg-blue-200`}>IN PROGRESS</div>;
+      case 'awaiting_approval': return <div className={`${baseClasses} text-yellow-800 bg-yellow-200`}>AWAITING APPROVAL</div>;
+      case 'assigned': return <div className={`${baseClasses} text-gray-800 bg-gray-200`}>ASSIGNED</div>;
+      default: return null;
     }
   };
 
-  const handleTaskClick = (task: any) => {
-    setSelectedTask(task);
+  const getPriorityDot = (priority: string) => {
+    switch (priority) {
+      case 'high': return <div className="w-3 h-3 bg-red-500 rounded-full"></div>;
+      case 'medium': return <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>;
+      case 'low': return <div className="w-3 h-3 bg-green-500 rounded-full"></div>;
+      default: return null;
+    }
   };
 
-  const handleBackToList = () => {
-    setSelectedTask(null);
-    setShowNewTask(false);
-  };
-
-  const handleNewTask = () => {
-    setShowNewTask(true);
-    setSelectedTask(null);
-  };
 
   // Main Task List View
   if (!selectedTask && !showNewTask) {
@@ -949,7 +946,7 @@ const TasksView = ({ activeWorkspace }: any) => {
               <h2 className="text-xl font-semibold text-foreground">Tasks</h2>
               <p className="text-sm text-muted-foreground">{activeWorkspace.name}</p>
             </div>
-            <Button size="sm" onClick={handleNewTask}>
+            <Button size="sm" onClick={() => setShowNewTask(true)}>
               <Plus className="w-4 h-4" />
               New Task
             </Button>
@@ -980,31 +977,26 @@ const TasksView = ({ activeWorkspace }: any) => {
               onClick={() => handleTaskClick(task)}
               className="p-4 border-b hover:bg-secondary cursor-pointer transition-colors"
             >
-              <div className="flex items-start gap-3">
-                {/* Status Badge - Primary */}
-                <div className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(task.status)} min-w-0`}>
-                  {task.status.replace('_', ' ').toUpperCase()}
-                </div>
-
-                {/* Task Content */}
+              <div className="flex items-center gap-4">
+                 {getStatusBadge(task.status)}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground truncate">{task.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1">{task.workflow}</p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                    <span>👤 {task.assignee}</span>
-                    <span>📅 {task.dueDate}</span>
-                    <span className="text-blue-600 font-medium">{task.currentStep}</span>
-                  </div>
                 </div>
-
-                {/* Priority Indicator */}
-                <div className={`w-3 h-3 rounded-full ${task.priority === 'high' ? 'bg-red-500' :
-                    task.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}></div>
+                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        <span>{task.assignee}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{task.dueDate}</span>
+                    </div>
+                </div>
+                {getPriorityDot(task.priority)}
               </div>
             </div>
           ))}
-
           {filteredTasks.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <CheckCircle className="w-12 h-12 mb-4 text-gray-300" />
@@ -1037,7 +1029,12 @@ const TasksView = ({ activeWorkspace }: any) => {
           </div>
 
           {/* Status - Primary */}
-          <div className={`inline-flex px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(selectedTask.status)}`}>
+          <div className={`inline-flex px-4 py-2 rounded-full text-sm font-bold ${
+              selectedTask.status === 'completed' ? 'bg-green-500 text-white' :
+              selectedTask.status === 'in_progress' ? 'bg-blue-500 text-white' :
+              selectedTask.status === 'awaiting_approval' ? 'bg-yellow-500 text-white' :
+              'bg-gray-500 text-white'
+          }`}>
             {selectedTask.status.replace('_', ' ').toUpperCase()}
           </div>
         </div>
