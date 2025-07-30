@@ -108,7 +108,7 @@ export default function PartnerManagement() {
                     </div>
                      <div>
                         <label className="text-sm font-medium text-muted-foreground">Status</label>
-                        <p><Badge variant={selectedPartner.status === 'active' ? 'success' : 'warning'}>{selectedPartner.status}</Badge></p>
+                        <div><Badge variant={selectedPartner.status === 'active' ? 'success' : 'warning'}>{selectedPartner.status}</Badge></div>
                     </div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">Joined Date</label>
