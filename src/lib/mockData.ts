@@ -1,5 +1,6 @@
 // src/lib/mockData.ts
-import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users } from "lucide-react";
+import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users, Zap, Shield, Building, UserPlus, BarChart3, Activity, AlertTriangle, Send, Copy, ExternalLink, PlayCircle, PauseCircle, RotateCcw, Cpu, Network, Layers, Clock } from "lucide-react";
+
 
 // Mock Data for Admin
 export const mockPartners = [
@@ -236,6 +237,17 @@ export const mockAssignedWorkflows = [
     tags: ["Onboarding", "CRM"],
     category: "Customer Management"
   }
+];
+
+export const mockTasks = [
+    { id: 1, title: "Review Q4 Marketing Proposal", workflow: "Document Review", priority: "high", status: "assigned", dueDate: "2024-08-10", assignee: "Sarah Wilson", avatar: "https://placehold.co/32x32.png" },
+    { id: 2, title: "Verify Client Data: Acme Corp", workflow: "Customer Onboarding", priority: "medium", status: "in_progress", dueDate: "2024-08-12", assignee: "Mike Chen", avatar: "https://placehold.co/32x32.png" },
+    { id: 3, title: "Process Invoice #INV-2024-812", workflow: "Invoice Processing", priority: "low", status: "assigned", dueDate: "2024-08-15", assignee: "Emma Davis", avatar: "https://placehold.co/32x32.png" },
+    { id: 4, title: "Generate Content Brief for Blog", workflow: "Content Creation", priority: "medium", status: "in_progress", dueDate: "2024-08-11", assignee: "Sarah Wilson", avatar: "https://placehold.co/32x32.png" },
+    { id: 5, title: "Submit Final Expense Report", workflow: "Financial Reporting", priority: "high", status: "completed", dueDate: "2024-08-01", assignee: "Mike Chen", avatar: "https://placehold.co/32x32.png" },
+    { id: 6, title: "Onboard New Client: Peak Industries", workflow: "Customer Onboarding", priority: "high", status: "assigned", dueDate: "2024-08-09", assignee: "Emma Davis", avatar: "https://placehold.co/32x32.png" },
+    { id: 7, title: "Final Approval for Ad Campaign", workflow: "Document Review", priority: "high", status: "awaiting_approval", dueDate: "2024-08-09", assignee: "Partner Admin", avatar: "https://placehold.co/32x32.png" },
+    { id: 8, title: "Review Social Media Analytics", workflow: "Marketing Analysis", priority: "low", status: "completed", dueDate: "2024-08-02", assignee: "Sarah Wilson", avatar: "https://placehold.co/32x32.png" },
 ];
 
 export const mockPendingApprovals = [
