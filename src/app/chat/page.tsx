@@ -1,5 +1,5 @@
-import ChatInterface from "@/components/chat/ChatInterface";
+import SuupeChatApp from "@/components/chat/SuupeChat";
 
 export default function ChatPage() {
-    return <ChatInterface />;
+    return <SuupeChatApp />;
 }

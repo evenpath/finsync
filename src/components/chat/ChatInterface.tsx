@@ -122,7 +122,7 @@ const ChatInterface = () => {
 
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-6">
-            {messages.map((msg) => (
+            {messages.map((msg: any) => (
                 msg.isNotification ? (
                     <div key={msg.id} className="text-center text-xs text-muted-foreground my-4 flex items-center gap-2">
                         <hr className="flex-1"/> <span>{msg.text}</span> <hr className="flex-1"/>
