@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, TrendingUp, CheckCircle, Activity, Zap } from "lucide-react";
 import { mockSystemStats, mockPartners } from "@/lib/mockData";
-import { Badge } from "@/components/shared/Badge";
+import { Badge } from "@/components/ui/badge";
 
 export default function SystemOverview() {
   const statCards = [
@@ -118,7 +118,7 @@ export default function SystemOverview() {
                   <p className="font-medium text-foreground">{partner.name}</p>
                   <p className="text-sm text-muted-foreground">{partner.tasksCompleted} tasks completed</p>
                 </div>
-                <Badge variant={partner.status === "active" ? "success" : "warning"}>{partner.status}</Badge>
+                <Badge variant={partner.status === "active" ? "default" : "destructive"} className={partner.status === "active" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>{partner.status}</Badge>
               </div>
             ))}
           </CardContent>
