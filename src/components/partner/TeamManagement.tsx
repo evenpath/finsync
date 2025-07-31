@@ -1,3 +1,4 @@
+// src/components/partner/TeamManagement.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -18,9 +19,30 @@ import {
   XCircle,
   Users
 } from "lucide-react";
+import InviteMemberModal from "./InviteMemberModal";
+import type { TeamMember } from "@/lib/types";
 
 export default function TeamManagement() {
-  const [selectedMember, setSelectedMember] = useState(mockTeamMembers[0]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(teamMembers[0] || null);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  const handleInviteMember = (newMemberData: Omit<TeamMember, 'id' | 'status' | 'lastActive' | 'joinedDate' | 'tasksCompleted' | 'avgCompletionTime' | 'skills' | 'avatar'>) => {
+    const newMember: TeamMember = {
+      ...newMemberData,
+      id: teamMembers.length + 1,
+      status: 'invited',
+      lastActive: 'Never',
+      joinedDate: new Date().toISOString().split('T')[0],
+      tasksCompleted: 0,
+      avgCompletionTime: '-',
+      skills: [],
+      avatar: `https://placehold.co/40x40.png?text=${newMemberData.name.charAt(0)}`
+    };
+    console.log("Inviting new member:", newMember);
+    setTeamMembers(prev => [...prev, newMember]);
+    setIsInviteModalOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -29,8 +51,8 @@ export default function TeamManagement() {
           <h2 className="text-xl font-semibold font-headline text-foreground">Team Management</h2>
           <p className="text-muted-foreground">Manage your team members and their access</p>
         </div>
-        <Button>
-          <UserPlus className="w-4 h-4" />
+        <Button onClick={() => setIsInviteModalOpen(true)}>
+          <UserPlus className="w-4 h-4 mr-2" />
           Invite Member
         </Button>
       </div>
@@ -39,20 +61,20 @@ export default function TeamManagement() {
           <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline">Team Members</CardTitle>
+                    <CardTitle className="font-headline">Team Members ({teamMembers.length})</CardTitle>
                     <div className="flex items-center gap-2">
                         <div className="relative w-full max-w-xs">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input placeholder="Search members..." className="pl-9" />
                         </div>
-                        <Button variant="outline" size="sm"><Filter className="w-4 h-4" /> Filter</Button>
-                        <Button variant="outline" size="sm"><Download className="w-4 h-4" /> Export</Button>
+                        <Button variant="outline" size="sm"><Filter className="w-4 h-4 mr-2" /> Filter</Button>
+                        <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-2" /> Export</Button>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
                 <div className="divide-y">
-                    {mockTeamMembers.map((member) => (
+                    {teamMembers.map((member) => (
                       <div
                         key={member.id}
                         className={`p-4 md:p-6 hover:bg-secondary cursor-pointer transition-colors ${
@@ -66,7 +88,7 @@ export default function TeamManagement() {
                             <h4 className="font-medium text-foreground">{member.name}</h4>
                             <p className="text-sm text-muted-foreground">{member.role}</p>
                           </div>
-                          <Badge variant={member.status === "active" ? "success" : "warning"}>
+                          <Badge variant={member.status === "active" ? "success" : member.status === 'invited' ? 'warning' : 'default'}>
                             {member.status}
                           </Badge>
                           <div className="text-right hidden sm:block">
@@ -108,11 +130,11 @@ export default function TeamManagement() {
                     </div>
                   </div>
                   <div className="pt-4 space-y-2">
-                    <Button className="w-full"><Send className="w-4 h-4" />Assign Workflows</Button>
-                    <Button variant="outline" className="w-full"><MessageSquare className="w-4 h-4" />Send Message</Button>
-                    <Button variant="outline" className="w-full"><Settings className="w-4 h-4" />Manage Permissions</Button>
+                    <Button className="w-full"><Send className="w-4 h-4 mr-2" />Assign Workflows</Button>
+                    <Button variant="outline" className="w-full"><MessageSquare className="w-4 h-4 mr-2" />Send Message</Button>
+                    <Button variant="outline" className="w-full"><Settings className="w-4 h-4 mr-2" />Manage Permissions</Button>
                     {selectedMember.status === 'active' && (
-                        <Button variant="danger" className="w-full"><XCircle className="w-4 h-4" />Suspend Member</Button>
+                        <Button variant="danger" className="w-full"><XCircle className="w-4 h-4 mr-2" />Suspend Member</Button>
                     )}
                   </div>
                 </div>
@@ -126,6 +148,11 @@ export default function TeamManagement() {
           </Card>
         </div>
       </div>
+       <InviteMemberModal 
+        isOpen={isInviteModalOpen} 
+        onClose={() => setIsInviteModalOpen(false)}
+        onInviteMember={handleInviteMember}
+      />
     </div>
   );
 }

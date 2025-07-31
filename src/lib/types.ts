@@ -54,6 +54,19 @@ export type WorkflowTemplate = {
   icon: string;
 };
 
+export interface TeamMember {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: 'active' | 'invited';
+  avatar: string;
+  tasksCompleted: number;
+  avgCompletionTime: string;
+  lastActive: string;
+  skills: string[];
+  joinedDate: string;
+}
 
 export interface Workflow {
   id: string
