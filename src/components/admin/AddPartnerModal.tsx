@@ -51,74 +51,77 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAddPartner(partnerData);
+    onClose(); // Close the modal on successful submission
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-headline">
-            <UserPlus />
-            Invite New Partner
-          </DialogTitle>
-          <DialogDescription>
-            Enter the details of the new partner organization to send an invitation.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Org Name
-            </Label>
-            <Input
-              id="name"
-              value={partnerData.name}
-              onChange={handleInputChange}
-              className="col-span-3"
-              placeholder="e.g., Acme Corporation"
-              required
-            />
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-headline">
+              <UserPlus />
+              Invite New Partner
+            </DialogTitle>
+            <DialogDescription>
+              Enter the details of the new partner organization to send an invitation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Org Name
+              </Label>
+              <Input
+                id="name"
+                value={partnerData.name}
+                onChange={handleInputChange}
+                className="col-span-3"
+                placeholder="e.g., Acme Corporation"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={partnerData.email}
+                onChange={handleInputChange}
+                className="col-span-3"
+                placeholder="admin@acme.com"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="plan" className="text-right">
+                Plan
+              </Label>
+              <Select value={partnerData.plan} onValueChange={handleSelectChange}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Starter">Starter</SelectItem>
+                  <SelectItem value="Professional">Professional</SelectItem>
+                  <SelectItem value="Enterprise">Enterprise</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="email" className="text-right">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={partnerData.email}
-              onChange={handleInputChange}
-              className="col-span-3"
-              placeholder="admin@acme.com"
-              required
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="plan" className="text-right">
-              Plan
-            </Label>
-            <Select value={partnerData.plan} onValueChange={handleSelectChange}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a plan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Starter">Starter</SelectItem>
-                <SelectItem value="Professional">Professional</SelectItem>
-                <SelectItem value="Enterprise">Enterprise</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </form>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit">
+              Send Invitation
             </Button>
-          </DialogClose>
-          <Button type="submit" onClick={handleSubmit}>
-            Send Invitation
-          </Button>
-        </DialogFooter>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
