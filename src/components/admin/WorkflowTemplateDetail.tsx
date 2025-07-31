@@ -1,7 +1,7 @@
 // src/components/admin/WorkflowTemplateDetail.tsx
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/shared/Badge";
 import {
-  ArrowRight,
+  ArrowLeft,
   Bot,
   Building,
   CheckCircle,
@@ -39,10 +39,6 @@ interface WorkflowTemplateDetailProps {
     onBack: () => void;
     onEditWorkflow: (template: WorkflowTemplate) => void;
     onSave: (template: WorkflowTemplate) => void;
-    isEditing: boolean;
-    setIsEditing: (isEditing: boolean) => void;
-    editData: any;
-    setEditData: (data: any) => void;
 }
 
 export default function WorkflowTemplateDetail({
@@ -50,12 +46,18 @@ export default function WorkflowTemplateDetail({
   onBack,
   onEditWorkflow,
   onSave,
-  isEditing,
-  setIsEditing,
-  editData,
-  setEditData
 }: WorkflowTemplateDetailProps) {
-  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    title: template.title,
+    description: template.description,
+    category: template.category,
+    complexity: template.complexity,
+    icon: template.icon,
+    tags: template.tags.join(', '),
+    estimatedTime: template.estimatedTime
+  });
+
   const handleSave = () => {
     const updatedTemplate = {
       ...template,
@@ -73,7 +75,7 @@ export default function WorkflowTemplateDetail({
           <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <Button variant="ghost" onClick={onBack}>
-                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  <ArrowLeft className="w-4 h-4" />
                   Back to Templates
                 </Button>
               </div>

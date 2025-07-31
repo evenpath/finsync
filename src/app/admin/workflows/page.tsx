@@ -63,10 +63,10 @@ export default function AdminWorkflowsPage() {
             return null;
         }
         return (
-          <TemplateDetailView
+          <WorkflowTemplateDetail
             template={selectedTemplate}
             onBack={handleBackToTemplates}
-            onEdit={handleEditWorkflow}
+            onEditWorkflow={() => handleEditWorkflow(selectedTemplate)}
             onSave={handleSaveTemplate}
           />
         );
@@ -123,37 +123,3 @@ export default function AdminWorkflowsPage() {
     </>
   );
 }
-
-const TemplateDetailView = ({ template, onBack, onEdit, onSave }: { template: WorkflowTemplate, onBack: () => void, onEdit: (template: WorkflowTemplate) => void, onSave: (template: WorkflowTemplate) => void }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    title: template.title,
-    description: template.description,
-    category: template.category,
-    complexity: template.complexity,
-    icon: template.icon,
-    tags: template.tags.join(', '),
-    estimatedTime: template.estimatedTime
-  });
-
-  const handleSave = () => {
-    const updatedTemplate = {
-      ...template,
-      ...editData,
-      tags: editData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
-    };
-    onSave(updatedTemplate);
-    setIsEditing(false);
-  };
-
-  return <WorkflowTemplateDetail 
-    template={template} 
-    onBack={onBack} 
-    onEditWorkflow={onEdit} 
-    onSave={handleSave} 
-    isEditing={isEditing} 
-    setIsEditing={setIsEditing} 
-    editData={editData} 
-    setEditData={setEditData} 
-  />;
-};
