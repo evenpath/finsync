@@ -1,3 +1,4 @@
+// src/components/admin/PartnerManagement.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -17,9 +18,27 @@ import {
   Settings,
   Search
 } from "lucide-react";
+import AddPartnerModal from "./AddPartnerModal"; // Make sure this path is correct
 
 export default function PartnerManagement() {
-  const [selectedPartner, setSelectedPartner] = useState(mockPartners[0]);
+  const [partners, setPartners] = useState(mockPartners);
+  const [selectedPartner, setSelectedPartner] = useState(partners[0]);
+  const [isAddPartnerModalOpen, setIsAddPartnerModalOpen] = useState(false);
+
+  const handleAddPartner = (newPartnerData: Omit<typeof mockPartners[0], 'id' | 'status' | 'joinedDate' | 'lastActive'>) => {
+    const newPartner = {
+      ...newPartnerData,
+      id: partners.length + 1,
+      status: 'pending' as const,
+      joinedDate: new Date().toISOString().split('T')[0],
+      lastActive: 'Never',
+    };
+    console.log("Adding new partner:", newPartner);
+    // In a real app, you'd send this to your backend.
+    // For now, we'll just add it to our local state.
+    setPartners(prev => [...prev, newPartner]);
+    setIsAddPartnerModalOpen(false);
+  };
   
   return (
     <div className="space-y-6">
@@ -28,7 +47,7 @@ export default function PartnerManagement() {
           <h2 className="text-xl font-semibold font-headline text-foreground">Partner Organizations</h2>
           <p className="text-muted-foreground">Manage partner accounts and permissions</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddPartnerModalOpen(true)}>
           <UserPlus className="w-4 h-4" />
           Add Partner
         </Button>
@@ -51,7 +70,7 @@ export default function PartnerManagement() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y">
-                {mockPartners.map((partner) => (
+                {partners.map((partner) => (
                   <div
                     key={partner.id}
                     className={`p-6 hover:bg-secondary cursor-pointer transition-colors ${
@@ -150,6 +169,11 @@ export default function PartnerManagement() {
           </Card>
         </div>
       </div>
+       <AddPartnerModal 
+        isOpen={isAddPartnerModalOpen} 
+        onClose={() => setIsAddPartnerModalOpen(false)}
+        onAddPartner={handleAddPartner}
+      />
     </div>
   );
 }
