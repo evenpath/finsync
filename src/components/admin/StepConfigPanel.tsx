@@ -17,17 +17,13 @@ interface StepConfigPanelProps {
     onInfoChange: (info: Partial<WorkflowStep>) => void;
 }
 
-export default function StepConfigPanel({ step, onConfigChange, onInfoChange }: StepConfigPanelProps) {
-  const config = step.configuration || {};
-
-  if (step.type === 'ai_agent') {
-    return (
-      <div className="space-y-6">
+const AIStepConfig = ({ config, onConfigChange }: { config: any, onConfigChange: (config: any) => void}) => (
+    <div className="space-y-6">
         <div>
           <Label htmlFor="aiProvider">AI Provider</Label>
           <Select 
             value={config.provider || 'openai'}
-            onValueChange={(value) => onConfigChange({ provider: value })}
+            onValueChange={(value) => onConfigChange({ provider: value, model: '' })} // Reset model on provider change
           >
             <SelectTrigger id="aiProvider">
                 <SelectValue placeholder="Select provider" />
@@ -35,7 +31,10 @@ export default function StepConfigPanel({ step, onConfigChange, onInfoChange }: 
             <SelectContent>
                 {aiProviders.map(provider => (
                 <SelectItem key={provider.id} value={provider.id}>
-                    {provider.icon} {provider.name}
+                    <div className="flex items-center gap-2">
+                        {provider.icon}
+                        <span>{provider.name}</span>
+                    </div>
                 </SelectItem>
                 ))}
             </SelectContent>
@@ -45,14 +44,15 @@ export default function StepConfigPanel({ step, onConfigChange, onInfoChange }: 
         <div>
           <Label htmlFor="aiModel">Model</Label>
            <Select 
-            value={config.model || 'gpt-4'}
+            value={config.model || ''}
             onValueChange={(value) => onConfigChange({ model: value })}
+            disabled={!config.provider}
           >
              <SelectTrigger id="aiModel">
                 <SelectValue placeholder="Select model" />
             </SelectTrigger>
             <SelectContent>
-                {aiProviders.find(p => p.id === (config.provider || 'openai'))?.models.map(model => (
+                {aiProviders.find(p => p.id === (config.provider))?.models.map(model => (
                     <SelectItem key={model} value={model}>{model}</SelectItem>
                 ))}
             </SelectContent>
@@ -106,35 +106,11 @@ export default function StepConfigPanel({ step, onConfigChange, onInfoChange }: 
             />
           </div>
         </div>
-
-        <div className="bg-secondary p-4 rounded-lg">
-          <h4 className="font-medium text-foreground mb-2">Quick Templates</h4>
-          <div className="space-y-2">
-            {[
-              { name: 'Text Summarizer', prompt: 'Summarize the following text in 2-3 sentences: {input_text}' },
-              { name: 'Sentiment Analyzer', prompt: 'Analyze the sentiment of this text and provide a score from 1-10: {input_text}' },
-              { name: 'Content Generator', prompt: 'Generate engaging content about {topic} for {audience}' },
-              { name: 'Data Extractor', prompt: 'Extract key information from this document: {document_content}' }
-            ].map(template => (
-              <Button
-                key={template.name}
-                onClick={() => onConfigChange({ prompt: template.prompt })}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-              >
-                {template.name}
-              </Button>
-            ))}
-          </div>
-        </div>
       </div>
-    );
-  }
+);
 
-  // Default configuration for other step types
-  return (
-    <div className="space-y-6">
+const GenericStepConfig = ({ step, onInfoChange }: { step: WorkflowStep, onInfoChange: (info: Partial<WorkflowStep>) => void }) => (
+     <div className="space-y-6">
       <div>
         <Label htmlFor="stepName">Step Name</Label>
         <Input
@@ -155,9 +131,20 @@ export default function StepConfigPanel({ step, onConfigChange, onInfoChange }: 
       </div>
       <div className="bg-yellow-100/50 p-4 rounded-lg border border-yellow-200">
         <p className="text-sm text-yellow-800">
-          <strong>Note:</strong> Configuration options for '{step.type}' will be available in a future update.
+          <strong>Note:</strong> Advanced configuration for '{step.type.replace('_', ' ')}' steps will be available in a future update.
         </p>
       </div>
     </div>
-  );
+);
+
+
+export default function StepConfigPanel({ step, onConfigChange, onInfoChange }: StepConfigPanelProps) {
+  const config = step.configuration || {};
+
+  if (step.type === 'ai_agent') {
+    return <AIStepConfig config={config} onConfigChange={onConfigChange} />;
+  }
+
+  // Default configuration for other step types
+  return <GenericStepConfig step={step} onInfoChange={onInfoChange} />;
 };

@@ -48,7 +48,7 @@ export default function PartnerManagement() {
           <p className="text-muted-foreground">Manage partner accounts and permissions</p>
         </div>
         <Button onClick={() => setIsAddPartnerModalOpen(true)}>
-          <UserPlus className="w-4 h-4" />
+          <UserPlus className="w-4 h-4 mr-2" />
           Add Partner
         </Button>
       </div>
@@ -63,8 +63,8 @@ export default function PartnerManagement() {
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input placeholder="Search partners..." className="pl-9" />
                         </div>
-                        <Button variant="outline" size="sm"><Filter className="w-4 h-4" /> Filter</Button>
-                        <Button variant="outline" size="sm"><Download className="w-4 h-4" /> Export</Button>
+                        <Button variant="outline" size="sm"><Filter className="w-4 h-4 mr-2" /> Filter</Button>
+                        <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-2" /> Export</Button>
                     </div>
                 </div>
             </CardHeader>
@@ -154,9 +154,9 @@ export default function PartnerManagement() {
                         <p className="text-foreground">{selectedPartner.lastActive}</p>
                     </div>
                     <div className="pt-4 space-y-2">
-                        <Button className="w-full"><Send className="w-4 h-4" />Assign Workflows</Button>
-                        <Button variant="outline" className="w-full"><Eye className="w-4 h-4" />View Analytics</Button>
-                        <Button variant="outline" className="w-full"><Settings className="w-4 h-4" />Manage Settings</Button>
+                        <Button className="w-full"><Send className="w-4 h-4 mr-2" />Assign Workflows</Button>
+                        <Button variant="outline" className="w-full"><Eye className="w-4 h-4 mr-2" />View Analytics</Button>
+                        <Button variant="outline" className="w-full"><Settings className="w-4 h-4 mr-2" />Manage Settings</Button>
                     </div>
                 </div>
               </div>

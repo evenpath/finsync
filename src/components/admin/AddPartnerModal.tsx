@@ -51,7 +51,6 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAddPartner(partnerData);
-    onClose(); // Close the modal on successful submission
   };
 
   return (

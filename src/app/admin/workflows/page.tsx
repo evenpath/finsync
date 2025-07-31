@@ -39,12 +39,12 @@ export default function AdminWorkflowsPage() {
 
   const handleSaveWorkflow = (workflowData: any) => {
     console.log('Saving workflow:', workflowData);
-    // Here you would typically save the data to your backend
-    // For now, let's just update mock data for demonstration
+    // In a real app, this would save to a backend.
+    // For now, we'll just navigate back to the templates view.
     if (workflowData.id) {
-        // update
+        // Logic to update an existing workflow
     } else {
-        // create
+        // Logic to create a new workflow
     }
     setCurrentView('templates');
   };
@@ -53,6 +53,7 @@ export default function AdminWorkflowsPage() {
     console.log('Saving template details:', templateData);
     // Here you would typically save the data to your backend
     setSelectedTemplate(templateData);
+    // Optionally, you might want to refresh the list or stay on the detail page
   };
 
   const renderContent = () => {

@@ -69,13 +69,13 @@ export default function WorkflowTemplateDetail({
   };
 
   return (
-    <div className="flex-1 overflow-auto p-6">
+    <div className="p-6">
         <div className="max-w-6xl mx-auto">
           {/* Header inside main content */}
           <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" onClick={onBack}>
-                  <ArrowLeft className="w-4 h-4" />
+                <Button variant="outline" onClick={onBack}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Templates
                 </Button>
               </div>
@@ -86,18 +86,18 @@ export default function WorkflowTemplateDetail({
                       Cancel
                     </Button>
                     <Button onClick={handleSave}>
-                      <Save className="w-4 h-4" />
+                      <Save className="w-4 h-4 mr-2" />
                       Save Changes
                     </Button>
                   </>
                 ) : (
                   <>
                     <Button variant="outline" onClick={() => setIsEditing(true)}>
-                      <Edit3 className="w-4 h-4" />
+                      <Edit3 className="w-4 h-4 mr-2" />
                       Edit Details
                     </Button>
                     <Button onClick={() => onEditWorkflow(template)}>
-                      <Settings className="w-4 h-4" />
+                      <Settings className="w-4 h-4 mr-2" />
                       Edit Workflow
                     </Button>
                   </>
@@ -280,7 +280,7 @@ export default function WorkflowTemplateDetail({
                     <div className="flex items-center justify-between">
                         <CardTitle>Assigned Partners</CardTitle>
                         <Button variant="outline" size="sm">
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-4 h-4 mr-2" />
                             Assign to Partner
                         </Button>
                     </div>
@@ -341,23 +341,23 @@ export default function WorkflowTemplateDetail({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button variant="outline" className="w-full justify-start">
-                    <Play className="w-4 h-4" />
+                    <Play className="w-4 h-4 mr-2" />
                     Test Workflow
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 mr-2" />
                     Export Template
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Upload className="w-4 h-4" />
+                    <Upload className="w-4 h-4 mr-2" />
                     Import Version
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <BarChart3 className="w-4 h-4" />
+                    <BarChart3 className="w-4 h-4 mr-2" />
                     View Analytics
                   </Button>
                   <Button variant="destructive" className="w-full justify-start">
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 mr-2" />
                     Delete Template
                   </Button>
                 </CardContent>
