@@ -27,20 +27,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 try {
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    // Find a matching mock user to get claims. This simulates the backend setting custom claims.
+                    // This is a mock-up of how custom claims would work in a real app.
+                    // In a production environment, these claims would be set on the backend
+                    // (e.g., via a Cloud Function when a user is created or their role changes)
+                    // and would be automatically present in idTokenResult.claims.
                     const mockUser = mockAdminUsers.find(u => u.email === firebaseUser.email);
                     
-                    const customClaimsFromToken = (idTokenResult.claims || {}) as { 
-                        role?: 'Super Admin' | 'Admin' | 'partner' | 'employee';
-                        partnerId?: string;
+                    const finalClaims = {
+                      role: 'employee', // Default role
+                      partnerId: null, // Default
+                      ...idTokenResult.claims, // Real claims from token
+                      ...(mockUser && { role: mockUser.role }), // Override with mock role if found
                     };
 
-                    // Combine mock claims with token claims, giving precedence to mock claims for development.
-                    const finalClaims = {
-                      role: mockUser ? mockUser.role : customClaimsFromToken.role || 'employee',
-                      partnerId: customClaimsFromToken.partnerId,
-                    };
-                    
                     const authUser: FirebaseAuthUser = {
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,
