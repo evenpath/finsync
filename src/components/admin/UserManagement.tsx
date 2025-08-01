@@ -3,7 +3,6 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { mockAdminUsers } from "@/lib/mockData";
 import type { AdminUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,20 +27,18 @@ export default function UserManagement() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
-  const manageableUsers = useMemo(() => {
-    if (!currentUser) return [];
-    // This will be replaced by a fetch from your database
-    return mockAdminUsers.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
-  }, [currentUser]);
-
-  const [users, setUsers] = useState<AdminUser[]>(manageableUsers);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(manageableUsers[0] || null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
+  const manageableUsers = useMemo(() => {
+    if (!currentUser) return [];
+    return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
+  }, [currentUser, users]);
+
   React.useEffect(() => {
-    setUsers(manageableUsers);
-    if (!selectedUser || selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
-      setSelectedUser(manageableUsers[0] || null);
+    if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
+      setSelectedUser(null);
     }
   }, [manageableUsers, selectedUser, currentUser]);
 
@@ -104,7 +101,7 @@ export default function UserManagement() {
           <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline">All Admins ({users.length})</CardTitle>
+                    <CardTitle className="font-headline">All Admins ({manageableUsers.length})</CardTitle>
                     <div className="flex items-center gap-2">
                         <div className="relative w-full max-w-xs">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -116,7 +113,7 @@ export default function UserManagement() {
             </CardHeader>
             <CardContent className="p-0">
                 <div className="divide-y">
-                    {users.map((user) => (
+                    {manageableUsers.map((user) => (
                       <div
                         key={user.id}
                         className={`p-4 md:p-6 hover:bg-secondary cursor-pointer transition-colors ${
