@@ -43,8 +43,28 @@ const createTenantFlow = ai.defineFlow(
     }
 
     try {
+      // Sanitize the partner name to create a valid tenant displayName.
+      // Rules: starts with a letter, only letters, digits, hyphens, 4-20 chars.
+      const sanitizedName = input.partnerName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove invalid characters
+        .replace(/\s+/g, '-')       // Replace spaces with hyphens
+        .substring(0, 20);          // Truncate to 20 characters
+        
+      // Ensure it starts with a letter
+      let finalDisplayName = sanitizedName;
+      if (!/^[a-z]/.test(finalDisplayName)) {
+          finalDisplayName = 't-' + finalDisplayName.substring(0, 18);
+      }
+      
+      // Ensure it meets minimum length
+      if (finalDisplayName.length < 4) {
+          finalDisplayName = (finalDisplayName + '-1234').substring(0, 20);
+      }
+
+
       const tenant = await adminAuth.tenantManager().createTenant({
-        displayName: input.partnerName,
+        displayName: finalDisplayName,
         emailSignInConfig: {
           enabled: true,
           passwordRequired: true, 
@@ -61,7 +81,6 @@ const createTenantFlow = ai.defineFlow(
     } catch (error: any) {
         console.error("Error creating Firebase Auth tenant:", error);
 
-        // Check for specific permission denied error
         if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('permission'))) {
             return {
                 success: false,
