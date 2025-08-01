@@ -1,4 +1,3 @@
-
 // src/app/auth/signup/page.tsx
 "use client";
 
@@ -10,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { createTenant } from '@/ai/flows/create-tenant-flow';
 
 export default function SignupPage() {
     const [name, setName] = useState('');
@@ -19,24 +19,45 @@ export default function SignupPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const handleSignup = (e: React.FormEvent) => {
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // This is where you would integrate Firebase Auth multi-tenancy.
-        // 1. Create a new Partner document in Firestore.
-        // 2. Create a new Firebase Auth tenant for that partner.
-        // 3. Create the new user within that tenant.
-        console.log("Attempting to sign up new partner admin:", name, email);
+        try {
+            // 1. Create a new Firebase Auth tenant for the new partner.
+            const tenantResult = await createTenant({ partnerName: name });
+            if (!tenantResult.success || !tenantResult.tenantId) {
+                throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
+            }
+            console.log("New tenant created:", tenantResult.tenantId);
 
-        setTimeout(() => {
+            // 2. In a real app, you would create a new Partner document in Firestore
+            //    with the `tenantId` from the previous step.
+            //    e.g., await db.collection('partners').doc().set({ name, email, tenantId: tenantResult.tenantId });
+            console.log(`(Mock) Saving partner ${name} to Firestore with tenantId ${tenantResult.tenantId}`);
+
+            // 3. Then, you would create the new user account *within* that tenant.
+            //    This requires setting the tenantId on the auth instance on the client before `createUserWithEmailAndPassword`.
+            //    For this simulation, we'll just log it.
+            console.log(`(Mock) Creating user ${email} in tenant ${tenantResult.tenantId}`);
+            
             toast({
                 title: "Account Created!",
                 description: "Redirecting you to the partner onboarding.",
             });
             // New partners are redirected to the onboarding flow
             router.push('/partner/onboarding');
-        }, 1500);
+
+        } catch (error: any) {
+            console.error("Signup Error:", error);
+            toast({
+                variant: "destructive",
+                title: "Signup Failed",
+                description: error.message || "Could not create your account. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
   return (
@@ -48,10 +69,10 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Company Name</Label>
               <Input 
                 id="name" 
-                placeholder="Your Name" 
+                placeholder="Your Company Name" 
                 required 
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -59,11 +80,11 @@ export default function SignupPage() {
               />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Your Email</Label>
             <Input 
               id="email" 
               type="email" 
-              placeholder="m@example.com" 
+              placeholder="you@company.com" 
               required 
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -88,7 +109,7 @@ export default function SignupPage() {
           </Button>
           <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/auth/login" className="underline">Login</Link>
+              <Link href="/partner/login" className="underline">Login</Link>
           </div>
         </CardFooter>
       </form>

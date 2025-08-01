@@ -6,27 +6,42 @@ import type { Partner } from '@/lib/types';
 import * as admin from 'firebase-admin';
 
 /**
- * Fetches all partners. If a database connection is available, it fetches from Firestore.
- * Otherwise, it returns mock data.
+ * Fetches partners. If a tenantId is provided, it fetches the specific partner for that tenant.
+ * If no tenantId is provided (e.g., for an admin), it fetches all partners.
+ * Falls back to mock data if the database is not connected.
+ * @param {string} [tenantId] - The tenant ID to filter partners.
  * @returns {Promise<Partner[]>} A promise that resolves to an array of partners.
  */
-export async function getPartners(): Promise<Partner[]> {
+export async function getPartners(tenantId?: string): Promise<Partner[]> {
     if (!db) {
         console.log("Database not connected, returning mock partners.");
+        // If a tenantId is provided, we would ideally filter mock data too.
+        // For now, returning all mock partners for any case.
         return Promise.resolve(mockPartners);
     }
     
     const partnersRef = db.collection('partners');
-    const snapshot = await partnersRef.orderBy('name').get();
+    let query: admin.firestore.Query<admin.firestore.DocumentData> = partnersRef;
+
+    // If a tenantId is provided, filter the query to only get that partner.
+    if (tenantId) {
+        query = partnersRef.where('tenantId', '==', tenantId).limit(1);
+    } else {
+        // If no tenantId, assume it's an admin call and fetch all partners, ordered by name.
+        query = partnersRef.orderBy('name');
+    }
+    
+    const snapshot = await query.get();
     
     if (snapshot.empty) {
+        // If it was a tenant-specific query and nothing was found, it's not an error.
+        // If it was a global query, it means the collection is empty.
         return [];
     }
 
     const partners: Partner[] = [];
     snapshot.forEach(doc => {
         const data = doc.data();
-        // Ensure numeric fields are correctly typed
         const partnerData: Partner = {
             id: doc.id,
             ...data,
@@ -72,6 +87,7 @@ export async function seedInitialPartners(): Promise<void> {
             businessProfile: dataToSeed.businessProfile || null,
             aiMemory: dataToSeed.aiMemory || null,
             industry: dataToSeed.industry || null,
+            tenantId: `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}` // Add a mock tenantId
         };
 
         const partnerRef = db.collection('partners').doc(id);
