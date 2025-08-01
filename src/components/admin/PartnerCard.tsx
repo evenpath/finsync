@@ -22,7 +22,7 @@ export default function PartnerCard({ partner, isSelected, onSelect }: PartnerCa
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg bg-${industry.color}-100 flex items-center justify-center text-${industry.color}-600 text-lg`}>
+            <div className={`w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-lg`}>
               {industry.icon}
             </div>
             <div>

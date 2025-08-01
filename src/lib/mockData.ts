@@ -1,6 +1,7 @@
+
 // src/lib/mockData.ts
 import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users, Zap, Shield, Building, UserPlus, BarChart3, Activity, AlertTriangle, Send, Copy, ExternalLink, PlayCircle, PauseCircle, RotateCcw, Cpu, Network, Layers, Clock } from "lucide-react";
-import type { Industry, WorkflowTemplate } from './types';
+import type { Industry, Partner, WorkflowTemplate } from './types';
 
 export const industries: Industry[] = [
     { 
@@ -40,42 +41,129 @@ export const industries: Industry[] = [
 
 
 // Mock Data for Admin
-export const mockPartners = [
+export const mockPartners: Partner[] = [
   {
-    id: 1,
+    id: "1",
     name: "TechCorp Industries",
+    businessName: "TechCorp Industries LLC",
+    contactPerson: "Admin User",
     email: "admin@techcorp.com",
+    phone: "123-456-7890",
     status: "active",
-    members: 45,
-    workflows: 12,
-    tasksCompleted: 1250,
-    joinedDate: "2024-01-15",
     plan: "Enterprise",
-    lastActive: "2 hours ago"
+    joinedDate: "2024-01-15",
+    industry: industries[0],
+    businessSize: "large",
+    employeeCount: 500,
+    monthlyRevenue: "1M+",
+    location: { city: "New York", state: "NY" },
+    aiProfileCompleteness: 90,
+    stats: {
+      activeWorkflows: 12,
+      totalExecutions: 1250,
+      successRate: 98.5,
+      avgROI: 250,
+      timeSaved: "400 hours/month",
+    },
+    businessProfile: {
+      id: 'bp-1',
+      partnerId: '1',
+      industryId: industries[0].id,
+      businessName: 'TechCorp Industries LLC',
+      businessSize: 'large',
+      painPoints: ['Manual report generation', 'Slow data analysis'],
+      currentTools: [{name: 'Salesforce', category: 'CRM', satisfaction: 4, monthlySpend: 1000}],
+      goals: [{description: 'Automate weekly reporting', priority: 'high', timeline: '3 months'}]
+    },
+    aiMemory: {
+        businessUnderstanding: 'Large enterprise focused on B2B software solutions.',
+        keyInsights: ['Sales cycle is long, needs nurturing', 'High volume of customer support tickets'],
+        successPatterns: 'Automation of internal reporting has high impact.',
+        workflowPreferences: 'Prefers robust workflows with detailed logging and error handling.',
+        concernsRisks: 'Data security and integration with existing legacy systems.'
+    }
   },
   {
-    id: 2,
+    id: "2",
     name: "Marketing Solutions Ltd",
-    email: "admin@marketingsolutions.com",
+    businessName: "Marketing Solutions Ltd",
+    contactPerson: "Jane Smith",
+    email: "jane@marketingsolutions.com",
+    phone: "987-654-3210",
     status: "active",
-    members: 28,
-    workflows: 8,
-    tasksCompleted: 892,
-    joinedDate: "2024-02-20",
     plan: "Professional",
-    lastActive: "1 day ago"
+    joinedDate: "2024-02-20",
+    industry: industries[1],
+    businessSize: "medium",
+    employeeCount: 50,
+    monthlyRevenue: "200K",
+    location: { city: "Chicago", state: "IL" },
+    aiProfileCompleteness: 75,
+    stats: {
+      activeWorkflows: 8,
+      totalExecutions: 892,
+      successRate: 95.2,
+      avgROI: 180,
+      timeSaved: "150 hours/month",
+    },
+    businessProfile: {
+       id: 'bp-2',
+      partnerId: '2',
+      industryId: industries[1].id,
+      businessName: 'Marketing Solutions Ltd',
+      businessSize: 'medium',
+      painPoints: ['Lead nurturing is manual', 'Campaign reporting is time-consuming'],
+      currentTools: [{name: 'HubSpot', category: 'CRM', satisfaction: 5, monthlySpend: 500}],
+      goals: [{description: 'Automate lead follow-up emails', priority: 'high', timeline: '1 month'}]
+    },
+    aiMemory: {
+        businessUnderstanding: 'Digital marketing agency specializing in SEO and content marketing.',
+        keyInsights: ['Client reporting is a major time sink', 'Content creation can be a bottleneck'],
+        successPatterns: 'Workflows that automate reporting and client communication are most valued.',
+        workflowPreferences: 'Prefers workflows that integrate with their existing marketing tools.',
+        concernsRisks: 'Maintaining brand voice in automated communications.'
+    }
   },
   {
-    id: 3,
+    id: "3",
     name: "StartupHub",
-    email: "admin@startuphub.com",
+    businessName: "StartupHub Inc.",
+    contactPerson: "John Doe",
+    email: "john@startuphub.com",
+    phone: "555-555-5555",
     status: "pending",
-    members: 12,
-    workflows: 3,
-    tasksCompleted: 156,
-    joinedDate: "2024-07-25",
     plan: "Starter",
-    lastActive: "3 days ago"
+    joinedDate: "2024-07-25",
+    industry: industries[2],
+    businessSize: "small",
+    employeeCount: 15,
+    monthlyRevenue: "50K",
+    location: { city: "Austin", state: "TX" },
+    aiProfileCompleteness: 30,
+    stats: {
+      activeWorkflows: 3,
+      totalExecutions: 156,
+      successRate: 92.0,
+      avgROI: 120,
+      timeSaved: "40 hours/month",
+    },
+     businessProfile: {
+       id: 'bp-3',
+      partnerId: '3',
+      industryId: industries[2].id,
+      businessName: 'StartupHub Inc.',
+      businessSize: 'small',
+      painPoints: ['Social media management is ad-hoc', 'Onboarding new customers is manual'],
+      currentTools: [{name: 'Buffer', category: 'Social Media', satisfaction: 3, monthlySpend: 15}],
+      goals: [{description: 'Schedule social media posts automatically', priority: 'medium', timeline: '2 weeks'}]
+    },
+    aiMemory: {
+        businessUnderstanding: 'A fast-growing tech startup in the SaaS space.',
+        keyInsights: ['Needs to be agile and adapt quickly', 'Limited budget for new tools'],
+        successPatterns: 'Low-cost, high-impact automations are key.',
+        workflowPreferences: 'Simple workflows that can be set up in minutes.',
+        concernsRisks: 'Scalability of workflows as the company grows.'
+    }
   }
 ];
 
