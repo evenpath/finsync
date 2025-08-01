@@ -1,3 +1,4 @@
+
 // src/components/admin/AddPartnerModal.tsx
 "use client";
 
@@ -95,16 +96,24 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
   </div>
 );
 
-const StepTwo = ({ outlets, setOutlets }: any) => {
+const NoApiKeyMessage = () => (
+    <div className="flex items-center gap-4 rounded-lg border border-destructive/50 bg-red-50 p-4 text-sm text-destructive">
+        <AlertTriangle className="h-6 w-6" />
+        <div className="flex-1">
+          <h4 className="font-semibold">Google Maps API Key is Missing</h4>
+          <p className="text-xs">Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env file to enable location features.</p>
+        </div>
+    </div>
+);
+
+const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (outlets: any[]) => void }) => {
   const [newOutlet, setNewOutlet] = useState({ name: '', address: '' });
   const [mapCenter, setMapCenter] = useState({ lat: 37.386051, lng: -122.083855 }); // Default to Mountain View, CA
   const [markerPosition, setMarkerPosition] = useState<{lat: number, lng: number} | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  
-  const hasApiKey = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries,
   });
 
@@ -136,18 +145,6 @@ const StepTwo = ({ outlets, setOutlets }: any) => {
   
   const handleRemoveOutlet = (index: number) => {
     setOutlets(outlets.filter((_:any, i:number) => i !== index));
-  }
-
-  if (!hasApiKey) {
-    return (
-      <div className="flex items-center gap-4 rounded-lg border border-destructive/50 bg-red-50 p-4 text-sm text-destructive">
-        <AlertTriangle className="h-6 w-6" />
-        <div className="flex-1">
-          <h4 className="font-semibold">Google Maps API Key is Missing</h4>
-          <p className="text-xs">Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env file to enable location features.</p>
-        </div>
-      </div>
-    )
   }
 
   if (loadError) return <div>Error loading maps. Please check your API key and network connection.</div>;
@@ -215,6 +212,13 @@ const StepTwo = ({ outlets, setOutlets }: any) => {
       </div>
     </div>
   );
+};
+
+
+const StepTwo = ({ outlets, setOutlets }: any) => {
+    const hasApiKey = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    return hasApiKey ? <MapComponent outlets={outlets} setOutlets={setOutlets} /> : <NoApiKeyMessage />;
 };
 
 
