@@ -6,6 +6,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import type { FirebaseAuthUser, AuthState } from '@/lib/types';
 import { app } from '@/lib/firebase';
+import { mockAdminUsers } from '@/lib/mockData';
 
 const auth = getAuth(app);
 
@@ -25,9 +26,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 try {
-                    const idTokenResult = await firebaseUser.getIdTokenResult(true); // Force refresh to get latest claims
+                    const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    const customClaims = idTokenResult.claims as { 
+                    // Find a matching mock user to get claims
+                    const mockUser = mockAdminUsers.find(u => u.email === firebaseUser.email);
+                    
+                    const customClaims = (idTokenResult.claims || {}) as { 
                         role?: 'Super Admin' | 'Admin' | 'partner' | 'employee';
                         partnerId?: string;
                         permissions?: string[];
@@ -41,9 +45,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         phoneNumber: firebaseUser.phoneNumber,
                         emailVerified: firebaseUser.emailVerified,
                         customClaims: {
-                            role: customClaims.role || 'employee', // Default to least privileged role
+                            role: mockUser?.role || customClaims.role || 'employee',
                             partnerId: customClaims.partnerId,
-                            permissions: customClaims.permissions || []
+                            permissions: mockUser?.permissions || customClaims.permissions || []
                         },
                         creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
@@ -52,8 +56,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     
                     setUser(authUser);
                 } catch (e) {
-                    console.error("Error fetching user claims:", e);
-                    setError("Failed to fetch user permissions.");
+                    console.error("Error processing user auth state:", e);
+                    setError("Failed to process user permissions.");
                     setUser(null);
                 }
             } else {
@@ -62,7 +66,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setLoading(false);
         });
 
-        // Cleanup subscription on unmount
         return () => unsubscribe();
     }, []);
 

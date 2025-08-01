@@ -66,9 +66,8 @@ export default function AdminSidebar() {
               return null;
             }
 
-            const isActive = item.href === '/admin' 
-              ? pathname === item.href 
-              : pathname.startsWith(item.href);
+            const isActive = (item.href === '/admin' && pathname === item.href) || 
+                             (item.href !== '/admin' && pathname.startsWith(item.href));
 
             const Icon = item.icon;
             return (
@@ -98,7 +97,7 @@ export default function AdminSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              {user?.displayName || 'Admin User'}
+              {user?.displayName || user?.email}
             </p>
             <p className="text-xs text-muted-foreground">{user?.customClaims?.role}</p>
           </div>
