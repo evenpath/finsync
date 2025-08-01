@@ -127,4 +127,3 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
         </>
     );
 }
-

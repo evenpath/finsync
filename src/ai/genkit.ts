@@ -41,6 +41,7 @@ export function getDb() {
     console.error("Firebase Admin not initialized, Firestore is not available.");
     // Depending on the use case, you might return null or a mock object.
     // For this app, we'll proceed, and individual calls will fail, which is captured in components.
+    return null;
   }
   return admin.firestore();
 }
