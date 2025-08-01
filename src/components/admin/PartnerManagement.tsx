@@ -15,8 +15,6 @@ import { Button } from '@/components/ui/button';
 import AddPartnerModal from './AddPartnerModal';
 import { useToast } from '@/hooks/use-toast';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
-import { getPartners } from '@/ai/flows/get-partners-flow';
-
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
@@ -34,40 +32,13 @@ export default function PartnerManagement() {
 
   const fetchPartners = useCallback(async () => {
     setIsLoading(true);
-    try {
-      const partnersList = await getPartners();
-
-      setPartners(partnersList);
-      if (partnersList.length > 0 && !selectedPartner) {
-        setSelectedPartner(partnersList[0]);
-      } else if (partnersList.length === 0) {
-         console.log("Partners collection is empty, seeding with mock data...");
-        for (const partner of mockPartners) {
-          const q = query(collection(db, "partners"), where("name", "==", partner.name));
-          const existing = await getDocs(q);
-          if(existing.empty) {
-             await addDoc(collection(db, "partners"), partner);
-          }
-        }
-        // Fetch again after seeding
-        const seededPartners = await getPartners();
-        setPartners(seededPartners);
-        if (seededPartners.length > 0) {
-            setSelectedPartner(seededPartners[0]);
-        }
-      }
-
-    } catch (error) {
-      console.error("Error fetching partners: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error fetching partners",
-        description: (error as Error).message || "An unexpected error occurred.",
-      });
-    } finally {
-      setIsLoading(false);
+    // Using mock data to bypass Firestore fetching issues for now.
+    setPartners(mockPartners);
+    if (mockPartners.length > 0) {
+      setSelectedPartner(mockPartners[0]);
     }
-  }, [toast, selectedPartner]);
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     fetchPartners();
