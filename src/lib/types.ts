@@ -223,10 +223,13 @@ export interface BusinessProfile {
   id: string;
   partnerId: string;
   industryId: string;
+  industry: Industry;
   businessName: string;
   businessSize: 'small' | 'medium' | 'large';
   employeeCount?: number;
-  location?: BusinessLocation;
+  locationCity?: string;
+  locationState?: string;
+  locationCountry?: string;
   painPoints: string[];
   currentTools: CurrentTool[];
   goals: BusinessGoal[];
@@ -302,6 +305,7 @@ export interface WorkflowTemplate {
   updatedAt: Date;
   lastUsedAt?: Date;
   aiAgents?: number;
+  totalUses?: number; // Added for analytics
 }
 
 export interface WorkflowStep {
@@ -793,7 +797,15 @@ export interface APIUsageStats {
 // ============================================================================
 // 9. TEAM MANAGEMENT VARIABLES
 // ============================================================================
-
+export interface Task {
+    id: number;
+    title: string;
+    workflow: string;
+    priority: 'high' | 'medium' | 'low';
+    status: 'assigned' | 'in_progress' | 'awaiting_approval' | 'completed';
+    dueDate?: string;
+    assignee?: string;
+}
 export interface TeamMember {
   id: number;
   userId?: string;

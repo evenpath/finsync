@@ -2,7 +2,7 @@
 // src/components/admin/UserManagement.tsx
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import type { AdminUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
 import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
 import { useToast } from "@/hooks/use-toast";
+import { mockAdminUsers } from "@/lib/mockData";
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -31,6 +32,11 @@ export default function UserManagement() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  useEffect(() => {
+    // Load mock data on component mount
+    setUsers(mockAdminUsers);
+  }, []);
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
