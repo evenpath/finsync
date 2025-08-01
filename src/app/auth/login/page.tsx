@@ -22,7 +22,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    console.log("Attempting to log in with:", email, password);
+    console.log("Attempting to log in with:", email);
 
     // This is a mock login flow.
     setTimeout(() => {
@@ -34,8 +34,8 @@ export default function LoginPage() {
         sessionStorage.setItem('mockUserRole', 'admin');
         
         toast({ title: "Login Successful", description: "Redirecting to admin dashboard..." });
-        router.push('/admin');
-        router.refresh(); // Force a refresh to re-evaluate the auth state in the layout
+        // Use window.location.href to force a full page reload and ensure auth state is picked up
+        window.location.href = '/admin';
       } else {
         sessionStorage.removeItem('isMockAuthenticated');
         sessionStorage.removeItem('mockUserRole');
@@ -78,6 +78,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
+              placeholder="Enter any password"
             />
           </div>
         </CardContent>

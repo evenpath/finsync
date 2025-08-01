@@ -33,40 +33,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<FirebaseAuthUser | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Mocking authentication state using sessionStorage.
-        // In a real app, this would be replaced with Firebase's onAuthStateChanged listener.
-        const checkAuth = () => {
-            try {
-                const isAuthenticated = sessionStorage.getItem('isMockAuthenticated') === 'true';
-                const role = sessionStorage.getItem('mockUserRole');
+    const checkAuth = useCallback(() => {
+        try {
+            const isAuthenticated = sessionStorage.getItem('isMockAuthenticated') === 'true';
+            const role = sessionStorage.getItem('mockUserRole');
 
-                if (isAuthenticated && role === 'admin') {
-                    setUser(mockAdminUser);
-                } else {
-                    setUser(null);
-                }
-            } catch (error) {
-                // sessionStorage is not available on the server, so we can ignore this error.
+            if (isAuthenticated && role === 'admin') {
+                setUser(mockAdminUser);
+            } else {
                 setUser(null);
-            } finally {
-                setLoading(false);
             }
-        };
-        
+        } catch (error) {
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
         checkAuth();
         
-        // Listen for changes in sessionStorage
-        window.addEventListener('storage', checkAuth);
-        return () => {
-            window.removeEventListener('storage', checkAuth);
+        const handleStorageChange = () => {
+            checkAuth();
         };
-    }, []);
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, [checkAuth]);
 
     const value: AuthState = {
         user,
         loading,
-        error: null, // No error handling in mock
+        error: null,
         isAuthenticated: !!user,
     };
 
