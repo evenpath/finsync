@@ -1,5 +1,3 @@
-
-
 // ============================================================================
 // FIREBASE BACKEND VARIABLES
 // ============================================================================
@@ -107,23 +105,32 @@ export interface DashboardPreferences {
 export interface Partner {
   id: string;
   name: string;
-  description?: string;
-  logo?: string;
-  website?: string;
-  industryId?: string;
-  industry?: Industry;
+  businessName: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  status: 'active' | 'pending' | 'suspended';
+  plan: 'Starter' | 'Professional' | 'Enterprise';
+  joinedDate: string;
+  industry: Industry | null;
   businessSize: 'small' | 'medium' | 'large';
-  adminIds: string[];
-  employeeIds: string[];
-  workflowIds: string[];
-  settings: PartnerSettings;
-  subscription: PartnerSubscription;
-  billing: BillingInfo;
-  onboardingCompleted: boolean;
-  status: 'active' | 'suspended' | 'trial';
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  employeeCount: number;
+  monthlyRevenue: string;
+  location: { city: string; state: string };
+  aiProfileCompleteness: number;
+  stats: {
+    activeWorkflows: number;
+    totalExecutions: number;
+    successRate: number;
+    avgROI: number;
+    timeSaved: string;
+  };
+  businessProfile: BusinessProfile | null;
+  aiMemory: AIMemory | null;
+  createdAt?: any; // Allow for serverTimestamp
+  updatedAt?: any; // Allow for serverTimestamp
 }
+
 
 export interface PartnerSettings {
   allowEmployeeCustomization: boolean;
@@ -191,8 +198,8 @@ export interface Industry {
   averageSetupTime?: number;
   averageROI?: number;
   isActive?: boolean;
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface WorkflowPattern {
@@ -215,7 +222,6 @@ export interface BusinessProfile {
   id: string;
   partnerId: string;
   industryId: string;
-  industry?: Industry;
   businessName: string;
   businessSize: 'small' | 'medium' | 'large';
   employeeCount?: number;
@@ -227,8 +233,16 @@ export interface BusinessProfile {
   budgetRange?: string;
   timelineExpectation?: string;
   technicalExpertise?: 'low' | 'medium' | 'high';
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface AIMemory {
+    businessUnderstanding: string;
+    keyInsights: string[];
+    successPatterns: string;
+    workflowPreferences: string;
+    concernsRisks: string;
 }
 
 export interface BusinessLocation {
@@ -283,9 +297,9 @@ export interface WorkflowTemplate {
   requiredPermissions?: string[];
   createdBy?: string;
   createdByRole?: 'admin' | 'partner';
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
-  lastUsedAt?: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
+  lastUsedAt?: Date;
   aiAgents?: number;
 }
 
@@ -360,7 +374,7 @@ export interface StepConfiguration {
   delayType?: 'fixed' | 'until_date' | 'until_condition';
   duration?: number;
   unit?: 'seconds' | 'minutes' | 'hours' | 'days';
-  targetDate?: FirebaseTimestamp;
+  targetDate?: Date;
   condition?: string;
 }
 
@@ -430,10 +444,10 @@ export interface WorkflowInstance {
   schedule?: ScheduleConfig;
   isActive: boolean;
   createdBy: string;
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
-  lastExecutedAt?: FirebaseTimestamp;
-  nextExecutionAt?: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
+  lastExecutedAt?: Date;
+  nextExecutionAt?: Date;
 }
 
 export interface WorkflowCustomization {
@@ -443,7 +457,7 @@ export interface WorkflowCustomization {
   customValue: any;
   reason?: string;
   modifiedBy: string;
-  modifiedAt: FirebaseTimestamp;
+  modifiedAt: Date;
 }
 
 export interface TriggerConfiguration {
@@ -485,7 +499,7 @@ export interface ScheduleConfig {
   daysOfWeek?: number[];
   timeOfDay?: string;
   timezone: string;
-  nextRun?: FirebaseTimestamp;
+  nextRun?: Date;
 }
 
 export interface PerformanceMetrics {
@@ -493,8 +507,8 @@ export interface PerformanceMetrics {
   successfulExecutions: number;
   failedExecutions: number;
   averageExecutionTime: number;
-  lastSuccessAt?: FirebaseTimestamp;
-  lastFailureAt?: FirebaseTimestamp;
+  lastSuccessAt?: Date;
+  lastFailureAt?: Date;
   uptimePercentage: number;
   costPerExecution?: number;
   roiGenerated?: number;
@@ -508,8 +522,8 @@ export interface WorkflowExecution {
   executionPath: ExecutionStep[];
   status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'paused';
   currentStepId?: string;
-  startedAt: FirebaseTimestamp;
-  completedAt?: FirebaseTimestamp;
+  startedAt: Date;
+  completedAt?: Date;
   duration?: number;
   errorDetails?: ExecutionError;
   results: ExecutionResults;
@@ -521,8 +535,8 @@ export interface WorkflowExecution {
 export interface ExecutionStep {
   stepId: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
-  startedAt?: FirebaseTimestamp;
-  completedAt?: FirebaseTimestamp;
+  startedAt?: Date;
+  completedAt?: Date;
   duration?: number;
   input?: any;
   output?: any;
@@ -535,7 +549,7 @@ export interface ExecutionError {
   code: string;
   message: string;
   stepId?: string;
-  timestamp: FirebaseTimestamp;
+  timestamp: Date;
   stackTrace?: string;
   recoverable: boolean;
 }
@@ -555,7 +569,7 @@ export interface ExecutionFile {
   type: string;
   size: number;
   url: string;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 export interface NotificationResult {
@@ -563,7 +577,7 @@ export interface NotificationResult {
   recipient: string;
   status: 'sent' | 'failed' | 'pending';
   messageId?: string;
-  timestamp: FirebaseTimestamp;
+  timestamp: Date;
 }
 
 export interface APICallResult {
@@ -572,7 +586,7 @@ export interface APICallResult {
   statusCode: number;
   responseTime: number;
   success: boolean;
-  timestamp: FirebaseTimestamp;
+  timestamp: Date;
 }
 
 export interface ExecutionContext {
@@ -601,8 +615,8 @@ export interface ProblemDescription {
   feedback?: string;
   improvementSuggestions?: string[];
   createdBy: string;
-  createdAt: FirebaseTimestamp;
-  processedAt?: FirebaseTimestamp;
+  createdAt: Date;
+  processedAt?: Date;
 }
 
 export interface ProblemAnalysis {
@@ -640,7 +654,7 @@ export interface AIGenerationLog {
   processingTime: number;
   success: boolean;
   errorMessage?: string;
-  timestamp: FirebaseTimestamp;
+  timestamp: Date;
 }
 
 export interface AITrainingData {
@@ -651,7 +665,7 @@ export interface AITrainingData {
   industryContext: string;
   businessSize: string;
   successMetrics: any;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 export interface AIFeedback {
@@ -686,8 +700,8 @@ export interface APIIntegration {
   optionalFields: APIField[];
   webhookSupport: boolean;
   rateLimits: RateLimit[];
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface APIAction {
@@ -748,13 +762,13 @@ export interface PartnerAPIConfiguration {
   displayName?: string;
   configuration: APICredentials;
   status: 'active' | 'inactive' | 'error' | 'testing';
-  lastTestAt?: FirebaseTimestamp;
-  lastErrorAt?: FirebaseTimestamp;
+  lastTestAt?: Date;
+  lastErrorAt?: Date;
   errorMessage?: string;
   usageStats: APIUsageStats;
   createdBy: string;
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface APICredentials {
@@ -768,7 +782,7 @@ export interface APIUsageStats {
   totalCalls: number;
   successfulCalls: number;
   failedCalls: number;
-  lastCallAt?: FirebaseTimestamp;
+  lastCallAt?: Date;
   averageResponseTime: number;
   monthlyUsage: number;
   quotaUsed?: number;
@@ -796,7 +810,7 @@ export interface TeamMember {
   assignedWorkflows?: string[];
   availability?: Availability;
   invitedBy?: string;
-  invitedAt?: FirebaseTimestamp;
+  invitedAt?: Date;
   joinedDate?: string;
   lastActive?: string;
   avatar: string;
@@ -815,7 +829,7 @@ export interface Skill {
   level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   verified: boolean;
   verifiedBy?: string;
-  verifiedAt?: FirebaseTimestamp;
+  verifiedAt?: Date;
 }
 
 export interface TeamMemberMetrics {
@@ -834,7 +848,7 @@ export interface TeamReview {
   comments: string;
   areas_for_improvement: string[];
   strengths: string[];
-  reviewedAt: FirebaseTimestamp;
+  reviewedAt: Date;
 }
 
 export interface Availability {
@@ -843,7 +857,7 @@ export interface Availability {
   holidays: Holiday[];
   timeOff: TimeOff[];
   isAvailable: boolean;
-  lastUpdated: FirebaseTimestamp;
+  lastUpdated: Date;
 }
 
 export interface WorkingHours {
@@ -855,13 +869,13 @@ export interface WorkingHours {
 
 export interface Holiday {
   name: string;
-  date: FirebaseTimestamp;
+  date: Date;
   isRecurring: boolean;
 }
 
 export interface TimeOff {
-  startDate: FirebaseTimestamp;
-  endDate: FirebaseTimestamp;
+  startDate: Date;
+  endDate: Date;
   reason: string;
   status: 'approved' | 'pending' | 'rejected';
   approvedBy?: string;
@@ -876,10 +890,10 @@ export interface AnalyticsData {
   partnerId: string;
   type: 'workflow_performance' | 'team_metrics' | 'business_impact' | 'cost_analysis' | 'usage_stats';
   period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-  startDate: FirebaseTimestamp;
-  endDate: FirebaseTimestamp;
+  startDate: Date;
+  endDate: Date;
   data: AnalyticsMetrics;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 export interface AnalyticsMetrics {
@@ -947,8 +961,8 @@ export interface DashboardWidget {
   dataSource: string;
   refreshInterval: number;
   isVisible: boolean;
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface WidgetPosition {
@@ -990,10 +1004,10 @@ export interface Notification {
   channels: NotificationChannel[];
   priority: 'low' | 'normal' | 'high' | 'urgent';
   status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
-  readAt?: FirebaseTimestamp;
-  expiresAt?: FirebaseTimestamp;
-  createdAt: FirebaseTimestamp;
-  sentAt?: FirebaseTimestamp;
+  readAt?: Date;
+  expiresAt?: Date;
+  createdAt: Date;
+  sentAt?: Date;
 }
 
 export interface NotificationChannel {
@@ -1001,7 +1015,7 @@ export interface NotificationChannel {
   address?: string;
   status: 'pending' | 'sent' | 'delivered' | 'failed';
   errorMessage?: string;
-  deliveredAt?: FirebaseTimestamp;
+  deliveredAt?: Date;
 }
 
 export interface ChatMessage {
@@ -1016,10 +1030,10 @@ export interface ChatMessage {
   replyTo?: string;
   reactions?: MessageReaction[];
   isEdited: boolean;
-  editedAt?: FirebaseTimestamp;
+  editedAt?: Date;
   isDeleted: boolean;
-  deletedAt?: FirebaseTimestamp;
-  createdAt: FirebaseTimestamp;
+  deletedAt?: Date;
+  createdAt: Date;
 }
 
 export interface MessageAttachment {
@@ -1034,7 +1048,7 @@ export interface MessageAttachment {
 export interface MessageReaction {
   userId: string;
   emoji: string;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 export interface Conversation {
@@ -1046,20 +1060,20 @@ export interface Conversation {
   workflowId?: string;
   partnerId?: string;
   lastMessage?: ChatMessage;
-  lastMessageAt?: FirebaseTimestamp;
+  lastMessageAt?: Date;
   isActive: boolean;
   createdBy: string;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 export interface ConversationParticipant {
   userId: string;
   role: 'member' | 'admin' | 'observer';
-  joinedAt: FirebaseTimestamp;
-  lastReadAt?: FirebaseTimestamp;
+  joinedAt: Date;
+  lastReadAt?: Date;
   notificationSettings: {
     muted: boolean;
-    muteUntil?: FirebaseTimestamp;
+    muteUntil?: Date;
   };
 }
 
@@ -1077,7 +1091,7 @@ export interface SystemConfig {
   isEditable: boolean;
   requiresRestart: boolean;
   lastModifiedBy?: string;
-  lastModifiedAt?: FirebaseTimestamp;
+  lastModifiedAt?: Date;
 }
 
 export interface FeatureFlag {
@@ -1090,8 +1104,8 @@ export interface FeatureFlag {
   targetPartners?: string[];
   conditions?: FeatureFlagCondition[];
   createdBy: string;
-  createdAt: FirebaseTimestamp;
-  updatedAt: FirebaseTimestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface FeatureFlagCondition {
@@ -1109,7 +1123,7 @@ export interface AuditLog {
   details: any;
   ipAddress: string;
   userAgent: string;
-  timestamp: FirebaseTimestamp;
+  timestamp: Date;
   partnerId?: string;
 }
 
@@ -1135,8 +1149,8 @@ export interface FileUpload {
   tags: string[];
   metadata: FileMetadata;
   virusScanResult?: 'clean' | 'infected' | 'pending';
-  createdAt: FirebaseTimestamp;
-  expiresAt?: FirebaseTimestamp;
+  createdAt: Date;
+  expiresAt?: Date;
 }
 
 export interface FileMetadata {
@@ -1154,7 +1168,7 @@ export interface StorageQuota {
   totalLimit: number; // bytes
   usedSpace: number; // bytes
   fileCount: number;
-  lastCalculatedAt: FirebaseTimestamp;
+  lastCalculatedAt: Date;
   alertThreshold: number; // percentage
   alertSent: boolean;
 }
@@ -1174,9 +1188,9 @@ export interface Invoice {
   currency: string;
   lineItems: InvoiceLineItem[];
   billingPeriod: BillingPeriod;
-  issueDate: FirebaseTimestamp;
-  dueDate: FirebaseTimestamp;
-  paidAt?: FirebaseTimestamp;
+  issueDate: Date;
+  dueDate: Date;
+  paidAt?: Date;
   paymentMethod?: string;
   stripeInvoiceId?: string;
   downloadUrl?: string;
@@ -1191,8 +1205,8 @@ export interface InvoiceLineItem {
 }
 
 export interface BillingPeriod {
-  start: FirebaseTimestamp;
-  end: FirebaseTimestamp;
+  start: Date;
+  end: Date;
   type: 'monthly' | 'quarterly' | 'yearly';
 }
 
@@ -1202,7 +1216,7 @@ export interface UsageRecord {
   metric: string;
   value: number;
   unit: string;
-  timestamp: FirebaseTimestamp;
+  timestamp: Date;
   billingPeriod: string;
   details?: any;
 }
@@ -1220,7 +1234,7 @@ export interface PricingPlan {
   isPopular: boolean;
   stripeProductId?: string;
   stripePriceId?: string;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 export interface PlanFeature {
@@ -1248,9 +1262,9 @@ export interface WebhookEndpoint {
   events: string[];
   isActive: boolean;
   failureCount: number;
-  lastSuccessAt?: FirebaseTimestamp;
-  lastFailureAt?: FirebaseTimestamp;
-  createdAt: FirebaseTimestamp;
+  lastSuccessAt?: Date;
+  lastFailureAt?: Date;
+  createdAt: Date;
 }
 
 export interface WebhookDelivery {
@@ -1262,9 +1276,9 @@ export interface WebhookDelivery {
   httpStatus?: number;
   responseBody?: string;
   attemptCount: number;
-  nextRetryAt?: FirebaseTimestamp;
-  createdAt: FirebaseTimestamp;
-  deliveredAt?: FirebaseTimestamp;
+  nextRetryAt?: Date;
+  createdAt: Date;
+  deliveredAt?: Date;
 }
 
 export interface SystemEvent {
@@ -1276,7 +1290,7 @@ export interface SystemEvent {
   workflowId?: string;
   severity: 'info' | 'warning' | 'error' | 'critical';
   processed: boolean;
-  createdAt: FirebaseTimestamp;
+  createdAt: Date;
 }
 
 // ============================================================================

@@ -1,4 +1,3 @@
-
 // src/components/admin/PartnerCard.tsx
 import React from 'react';
 import type { Partner } from '@/lib/types';
@@ -12,7 +11,7 @@ interface PartnerCardProps {
 }
 
 export default function PartnerCard({ partner, isSelected, onSelect }: PartnerCardProps) {
-  const industry = partner.industry || { name: 'N/A', icon: '🏢', color: 'gray' };
+  const industry = partner.industry || { name: 'N/A', icon: '🏢' };
   
   return (
     <Card 

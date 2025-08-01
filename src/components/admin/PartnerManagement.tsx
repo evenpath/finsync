@@ -1,16 +1,20 @@
 // src/components/admin/PartnerManagement.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { Search, Plus, Users } from 'lucide-react';
-import { mockPartners } from '@/lib/mockData';
-import type { Partner } from '@/lib/types';
+import { industries as mockIndustries } from '@/lib/mockData';
+import type { Partner, Industry } from '@/lib/types';
 import PartnerCard from './PartnerCard';
 import PartnerDetailView from './PartnerDetailView';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import AddPartnerModal from './AddPartnerModal';
+import { useToast } from '@/hooks/use-toast';
+
 
 const industries = [
   { value: 'all', label: 'All Industries' },
@@ -21,19 +25,94 @@ const industries = [
 ];
 
 export default function PartnerManagement() {
-  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(mockPartners[0]);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterIndustry, setFilterIndustry] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-   const handleAddPartner = (partnerData: any) => {
-    console.log("Adding new partner:", partnerData);
-    // Here you would typically add logic to save the new partner to your database.
-    // For now, we'll just close the modal.
-    setIsModalOpen(false);
+  useEffect(() => {
+    const fetchPartners = async () => {
+      setIsLoading(true);
+      try {
+        const partnersCollection = collection(db, 'partners');
+        const partnersSnapshot = await getDocs(partnersCollection);
+        const partnersList = partnersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
+        setPartners(partnersList);
+        if (partnersList.length > 0) {
+          setSelectedPartner(partnersList[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching partners:", error);
+        toast({
+          variant: "destructive",
+          title: "Error fetching partners",
+          description: "Could not load partner data from Firestore.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPartners();
+  }, [toast]);
+
+  const handleAddPartner = async (partnerData: any) => {
+    try {
+      const selectedIndustry = mockIndustries.find(i => i.id === partnerData.industryId) as Industry;
+
+      const newPartner: Omit<Partner, 'id'> = {
+        name: partnerData.name,
+        contactPerson: partnerData.name,
+        email: partnerData.email,
+        businessName: partnerData.name,
+        phone: '',
+        status: 'active',
+        plan: partnerData.plan,
+        joinedDate: new Date().toISOString(),
+        industry: selectedIndustry,
+        businessSize: 'small',
+        employeeCount: 0,
+        monthlyRevenue: '0',
+        location: { city: partnerData.outlets[0]?.address.split(',')[1] || '', state: partnerData.outlets[0]?.address.split(',')[2]?.trim().split(' ')[0] || ''},
+        aiProfileCompleteness: 0,
+        stats: {
+          activeWorkflows: 0,
+          totalExecutions: 0,
+          successRate: 0,
+          avgROI: 0,
+          timeSaved: "0 hours/month",
+        },
+        businessProfile: null,
+        aiMemory: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      
+      const docRef = await addDoc(collection(db, "partners"), newPartner);
+      const newPartnerWithId = { id: docRef.id, ...newPartner } as Partner;
+
+      setPartners(prev => [...prev, newPartnerWithId]);
+      setSelectedPartner(newPartnerWithId);
+      setIsModalOpen(false);
+
+      toast({
+        title: "Partner Added",
+        description: `${partnerData.name} has been successfully added.`,
+      });
+
+    } catch (error) {
+      console.error("Error adding partner:", error);
+      toast({
+        variant: "destructive",
+        title: "Error adding partner",
+        description: "An unexpected error occurred while saving the partner.",
+      });
+    }
   };
-
-  const filteredPartners = mockPartners.filter(partner => {
+  
+  const filteredPartners = partners.filter(partner => {
     const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesIndustry = filterIndustry === 'all' || 
                           (partner.industry && partner.industry.name.toLowerCase().includes(filterIndustry.toLowerCase()));
@@ -84,14 +163,20 @@ export default function PartnerManagement() {
           </div>
 
           <div className="overflow-y-auto flex-1 p-4 space-y-4">
-            {filteredPartners.map(partner => (
-              <PartnerCard 
-                key={partner.id} 
-                partner={partner}
-                isSelected={selectedPartner?.id === partner.id}
-                onSelect={() => setSelectedPartner(partner)} 
-              />
-            ))}
+            {isLoading ? (
+              <p>Loading partners...</p>
+            ) : filteredPartners.length > 0 ? (
+              filteredPartners.map(partner => (
+                <PartnerCard 
+                  key={partner.id} 
+                  partner={partner}
+                  isSelected={selectedPartner?.id === partner.id}
+                  onSelect={() => setSelectedPartner(partner)} 
+                />
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground p-8">No partners found.</p>
+            )}
           </div>
         </div>
 

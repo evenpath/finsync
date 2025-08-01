@@ -1,4 +1,3 @@
-
 // src/components/admin/PartnerDetailView.tsx
 "use client";
 
@@ -8,6 +7,7 @@ import { Building, FileText, Brain, Zap } from 'lucide-react';
 import PartnerOverview from './PartnerOverview';
 import PartnerBusinessProfile from './PartnerBusinessProfile';
 import PartnerAIMemory from './PartnerAIMemory';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface PartnerDetailViewProps {
   partner: Partner;
@@ -16,13 +16,35 @@ interface PartnerDetailViewProps {
 export default function PartnerDetailView({ partner }: PartnerDetailViewProps) {
   const [view, setView] = useState('overview'); // overview, profile, ai-memory, workflows
 
-  const industry = partner.industry || { name: 'N/A', icon: '🏢', color: 'gray' };
+  const industry = partner.industry || { name: 'N/A', icon: '🏢' };
 
   const renderContent = () => {
     switch (view) {
       case 'profile':
+        if (!partner.businessProfile) {
+          return (
+             <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold">No Business Profile</h3>
+                <p>This partner has not completed their business profile yet.</p>
+              </CardContent>
+            </Card>
+          )
+        }
         return <PartnerBusinessProfile partner={partner} />;
       case 'ai-memory':
+         if (!partner.aiMemory) {
+          return (
+             <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                <Brain className="w-12 h-12 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold">No AI Memory</h3>
+                <p>AI insights will be generated as the partner uses workflows.</p>
+              </CardContent>
+            </Card>
+          )
+        }
         return <PartnerAIMemory partner={partner} />;
       case 'workflows':
         return (
@@ -43,7 +65,7 @@ export default function PartnerDetailView({ partner }: PartnerDetailViewProps) {
       <div className="bg-card border-b p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-lg bg-${industry.color}-100 flex items-center justify-center text-${industry.color}-600 text-xl`}>
+            <div className={`w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-xl`}>
               {industry.icon}
             </div>
             <div>
