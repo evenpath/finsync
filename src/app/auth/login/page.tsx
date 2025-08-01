@@ -38,10 +38,13 @@ export default function LoginPage() {
       // Redirect based on role
       if (userRole === 'Super Admin' || userRole === 'Admin') {
         router.push('/admin');
-      } else if (userRole === 'partner' || userRole === 'employee') {
+      } else if (userRole === 'partner') {
         // Assuming partner admins and employees go to the partner dashboard first
         router.push('/partner');
-      } else {
+      } else if (userRole === 'employee') {
+        router.push('/employee');
+      }
+      else {
         router.push('/'); // Default redirect
       }
 
