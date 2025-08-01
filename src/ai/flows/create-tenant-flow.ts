@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { adminAuth } from '@/lib/firebase-admin';
 
 const CreateTenantInputSchema = z.object({
   partnerName: z.string().describe('The name of the partner organization for which to create a tenant.'),
@@ -34,27 +35,35 @@ const createTenantFlow = ai.defineFlow(
     outputSchema: CreateTenantOutputSchema,
   },
   async (input) => {
-    // In a real implementation, we would use the Firebase Admin SDK:
-    // 1. Initialize Firebase Admin SDK (if not already done).
-    // 2. Use admin.auth().tenantManager().createTenant({ displayName: input.partnerName });
-    //    const tenant = await admin.auth().tenantManager().createTenant({
-    //      displayName: input.partnerName,
-    //      emailSignInConfig: {
-    //        enabled: true,
-    //        passwordRequired: true,
-    //      },
-    //    });
-    // 3. Return { success: true, tenantId: tenant.tenantId, message: '...' };
+    if (!adminAuth) {
+        return {
+            success: false,
+            message: "Firebase Admin SDK is not initialized. Cannot create tenant.",
+        };
+    }
 
-    console.log(`Simulating tenant creation for partner: ${input.partnerName}`);
-    
-    // For now, we return a mock tenantId.
-    const mockTenantId = `tenant_${input.partnerName.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`;
-    
-    return {
-      success: true,
-      tenantId: mockTenantId,
-      message: `(Mock) Successfully created tenant for ${input.partnerName}.`,
-    };
+    try {
+      const tenant = await adminAuth.tenantManager().createTenant({
+        displayName: input.partnerName,
+        emailSignInConfig: {
+          enabled: true,
+          passwordRequired: true, 
+        },
+      });
+
+      console.log(`Successfully created tenant for ${input.partnerName} with ID: ${tenant.tenantId}`);
+
+      return {
+        success: true,
+        tenantId: tenant.tenantId,
+        message: `Successfully created tenant for ${input.partnerName}.`,
+      };
+    } catch (error: any) {
+        console.error("Error creating Firebase Auth tenant:", error);
+        return {
+            success: false,
+            message: `Failed to create tenant: ${error.message}`,
+        };
+    }
   }
 );
