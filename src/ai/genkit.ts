@@ -2,9 +2,7 @@
 // src/ai/genkit.ts
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-
-// The Firebase Admin SDK is now initialized in `src/lib/firebase-admin.ts`.
-// We just need to configure Genkit here.
+import './../lib/firebase-admin'; // Ensures admin is initialized
 
 export const ai = genkit({
   plugins: [googleAI()],

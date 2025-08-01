@@ -8,27 +8,31 @@ let app: admin.app.App;
 let db: admin.firestore.Firestore;
 let adminAuth: admin.auth.Auth;
 
+function formatPrivateKey(key: string) {
+  return key.replace(/\\n/g, '\n');
+}
+
 // This pattern ensures that the SDK is initialized only once.
 if (admin.apps.length === 0) {
   try {
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64
-      ? Buffer.from(
-          process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64,
-          'base64'
-        ).toString('utf-8')
-      : null;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-    if (serviceAccountJson) {
-      const serviceAccount = JSON.parse(serviceAccountJson);
+    if (privateKey && clientEmail && projectId) {
       app = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.credential.cert({
+          projectId,
+          clientEmail,
+          privateKey: formatPrivateKey(privateKey),
+        }),
+        projectId,
       });
       console.log('Firebase Admin SDK initialized successfully.');
     } else {
       console.warn(
-        'Firebase Admin credentials not found. App will run in a limited mode. Please set FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 environment variable for full functionality.'
+        'Firebase Admin credentials not found. App will run in a limited mode. Please ensure FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set in your environment.'
       );
-      // Fallback to a "not initialized" state which can be checked in services.
     }
   } catch (error: any) {
     console.error("Error initializing Firebase Admin SDK:", error.message);
@@ -38,7 +42,6 @@ if (admin.apps.length === 0) {
 }
 
 // @ts-ignore - This allows db and adminAuth to be uninitialized if creds are missing.
-// Services that use them will check for their existence and handle the error gracefully.
 if (app!) {
   db = getFirestore(app);
   adminAuth = getAuth(app);
