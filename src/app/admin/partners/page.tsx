@@ -1,3 +1,4 @@
+
 // src/app/admin/partners/page.tsx
 import AdminHeader from "@/components/admin/AdminHeader";
 import PartnerManagementUI from "@/components/admin/PartnerManagementUI";
@@ -29,14 +30,15 @@ async function PartnerManagement() {
         // Render a specific error component if data fetching fails
         return (
              <div className="flex items-center justify-center h-full p-6">
-                 <Card className="w-full max-w-lg border-destructive">
+                 <Card className="w-full max-w-2xl border-destructive bg-destructive/10">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
-                            <AlertTriangle className="w-12 h-12 text-destructive" />
+                            <AlertTriangle className="w-12 h-12 text-destructive flex-shrink-0" />
                             <div>
                                 <h3 className="text-lg font-bold text-destructive">Error Connecting to Database</h3>
-                                <p className="text-muted-foreground mt-2">Could not fetch partner data from Firestore. Please ensure your Firebase Admin credentials are correctly configured in your `.env` file.</p>
-                                <p className="text-xs text-muted-foreground mt-4"><strong>Details:</strong> {errorMessage}</p>
+                                <p className="text-muted-foreground mt-2">Could not fetch partner data. This is likely due to missing or incorrect Firebase Admin credentials in your environment variables.</p>
+                                <p className="text-xs text-muted-foreground mt-4 font-mono bg-destructive/20 p-2 rounded"><strong>Details:</strong> {errorMessage}</p>
+                                <p className="text-sm text-muted-foreground mt-3">Please ensure your <strong>.env</strong> file contains the correct `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`.</p>
                             </div>
                         </div>
                     </CardContent>

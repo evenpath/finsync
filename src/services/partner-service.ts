@@ -1,6 +1,7 @@
+
 // src/services/partner-service.ts
 import 'server-only';
-import { getDb } from '@/ai/genkit';
+import { db } from '@/lib/firebase-admin'; // Use the centralized admin instance
 import { mockPartners, industries } from '@/lib/mockData';
 import type { Partner } from '@/lib/types';
 import * as admin from 'firebase-admin';
@@ -10,7 +11,7 @@ import * as admin from 'firebase-admin';
  * @returns {Promise<Partner[]>} A promise that resolves to an array of partners.
  */
 export async function getPartners(): Promise<Partner[]> {
-    const db = getDb();
+    // No need to call getDb() anymore, just use the imported db instance.
     const partnersRef = db.collection('partners');
     const snapshot = await partnersRef.orderBy('name').get();
     
@@ -31,7 +32,6 @@ export async function getPartners(): Promise<Partner[]> {
  * This should only be run once when the collection is empty.
  */
 export async function seedInitialPartners(): Promise<void> {
-    const db = getDb();
     const partnersRef = db.collection('partners');
     const snapshot = await partnersRef.limit(1).get();
 
@@ -46,7 +46,6 @@ export async function seedInitialPartners(): Promise<void> {
     mockPartners.forEach(partnerData => {
         const industryInfo = industries.find(i => i.slug === partnerData.industry?.slug) || null;
         
-        // Create a new object that conforms to the Partner type for seeding
         const partnerToSeed: Omit<Partner, 'id' | 'businessProfile' | 'aiMemory'> & { businessProfile: null, aiMemory: null, createdAt: admin.firestore.FieldValue, updatedAt: admin.firestore.FieldValue } = {
             name: partnerData.name,
             businessName: partnerData.businessName,
@@ -63,7 +62,6 @@ export async function seedInitialPartners(): Promise<void> {
             location: partnerData.location,
             aiProfileCompleteness: partnerData.aiProfileCompleteness,
             stats: partnerData.stats,
-            // Explicitly set to null as per the type for initial seeding
             businessProfile: null, 
             aiMemory: null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
