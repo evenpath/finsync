@@ -1,8 +1,6 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import * as admin from 'firebase-admin';
-import { serviceAccount } from '@/lib/firebase-admin-config';
-
 
 // This function ensures that Firebase Admin is initialized, but only once.
 function initializeFirebaseAdmin() {
@@ -11,12 +9,18 @@ function initializeFirebaseAdmin() {
         return;
     }
     
+    const serviceAccount = {
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    }
+
     // Check for essential service account properties before attempting to initialize.
-    if (serviceAccount.project_id && serviceAccount.private_key && serviceAccount.client_email) {
+    if (serviceAccount.projectId && serviceAccount.privateKey && serviceAccount.clientEmail) {
         try {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
-                databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+                databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`
             });
             console.log("Firebase Admin SDK initialized successfully.");
         } catch (error: any) {
@@ -26,7 +30,7 @@ function initializeFirebaseAdmin() {
         }
     } else {
         // This warning is crucial for debugging missing environment variables.
-        console.warn("Firebase Admin SDK credentials are not fully set in firebase-admin-config.ts. Server-side functionality will be limited.");
+        console.warn("Firebase Admin SDK credentials are not fully set in .env file. Server-side functionality will be limited.");
     }
 }
 
