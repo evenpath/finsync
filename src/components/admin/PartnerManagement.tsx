@@ -1,179 +1,114 @@
+
 // src/components/admin/PartnerManagement.tsx
 "use client";
 
-import React, { useState } from "react";
-import { mockPartners } from "@/lib/mockData";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
-import { Input } from "@/components/ui/input";
-import {
-  UserPlus,
-  Filter,
-  Download,
-  Building,
-  Edit3,
-  Send,
-  Eye,
-  Settings,
-  Search
-} from "lucide-react";
-import AddPartnerModal from "./AddPartnerModal"; // Make sure this path is correct
+import React, { useState } from 'react';
+import { Search, Plus } from 'lucide-react';
+import { mockPartners } from '@/lib/mockData';
+import type { Partner } from '@/lib/types';
+import PartnerCard from './PartnerCard';
+import PartnerDetailView from './PartnerDetailView';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
+const industries = [
+  { value: 'all', label: 'All Industries' },
+  { value: 'Property Management', label: 'Property Management' },
+  { value: 'HVAC Services', label: 'HVAC Services' },
+  { value: 'Hotels', label: 'Hotels & Hospitality' },
+  { value: 'other', label: 'Other' }
+];
 
 export default function PartnerManagement() {
-  const [partners, setPartners] = useState(mockPartners);
-  const [selectedPartner, setSelectedPartner] = useState(partners[0]);
-  const [isAddPartnerModalOpen, setIsAddPartnerModalOpen] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(mockPartners[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterIndustry, setFilterIndustry] = useState('all');
 
-  const handleAddPartner = (newPartnerData: Omit<typeof mockPartners[0], 'id' | 'status' | 'joinedDate' | 'lastActive'>) => {
-    const newPartner = {
-      ...newPartnerData,
-      id: partners.length + 1,
-      status: 'pending' as const,
-      joinedDate: new Date().toISOString().split('T')[0],
-      lastActive: 'Never',
-    };
-    console.log("Adding new partner:", newPartner);
-    // In a real app, you'd send this to your backend.
-    // For now, we'll just add it to our local state.
-    setPartners(prev => [...prev, newPartner]);
-    setIsAddPartnerModalOpen(false);
-  };
-  
+  const filteredPartners = mockPartners.filter(partner => {
+    const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesIndustry = filterIndustry === 'all' || 
+                          (partner.industry && partner.industry.name.toLowerCase().includes(filterIndustry.toLowerCase()));
+    return matchesSearch && matchesIndustry;
+  });
+
   return (
-    <div className="space-y-6">
-       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold font-headline text-foreground">Partner Organizations</h2>
-          <p className="text-muted-foreground">Manage partner accounts and permissions</p>
+    <div className="h-full flex flex-col">
+      <header className="bg-card border-b p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Partner Management</h1>
+            <p className="text-muted-foreground mt-1">Build comprehensive business profiles for AI-powered workflows</p>
+          </div>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Partner
+          </Button>
         </div>
-        <Button onClick={() => setIsAddPartnerModalOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add Partner
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-             <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline">All Partners</CardTitle>
-                     <div className="flex items-center gap-2">
-                        <div className="relative w-full max-w-xs">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="Search partners..." className="pl-9" />
-                        </div>
-                        <Button variant="outline" size="sm"><Filter className="w-4 h-4 mr-2" /> Filter</Button>
-                        <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-2" /> Export</Button>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {partners.map((partner) => (
-                  <div
-                    key={partner.id}
-                    className={`p-6 hover:bg-secondary cursor-pointer transition-colors ${
-                      selectedPartner?.id === partner.id
-                        ? "bg-primary/10 border-l-4 border-primary"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedPartner(partner)}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-                          <Building className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-foreground">{partner.name}</h4>
-                          <p className="text-sm text-muted-foreground">{partner.email}</p>
-                        </div>
-                      </div>
-                      <Badge variant={
-                        partner.status === 'active' ? 'success' :
-                        partner.status === 'pending' ? 'warning' : 'default'
-                      }>
-                        {partner.status}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-4 gap-4 text-sm text-muted-foreground">
-                      <div>
-                        <span className="font-medium">{partner.members}</span>
-                        <p className="text-xs">Members</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">{partner.workflows}</span>
-                        <p className="text-xs">Workflows</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">{partner.tasksCompleted}</span>
-                        <p className="text-xs">Tasks</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">{partner.plan}</span>
-                        <p className="text-xs">Plan</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Partners List */}
+        <div className="w-1/3 border-r bg-card flex flex-col">
+          <div className="p-4 border-b">
+            <div className="flex gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search partners..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10"
+                />
               </div>
-            </CardContent>
-          </Card>
+              <Select value={filterIndustry} onValueChange={setFilterIndustry}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  {industries.map(industry => (
+                    <SelectItem key={industry.value} value={industry.value}>{industry.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{filteredPartners.length} partners</span>
+              <span>•</span>
+              <span>{filteredPartners.filter(p => p.status === 'active').length} active</span>
+            </div>
+          </div>
+
+          <div className="overflow-y-auto flex-1 p-4 space-y-4">
+            {filteredPartners.map(partner => (
+              <PartnerCard 
+                key={partner.id} 
+                partner={partner}
+                isSelected={selectedPartner?.id === partner.id}
+                onSelect={() => setSelectedPartner(partner)} 
+              />
+            ))}
+          </div>
         </div>
 
-        <div>
-          <Card className="sticky top-6 p-6">
-            {selectedPartner ? (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-foreground">Partner Details</h3>
-                  <Button variant="ghost" size="icon">
-                    <Edit3 className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-sm font-medium text-muted-foreground">Organization</label>
-                        <p className="text-foreground font-semibold">{selectedPartner.name}</p>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-muted-foreground">Contact Email</label>
-                        <p className="text-foreground">{selectedPartner.email}</p>
-                    </div>
-                     <div>
-                        <label className="text-sm font-medium text-muted-foreground">Status</label>
-                        <div><Badge variant={selectedPartner.status === 'active' ? 'success' : 'warning'}>{selectedPartner.status}</Badge></div>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-muted-foreground">Joined Date</label>
-                        <p className="text-foreground">{selectedPartner.joinedDate}</p>
-                    </div>
-                     <div>
-                        <label className="text-sm font-medium text-muted-foreground">Last Active</label>
-                        <p className="text-foreground">{selectedPartner.lastActive}</p>
-                    </div>
-                    <div className="pt-4 space-y-2">
-                        <Button className="w-full"><Send className="w-4 h-4 mr-2" />Assign Workflows</Button>
-                        <Button variant="outline" className="w-full"><Eye className="w-4 h-4 mr-2" />View Analytics</Button>
-                        <Button variant="outline" className="w-full"><Settings className="w-4 h-4 mr-2" />Manage Settings</Button>
-                    </div>
-                </div>
+        {/* Partner Details */}
+        <div className="flex-1 bg-secondary/30 overflow-y-auto">
+          {selectedPartner ? (
+            <PartnerDetailView partner={selectedPartner} />
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Select a Partner</h3>
+                <p className="text-muted-foreground">Choose a partner from the list to view their detailed business profile and AI insights</p>
               </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-10">
-                <Building className="w-12 h-12 mx-auto mb-4" />
-                <p>Select a partner to view details</p>
-              </div>
-            )}
-          </Card>
+            </div>
+          )}
         </div>
       </div>
-       <AddPartnerModal 
-        isOpen={isAddPartnerModalOpen} 
-        onClose={() => setIsAddPartnerModalOpen(false)}
-        onAddPartner={handleAddPartner}
-      />
     </div>
   );
 }
