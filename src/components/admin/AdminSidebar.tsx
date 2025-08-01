@@ -1,3 +1,4 @@
+
 // src/components/admin/AdminSidebar.tsx
 "use client";
 
@@ -12,6 +13,7 @@ import {
   Settings,
   Shield,
   LogOut,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +21,7 @@ const menuItems = [
   { id: "overview", label: "System Overview", icon: BarChart3, href: "/admin" },
   { id: "partners", label: "Partner Management", icon: Building, href: "/admin/partners" },
   { id: "workflows", label: "Workflow Templates", icon: Zap, href: "/admin/workflows" },
+  { id: "users", label: "User Management", icon: Users, href: "/admin/users" },
   { id: "analytics", label: "System Analytics", icon: TrendingUp, href: "/admin/analytics" },
   { id: "logs", label: "System Logs", icon: FileText, href: "/admin/logs" },
   { id: "settings", label: "Admin Settings", icon: Settings, href: "/admin/settings" },

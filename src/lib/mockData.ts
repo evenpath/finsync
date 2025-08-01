@@ -1,7 +1,7 @@
 
 // src/lib/mockData.ts
 import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users, Zap, Shield, Building, UserPlus, BarChart3, Activity, AlertTriangle, Send, Copy, ExternalLink, PlayCircle, PauseCircle, RotateCcw, Cpu, Network, Layers, Clock } from "lucide-react";
-import type { Industry, Partner, WorkflowTemplate } from './types';
+import type { Industry, Partner, WorkflowTemplate, AdminUser } from './types';
 
 export const industries: Industry[] = [
     { 
@@ -10,8 +10,8 @@ export const industries: Industry[] = [
       slug: 'property-management',
       icon: '🏢',
       description: 'Manage rental properties, tenants, and maintenance',
-      workflowPatterns: {},
-      successMetrics: {},
+      workflowPatterns: [],
+      successMetrics: [],
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -21,8 +21,8 @@ export const industries: Industry[] = [
       slug: 'hvac-services',
       icon: '🔧',
       description: 'Heating, ventilation, and air conditioning',
-      workflowPatterns: {},
-      successMetrics: {},
+      workflowPatterns: [],
+      successMetrics: [],
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -32,11 +32,47 @@ export const industries: Industry[] = [
       slug: 'independent-hotels',
       icon: '🏨',
       description: 'Boutique and independent hotel operations',
-      workflowPatterns: {},
-      successMetrics: {},
+      workflowPatterns: [],
+      successMetrics: [],
       createdAt: new Date(),
       updatedAt: new Date()
     }
+];
+
+export const mockAdminUsers: AdminUser[] = [
+  {
+    id: '1',
+    name: 'Super Admin',
+    email: 'core@suupe.com',
+    role: 'Super Admin',
+    status: 'active',
+    avatar: 'https://placehold.co/40x40.png',
+    lastActive: 'Online',
+    joinedDate: '2023-01-01',
+    permissions: ['all']
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane.smith@flowfactory.com',
+    role: 'Admin',
+    status: 'active',
+    avatar: 'https://placehold.co/40x40.png',
+    lastActive: '2 hours ago',
+    joinedDate: '2023-03-15',
+    permissions: ['read', 'write', 'partners-manage', 'workflows-manage']
+  },
+  {
+    id: '3',
+    name: 'John Doe',
+    email: 'john.doe@flowfactory.com',
+    role: 'Admin',
+    status: 'invited',
+    avatar: 'https://placehold.co/40x40.png',
+    lastActive: 'Never',
+    joinedDate: '2024-07-30',
+    permissions: ['read', 'partners-view']
+  },
 ];
 
 
@@ -300,7 +336,7 @@ export const mockSystemLogs = [
 ];
 
 // Mock Data for Partner Admin
-export const mockTeamMembers = [
+export const mockTeamMembers: any[] = [
   {
     id: 1,
     name: "Sarah Wilson",

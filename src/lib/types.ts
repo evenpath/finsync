@@ -31,6 +31,18 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
+export interface AdminUser {
+    id: string;
+    name: string;
+    email: string;
+    role: 'Super Admin' | 'Admin';
+    status: 'active' | 'invited' | 'suspended';
+    avatar: string;
+    lastActive: string;
+    joinedDate: string;
+    permissions: string[];
+}
+
 // ============================================================================
 // 2. USER MANAGEMENT VARIABLES
 // ============================================================================
@@ -98,6 +110,7 @@ export interface Partner {
   logo?: string;
   website?: string;
   industryId?: string;
+  industry?: Industry;
   businessSize: 'small' | 'medium' | 'large';
   adminIds: string[];
   workerIds: string[];
@@ -170,13 +183,13 @@ export interface Industry {
   slug: string;
   description: string;
   icon: string;
-  category: string;
-  workflowPatterns: WorkflowPattern[];
-  successMetrics: SuccessMetric[];
-  popularIntegrations: string[];
-  averageSetupTime: number;
-  averageROI: number;
-  isActive: boolean;
+  category?: string;
+  workflowPatterns?: WorkflowPattern[];
+  successMetrics?: SuccessMetric[];
+  popularIntegrations?: string[];
+  averageSetupTime?: number;
+  averageROI?: number;
+  isActive?: boolean;
   createdAt: FirebaseTimestamp;
   updatedAt: FirebaseTimestamp;
 }
@@ -205,14 +218,14 @@ export interface BusinessProfile {
   businessName: string;
   businessSize: 'small' | 'medium' | 'large';
   employeeCount?: number;
-  location: BusinessLocation;
+  location?: BusinessLocation;
   painPoints: string[];
   currentTools: CurrentTool[];
   goals: BusinessGoal[];
   monthlyRevenueRange?: string;
   budgetRange?: string;
   timelineExpectation?: string;
-  technicalExpertise: 'low' | 'medium' | 'high';
+  technicalExpertise?: 'low' | 'medium' | 'high';
   createdAt: FirebaseTimestamp;
   updatedAt: FirebaseTimestamp;
 }
@@ -221,7 +234,7 @@ export interface BusinessLocation {
   city?: string;
   state?: string;
   country: string;
-  timezone: string;
+  timezone?: string;
 }
 
 export interface CurrentTool {
@@ -229,15 +242,15 @@ export interface CurrentTool {
   category: string;
   satisfaction: 1 | 2 | 3 | 4 | 5;
   monthlySpend?: number;
-  integrationRequired: boolean;
+  integrationRequired?: boolean;
 }
 
 export interface BusinessGoal {
-  category: string;
+  category?: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
   timeline: string;
-  measurable: boolean;
+  measurable?: boolean;
 }
 
 // ============================================================================
@@ -255,20 +268,20 @@ export interface WorkflowTemplate {
   complexity: 'simple' | 'medium' | 'complex';
   steps: WorkflowStep[];
   isFeatured: boolean;
-  isPublic: boolean;
+  isPublic?: boolean;
   successRate: number;
   avgSetupTimeHours: number;
   roiPercentage: number;
   usageCount: number;
-  userRating: number;
+  userRating?: number;
   estimatedTime: string;
   tags: string[];
   icon: string;
   thumbnail?: string;
   apiIntegrations: string[];
-  requiredPermissions: string[];
-  createdBy: string;
-  createdByRole: 'admin' | 'partner';
+  requiredPermissions?: string[];
+  createdBy?: string;
+  createdByRole?: 'admin' | 'partner';
   createdAt: FirebaseTimestamp;
   updatedAt: FirebaseTimestamp;
   lastUsedAt?: FirebaseTimestamp;
@@ -766,23 +779,28 @@ export interface APIUsageStats {
 // ============================================================================
 
 export interface TeamMember {
-  id: string;
-  userId: string;
+  id: number;
+  userId?: string;
   user?: UserProfile;
-  partnerId: string;
-  role: 'partner_admin' | 'worker' | 'observer';
+  partnerId?: string;
+  name: string;
+  email: string;
+  role: string;
   status: 'active' | 'invited' | 'suspended' | 'left';
-  permissions: TeamPermission[];
-  skills: Skill[];
-  workloadCapacity: number;
-  currentWorkload: number;
-  performanceMetrics: TeamMemberMetrics;
-  assignedWorkflows: string[];
-  availability: Availability;
+  permissions?: TeamPermission[];
+  skills: string[];
+  workloadCapacity?: number;
+  currentWorkload?: number;
+  performanceMetrics?: TeamMemberMetrics;
+  assignedWorkflows?: string[];
+  availability?: Availability;
   invitedBy?: string;
   invitedAt?: FirebaseTimestamp;
-  joinedAt?: FirebaseTimestamp;
-  lastActiveAt?: FirebaseTimestamp;
+  joinedDate?: string;
+  lastActive?: string;
+  avatar: string;
+  tasksCompleted: number;
+  avgCompletionTime: string;
 }
 
 export interface TeamPermission {
@@ -1392,4 +1410,3 @@ export interface ResourceAccess {
   allowed: boolean;
   conditions?: any[];
 }
-```
