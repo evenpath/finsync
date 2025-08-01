@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Partner } from '@/lib/types';
 import PartnerCard from "@/components/admin/PartnerCard";
 import PartnerDetailView from "@/components/admin/PartnerDetailView";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AddPartnerModal from "@/components/admin/AddPartnerModal";
 import { Card, CardContent } from '@/components/ui/card';
+import { createTenant } from '@/ai/flows/create-tenant-flow';
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -18,8 +19,16 @@ interface PartnerManagementUIProps {
 
 export default function PartnerManagementUI({ initialPartners, error = null }: PartnerManagementUIProps) {
     const [partners, setPartners] = useState<Partner[]>(initialPartners);
-    const [selectedPartner, setSelectedPartner] = useState<Partner | null>(initialPartners.length > 0 ? initialPartners[0] : null);
+    const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    // Set the first partner as selected by default when the component loads
+    useEffect(() => {
+        if (initialPartners.length > 0 && !selectedPartner) {
+            setSelectedPartner(initialPartners[0]);
+        }
+    }, [initialPartners, selectedPartner]);
+
 
     if (error) {
         return (
@@ -40,34 +49,52 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
     }
     
     // In a real app, this would be wired up to a backend.
-    const handleAddPartner = (newPartnerData: any) => {
-        const newPartner: Partner = {
-            id: `partner-${Date.now()}`,
-            name: newPartnerData.name,
-            businessName: newPartnerData.name,
-            contactPerson: newPartnerData.name,
-            email: newPartnerData.email,
-            phone: '',
-            status: 'active',
-            plan: newPartnerData.plan,
-            joinedDate: new Date().toISOString(),
-            industry: null,
-            businessSize: 'small',
-            employeeCount: 0,
-            monthlyRevenue: '0',
-            location: { city: '', state: '' },
-            aiProfileCompleteness: 0,
-            stats: {
-                activeWorkflows: 0,
-                totalExecutions: 0,
-                successRate: 0,
-                avgROI: 0,
-                timeSaved: '0 hours/month',
-            },
-            businessProfile: null,
-            aiMemory: null,
-        };
-        setPartners(prev => [...prev, newPartner]);
+    const handleAddPartner = async (newPartnerData: any) => {
+        console.log("Adding new partner:", newPartnerData.name);
+        try {
+            // This is a server action and is safe to call from a client component.
+            const result = await createTenant({ partnerName: newPartnerData.name });
+
+            if (result.success) {
+                console.log("Tenant created successfully:", result.tenantId);
+                // Here, you would typically write the new partner to Firestore using the tenantId.
+                // For now, we'll just optimistically update the UI with mock data.
+                 const newPartner: Partner = {
+                    id: result.tenantId || `partner-${Date.now()}`,
+                    name: newPartnerData.name,
+                    businessName: newPartnerData.name,
+                    contactPerson: newPartnerData.name,
+                    email: newPartnerData.email,
+                    phone: '',
+                    status: 'active',
+                    plan: newPartnerData.plan,
+                    joinedDate: new Date().toISOString(),
+                    industry: null,
+                    businessSize: 'small',
+                    employeeCount: 0,
+                    monthlyRevenue: '0',
+                    location: { city: '', state: '' },
+                    aiProfileCompleteness: 0,
+                    stats: {
+                        activeWorkflows: 0,
+                        totalExecutions: 0,
+                        successRate: 0,
+                        avgROI: 0,
+                        timeSaved: '0 hours/month',
+                    },
+                    businessProfile: null,
+                    aiMemory: null,
+                };
+                setPartners(prev => [...prev, newPartner]);
+
+            } else {
+                console.error("Failed to create tenant:", result.message);
+                // Optionally show a toast notification with the error.
+            }
+        } catch (e) {
+            console.error("Error calling createTenant flow:", e);
+        }
+
         setIsAddModalOpen(false);
     };
 
