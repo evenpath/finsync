@@ -4,18 +4,21 @@ import 'server-only';
 import * as admin from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { serviceAccount } from './firebase-admin-config';
-
-// This file is the single source of truth for the initialized Firebase Admin SDK.
-// By centralizing it here, we ensure it's initialized only once.
 
 const isInitialized = admin.apps.length > 0;
 
 if (!isInitialized) {
   try {
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64) {
+      throw new Error('The FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 environment variable is not set. Please encode your service account JSON to Base64 and add it to your .env file.');
+    }
+
+    const serviceAccountJson = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64, 'base64').toString('utf-8');
+    const serviceAccount = JSON.parse(serviceAccountJson);
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
     });
     console.log("Firebase Admin SDK initialized successfully.");
   } catch (error: any) {
