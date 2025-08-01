@@ -1,12 +1,8 @@
-
 // src/ai/genkit.ts
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import * as admin from 'firebase-admin';
-import { config } from 'dotenv';
-
-// Load environment variables from .env file
-config();
+import { serviceAccount } from '@/lib/firebase-admin-config';
 
 // Global flag to ensure Firebase is initialized only once
 let isFirebaseAdminInitialized = false;
@@ -23,30 +19,17 @@ function initializeFirebaseAdmin() {
   }
 
   try {
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-
-    // Validate that the required environment variables are present
-    if (!projectId || !privateKey || !clientEmail) {
-      const missingVars = [];
-      if (!projectId) missingVars.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
-      if (!privateKey) missingVars.push('FIREBASE_PRIVATE_KEY');
-      if (!clientEmail) missingVars.push('FIREBASE_CLIENT_EMAIL');
-
-      throw new Error(`Missing required Firebase Admin credentials in .env file: ${missingVars.join(', ')}`);
+    // Check if the service account has the necessary properties
+    if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+      throw new Error(
+        'Service account is missing necessary properties (project_id, private_key, client_email). ' +
+        'Please check your firebase-admin-config.ts file.'
+      );
     }
-
-    // Correctly format the private key
-    const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
-
+    
     admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        privateKey: formattedPrivateKey,
-        clientEmail,
-      }),
-      databaseURL: `https://${projectId}.firebaseio.com`,
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
     });
     
     console.log("Firebase Admin SDK initialized successfully.");
@@ -54,7 +37,7 @@ function initializeFirebaseAdmin() {
 
   } catch (error: any) {
     console.error("Firebase Admin SDK initialization error:", error.message);
-    // Throwing an error here is important to stop execution if initialization fails.
+    // Throw an error to stop execution if initialization fails.
     throw new Error(`Firebase Admin SDK failed to initialize: ${error.message}`);
   }
 }
@@ -75,7 +58,7 @@ export function getDb(): admin.firestore.Firestore {
     return admin.firestore();
   } catch (error: any) {
     const enhancedError = new Error(
-      `getDb() error: "Firebase Admin not initialized, Firestore is not available. ${error.message}. Please check your Firebase Admin credentials in your .env file."`
+      `getDb() error: "Firebase Admin not initialized, Firestore is not available. ${error.message}. Please check your Firebase Admin credentials in your service account configuration."`
     );
     console.error(enhancedError.message);
     throw enhancedError;
