@@ -5,22 +5,21 @@
  * This function is intended to be called from the admin client.
  */
 
-import { getFirestore, collection, getDocs } from 'firebase-admin/firestore';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import * as admin from 'firebase-admin';
 import type { Partner } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if not already initialized
-if (!getApps().length) {
-  initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
 }
-const db = getFirestore();
+const db = admin.firestore();
 
 // This function is called from the client component.
 export async function getPartners(): Promise<Partner[]> {
   console.log('Executing getPartners on the server...');
   try {
-    const partnersCollection = collection(db, 'partners');
-    const partnerSnapshot = await getDocs(partnersCollection);
+    const partnersCollection = db.collection('partners');
+    const partnerSnapshot = await partnersCollection.get();
     
     if (partnerSnapshot.empty) {
       return [];
