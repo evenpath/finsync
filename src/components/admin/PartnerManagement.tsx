@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { Search, Plus, Users } from 'lucide-react';
-import { mockIndustries, mockPartners } from '@/lib/mockData';
+import { industries, mockPartners } from '@/lib/mockData';
 import type { Partner, Industry } from '@/lib/types';
 import PartnerCard from './PartnerCard';
 import PartnerDetailView from './PartnerDetailView';
@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
 
 
-const industries = [
+const industryOptions = [
   { value: 'all', label: 'All Industries' },
   { value: 'Property Management', label: 'Property Management' },
   { value: 'HVAC Services', label: 'HVAC Services' },
@@ -89,7 +89,7 @@ export default function PartnerManagement() {
       });
 
       // Step 2: Create the partner object and add to Firestore
-      const selectedIndustry = mockIndustries.find(i => i.id === partnerData.industryId) as Industry;
+      const selectedIndustry = industries.find(i => i.id === partnerData.industryId) as Industry;
 
       const newPartner: Omit<Partner, 'id'> = {
         name: partnerData.name,
@@ -178,7 +178,7 @@ export default function PartnerManagement() {
                   <SelectValue placeholder="Filter by industry" />
                 </SelectTrigger>
                 <SelectContent>
-                  {industries.map(industry => (
+                  {industryOptions.map(industry => (
                     <SelectItem key={industry.value} value={industry.value}>{industry.label}</SelectItem>
                   ))}
                 </SelectContent>

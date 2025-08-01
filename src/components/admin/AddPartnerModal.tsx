@@ -1,4 +1,3 @@
-
 // src/components/admin/AddPartnerModal.tsx
 "use client";
 
@@ -22,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserPlus, Plus, Building, Trash2, AlertTriangle } from 'lucide-react';
-import { industries as mockIndustries } from '@/lib/mockData';
+import { industries } from '@/lib/mockData';
 import { useJsApiLoader, GoogleMap, Autocomplete, Marker } from '@react-google-maps/api';
 
 interface AddPartnerModalProps {
@@ -88,7 +87,7 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
           <SelectValue placeholder="Select industry" />
         </SelectTrigger>
         <SelectContent>
-          {mockIndustries.map(industry => (
+          {industries.map(industry => (
             <SelectItem key={industry.id} value={industry.id}>{industry.name}</SelectItem>
           ))}
         </SelectContent>
