@@ -23,8 +23,11 @@ export default function SignupPage() {
         e.preventDefault();
         setIsLoading(true);
 
-        // This is where you would integrate Firebase Auth.
-        console.log("Attempting to sign up with:", name, email, password);
+        // This is where you would integrate Firebase Auth multi-tenancy.
+        // 1. Create a new Partner document in Firestore.
+        // 2. Create a new Firebase Auth tenant for that partner.
+        // 3. Create the new user within that tenant.
+        console.log("Attempting to sign up new partner admin:", name, email);
 
         setTimeout(() => {
             toast({
