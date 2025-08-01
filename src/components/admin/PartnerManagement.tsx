@@ -5,8 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase'; // Using client-side db instance
-import { collection, getDocs } from 'firebase/firestore';
+import { getData } from '@/ai/flows/get-data-flow';
 
 interface DataItem {
     id: string;
@@ -23,18 +22,7 @@ export default function PartnerManagement() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const dataCollection = collection(db, 'data');
-        const dataSnapshot = await getDocs(dataCollection);
-        
-        if (dataSnapshot.empty) {
-            console.log("No documents found in 'data' collection.");
-        }
-
-        const fetchedData = dataSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as DataItem));
-        
+        const fetchedData = await getData();
         setData(fetchedData);
 
         toast({
@@ -42,12 +30,12 @@ export default function PartnerManagement() {
           description: `Successfully fetched ${fetchedData.length} documents from the 'data' collection.`,
         });
 
-      } catch (error) {
-        console.error("Failed to fetch data from client:", error);
+      } catch (error: any) {
+        console.error("Failed to fetch data:", error);
         toast({
           variant: "destructive",
           title: "Error fetching data",
-          description: "Could not fetch data from Firestore. Check console for details and verify your Firestore security rules.",
+          description: error.message || "Could not fetch data from Firestore.",
         });
       } finally {
         setIsLoading(false);
@@ -63,7 +51,7 @@ export default function PartnerManagement() {
           <CardTitle>Firestore `data` Collection Test</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">This component now fetches all documents from the 'data' collection using the client-side SDK to verify the database connection.</p>
+          <p className="mb-4">This component now fetches all documents from the 'data' collection using the Admin SDK to verify the database connection.</p>
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-8 w-1/2" />
@@ -76,7 +64,7 @@ export default function PartnerManagement() {
                   <strong>ID:</strong> {item.id}
                   {Object.keys(item).map(key => {
                     if(key !== 'id') {
-                      return <span key={key}>, <strong>{key}:</strong> {item[key]}</span>
+                      return <span key={key}>, <strong>{key}:</strong> {JSON.stringify(item[key])}</span>
                     }
                     return null;
                   })}
@@ -84,7 +72,7 @@ export default function PartnerManagement() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">No documents found in the 'data' collection. This could be due to Firestore security rules or an empty collection.</p>
+            <p className="text-muted-foreground">No documents found in the 'data' collection. This could be due to an empty collection.</p>
           )}
         </CardContent>
       </Card>
