@@ -20,8 +20,11 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, user, loading]);
 
   React.useEffect(() => {
-    if (!loading && !isAuthorized) {
-      router.push('/auth/login');
+    // Only perform the check once the loading is complete
+    if (!loading) {
+      if (!isAuthorized) {
+        router.push('/auth/login');
+      }
     }
   }, [loading, isAuthorized, router]);
 
