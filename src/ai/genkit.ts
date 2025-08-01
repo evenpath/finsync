@@ -36,15 +36,13 @@ export const ai = genkit({
 // This ensures that db is only accessed where admin has been successfully initialized.
 export function getDb() {
   if (admin.apps.length === 0) {
-    // Return a mock or limited-functionality db instance if you want the app to run without full backend
-    // For now, we throw an error or handle it as best as we can.
-    console.error("Firebase Admin not initialized, Firestore is not available.");
-    // Depending on the use case, you might return null or a mock object.
-    // For this app, we'll proceed, and individual calls will fail, which is captured in components.
-    return null;
+    // Throw an error to be caught by the calling function.
+    // This prevents the application from proceeding with a null database instance.
+    throw new Error("Firebase Admin not initialized, Firestore is not available. Please check server logs and .env file.");
   }
   return admin.firestore();
 }
 
 // For backwards compatibility with existing files that import 'db' directly.
+// This might be null if initialization failed.
 export const db = admin.apps.length ? admin.firestore() : null;
