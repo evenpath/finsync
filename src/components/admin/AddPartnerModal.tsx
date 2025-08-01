@@ -1,7 +1,7 @@
 // src/components/admin/AddPartnerModal.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,14 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Plus, MapPin, Building, Trash2 } from 'lucide-react';
+import { UserPlus, Plus, Building, Trash2 } from 'lucide-react';
 import { industries as mockIndustries } from '@/lib/mockData';
+import { useJsApiLoader, GoogleMap, Autocomplete, Marker } from '@react-google-maps/api';
 
 interface AddPartnerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddPartner: (partnerData: any) => void;
 }
+
+const libraries: "places"[] = ['places'];
 
 const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputChange }: any) => (
   <div className="space-y-4">
@@ -94,17 +97,43 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
 
 const StepTwo = ({ outlets, setOutlets }: any) => {
   const [newOutlet, setNewOutlet] = useState({ name: '', address: '' });
+  const [mapCenter, setMapCenter] = useState({ lat: 37.386051, lng: -122.083855 }); // Default to Mountain View, CA
+  const [markerPosition, setMarkerPosition] = useState(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const handlePlaceSelect = useCallback(() => {
+    if (autocompleteRef.current) {
+      const place = autocompleteRef.current.getPlace();
+      if (place && place.geometry && place.geometry.location) {
+        const address = place.formatted_address || '';
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        setNewOutlet(prev => ({ ...prev, address }));
+        setMapCenter({ lat, lng });
+        setMarkerPosition({ lat, lng });
+      }
+    }
+  }, []);
 
   const handleAddOutlet = () => {
     if (newOutlet.name && newOutlet.address) {
-      setOutlets([...outlets, newOutlet]);
+      setOutlets([...outlets, { ...newOutlet, location: markerPosition }]);
       setNewOutlet({ name: '', address: '' });
+      setMarkerPosition(null);
     }
   };
   
   const handleRemoveOutlet = (index: number) => {
     setOutlets(outlets.filter((_:any, i:number) => i !== index));
   }
+
+  if (loadError) return <div>Error loading maps</div>;
+  if (!isLoaded) return <div>Loading Maps...</div>;
 
   return (
     <div className="space-y-4">
@@ -121,16 +150,26 @@ const StepTwo = ({ outlets, setOutlets }: any) => {
         </div>
         <div>
           <Label htmlFor="address">Address Search</Label>
-          {/* This input would be powered by Google Places API */}
-          <Input 
-            id="address" 
-            placeholder="Search for an address..." 
-            value={newOutlet.address}
-            onChange={(e) => setNewOutlet({ ...newOutlet, address: e.target.value })}
-          />
+          <Autocomplete
+            onLoad={(ref) => autocompleteRef.current = ref}
+            onPlaceChanged={handlePlaceSelect}
+          >
+            <Input 
+              id="address" 
+              placeholder="Search for an address..." 
+              value={newOutlet.address}
+              onChange={(e) => setNewOutlet({ ...newOutlet, address: e.target.value })}
+            />
+          </Autocomplete>
         </div>
-        <div className="h-40 bg-secondary rounded-lg flex items-center justify-center">
-            <p className="text-muted-foreground text-sm">Map would appear here</p>
+        <div className="h-48 bg-secondary rounded-lg">
+          <GoogleMap
+            mapContainerStyle={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
+            center={mapCenter}
+            zoom={15}
+          >
+            {markerPosition && <Marker position={markerPosition} />}
+          </GoogleMap>
         </div>
         <Button type="button" onClick={handleAddOutlet} className="w-full">
           <Plus className="w-4 h-4 mr-2" /> Add Outlet
@@ -189,16 +228,16 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
     setOutlets([]);
     onClose();
   };
+  
+  const handleClose = () => {
+    setStep(1);
+    setPartnerData({ name: '', email: '', plan: 'Starter', industryId: '' });
+    setOutlets([]);
+    onClose();
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-         setStep(1);
-         setPartnerData({ name: '', email: '', plan: 'Starter', industryId: '' });
-         setOutlets([]);
-      }
-      onClose();
-    }}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -227,9 +266,7 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
           <DialogFooter>
             {step === 1 ? (
               <>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
+                <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
                 <Button type="button" onClick={() => setStep(2)} disabled={!partnerData.name || !partnerData.email || !partnerData.industryId}>
                   Next: Add Locations
                 </Button>
