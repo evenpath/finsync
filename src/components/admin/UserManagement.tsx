@@ -1,4 +1,3 @@
-
 // src/components/admin/UserManagement.tsx
 "use client";
 
@@ -24,6 +23,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
 import { useToast } from "@/hooks/use-toast";
 import { mockAdminUsers } from "@/lib/mockData";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
+
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -32,11 +34,42 @@ export default function UserManagement() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load mock data on component mount
-    setUsers(mockAdminUsers);
-  }, []);
+    const fetchAdmins = async () => {
+        setIsLoading(true);
+        try {
+            const adminUsersCollection = collection(db, 'adminUsers');
+            const adminSnapshot = await getDocs(adminUsersCollection);
+            
+            if (adminSnapshot.empty) {
+                console.log("Admin users collection is empty, seeding with mock data...");
+                for (const user of mockAdminUsers) {
+                    await addDoc(collection(db, "adminUsers"), user);
+                }
+                const seededSnapshot = await getDocs(adminUsersCollection);
+                const usersList = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
+                setUsers(usersList);
+            } else {
+                const usersList = adminSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
+                setUsers(usersList);
+            }
+        } catch (error) {
+            console.error("Error fetching admin users: ", error);
+            toast({
+                variant: "destructive",
+                title: "Error fetching admin users",
+                description: (error as Error).message,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    if (currentUser?.customClaims?.role === 'Super Admin') {
+        fetchAdmins();
+    }
+  }, [currentUser, toast]);
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
@@ -53,43 +86,55 @@ export default function UserManagement() {
 
 
   const handleInviteUser = async (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
-    // In a real app, you would first create the user in Firebase Auth, get their UID,
-    // and then call the manageAdminUser flow.
-    // For this simulation, we'll use a mock UID and assume the user exists.
-    const mockUid = `mock-uid-${Math.random().toString(36).substring(7)}`;
-    console.log(`Simulating invitation for ${newUserData.email} with role ${newUserData.role} and mock UID ${mockUid}`);
-
+    setIsLoading(true);
     try {
+      // In a real app, you would first create the user in Firebase Auth.
+      // For this simulation, we assume user is created separately or invited to sign up.
+      // We'll call the flow to set their claims, and then add them to our adminUsers collection in Firestore.
+
+      // Check if user already exists
+      const q = query(collection(db, "adminUsers"), where("email", "==", newUserData.email));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        throw new Error("An admin with this email already exists.");
+      }
+
+      const mockUid = `mock-uid-${Math.random().toString(36).substring(7)}`;
       const result = await manageAdminUser({ uid: mockUid, role: newUserData.role });
       
       if (result.success) {
-        toast({
-          title: "Success",
-          description: result.message,
-        });
-
-        // Add the new user to the local state to update the UI
-        const newUser: AdminUser = {
+        const newUser: Omit<AdminUser, 'id'> = {
           ...newUserData,
-          id: mockUid,
           status: 'invited',
           lastActive: 'Never',
           joinedDate: new Date().toISOString().split('T')[0],
           avatar: `https://placehold.co/40x40.png?text=${newUserData.name.charAt(0)}`,
           permissions: newUserData.role === 'Super Admin' ? ['all'] : ['read', 'write']
         };
-        setUsers(prev => [...prev, newUser]);
+
+        const docRef = await addDoc(collection(db, "adminUsers"), newUser);
+        const createdUser = { id: docRef.id, ...newUser } as AdminUser;
+
+        setUsers(prev => [...prev, createdUser]);
         setIsInviteModalOpen(false);
+
+        toast({
+          title: "Success",
+          description: `Invitation sent to ${newUserData.email}.`,
+        });
+
       } else {
         throw new Error(result.message);
       }
     } catch (error) {
-      console.error("Failed to manage admin user:", error);
+      console.error("Failed to invite admin user:", error);
       toast({
         variant: "destructive",
         title: "Operation Failed",
         description: (error as Error).message || "An unexpected error occurred.",
       });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -122,7 +167,9 @@ export default function UserManagement() {
             </CardHeader>
             <CardContent className="p-0">
                 <div className="divide-y">
-                    {manageableUsers.map((user) => (
+                    {isLoading ? (
+                      <p className="p-6 text-muted-foreground">Loading admins...</p>
+                    ) : manageableUsers.map((user) => (
                       <div
                         key={user.id}
                         className={`p-4 md:p-6 hover:bg-secondary cursor-pointer transition-colors ${

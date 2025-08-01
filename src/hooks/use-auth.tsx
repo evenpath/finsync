@@ -1,4 +1,3 @@
-
 // src/hooks/use-auth.tsx
 "use client";
 
@@ -28,13 +27,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 try {
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    // Find a matching mock user to get claims
+                    // Find a matching mock user to get claims. This simulates the backend setting custom claims.
                     const mockUser = mockAdminUsers.find(u => u.email === firebaseUser.email);
                     
-                    const customClaims = (idTokenResult.claims || {}) as { 
+                    const customClaimsFromToken = (idTokenResult.claims || {}) as { 
                         role?: 'Super Admin' | 'Admin' | 'partner' | 'employee';
                         partnerId?: string;
                         permissions?: string[];
+                    };
+
+                    // Combine mock claims with token claims, giving precedence to mock claims for development.
+                    const finalClaims = {
+                      role: mockUser?.role || customClaimsFromToken.role || 'employee',
+                      permissions: mockUser?.permissions || customClaimsFromToken.permissions || [],
+                      partnerId: customClaimsFromToken.partnerId,
                     };
                     
                     const authUser: FirebaseAuthUser = {
@@ -44,11 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         photoURL: firebaseUser.photoURL,
                         phoneNumber: firebaseUser.phoneNumber,
                         emailVerified: firebaseUser.emailVerified,
-                        customClaims: {
-                            role: mockUser?.role || customClaims.role || 'employee',
-                            partnerId: customClaims.partnerId,
-                            permissions: mockUser?.permissions || customClaims.permissions || []
-                        },
+                        customClaims: finalClaims,
                         creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
                         providerData: firebaseUser.providerData

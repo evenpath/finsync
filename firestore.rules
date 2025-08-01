@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Admins can read/write partner data
+    match /partners/{partnerId} {
+      allow read, write: if request.auth != null && ('Admin' in request.auth.token.roles || 'Super Admin' in request.auth.token.roles);
+    }
+    
+    // Super Admins can read/write admin user data
+    match /adminUsers/{userId} {
+       allow read, write: if request.auth != null && 'Super Admin' in request.auth.token.roles;
+    }
+  }
+}

@@ -2,8 +2,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { Search, Plus, Users } from 'lucide-react';
-import { industries as mockIndustries, mockPartners } from '@/lib/mockData';
+import { mockIndustries, mockPartners } from '@/lib/mockData';
 import type { Partner, Industry } from '@/lib/types';
 import PartnerCard from './PartnerCard';
 import PartnerDetailView from './PartnerDetailView';
@@ -33,14 +35,44 @@ export default function PartnerManagement() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // We will use mock data for now instead of fetching from Firestore
-    setIsLoading(true);
-    setPartners(mockPartners);
-    if (mockPartners.length > 0) {
-      setSelectedPartner(mockPartners[0]);
-    }
-    setIsLoading(false);
-  }, []);
+    const fetchPartners = async () => {
+      setIsLoading(true);
+      try {
+        const partnersCollection = collection(db, 'partners');
+        const partnerSnapshot = await getDocs(partnersCollection);
+        if (partnerSnapshot.empty) {
+          // If the collection is empty, seed it with mock data
+          console.log("Partners collection is empty, seeding with mock data...");
+          for (const partner of mockPartners) {
+            await addDoc(collection(db, "partners"), partner);
+          }
+          // Fetch again after seeding
+           const seededSnapshot = await getDocs(partnersCollection);
+           const partnersList = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
+           setPartners(partnersList);
+           if (partnersList.length > 0) {
+              setSelectedPartner(partnersList[0]);
+           }
+        } else {
+          const partnersList = partnerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
+          setPartners(partnersList);
+           if (partnersList.length > 0) {
+              setSelectedPartner(partnersList[0]);
+           }
+        }
+      } catch (error) {
+        console.error("Error fetching partners: ", error);
+        toast({
+          variant: "destructive",
+          title: "Error fetching partners",
+          description: (error as Error).message,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPartners();
+  }, [toast]);
 
   const handleAddPartner = async (partnerData: any) => {
     try {
@@ -56,11 +88,10 @@ export default function PartnerManagement() {
         description: tenantResult.message,
       });
 
-      // Step 2: Create the partner object and add to local state
+      // Step 2: Create the partner object and add to Firestore
       const selectedIndustry = mockIndustries.find(i => i.id === partnerData.industryId) as Industry;
 
-      const newPartner: Partner = {
-        id: `partner_${Date.now()}`,
+      const newPartner: Omit<Partner, 'id'> = {
         name: partnerData.name,
         tenantId: tenantResult.tenantId,
         contactPerson: partnerData.name,
@@ -89,13 +120,16 @@ export default function PartnerManagement() {
         updatedAt: new Date().toISOString(),
       };
       
-      setPartners(prev => [...prev, newPartner]);
-      setSelectedPartner(newPartner);
+      const docRef = await addDoc(collection(db, "partners"), newPartner);
+      const createdPartner = { id: docRef.id, ...newPartner } as Partner;
+      
+      setPartners(prev => [...prev, createdPartner]);
+      setSelectedPartner(createdPartner);
       setIsModalOpen(false);
 
       toast({
         title: "Partner Added",
-        description: `${partnerData.name} has been successfully added.`,
+        description: `${partnerData.name} has been successfully added to Firestore.`,
       });
 
     } catch (error) {
