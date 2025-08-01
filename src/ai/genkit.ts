@@ -1,4 +1,5 @@
-// src/ai/genkit.ts (modified)
+
+// src/ai/genkit.ts
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import * as admin from 'firebase-admin';
