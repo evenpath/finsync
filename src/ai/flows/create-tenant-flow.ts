@@ -82,9 +82,22 @@ const createTenantFlow = ai.defineFlow(
         console.error("Error creating Firebase Auth tenant:", error);
 
         if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('permission'))) {
+             if (error.message && error.message.includes('serviceusage.services.use')) {
+                 return {
+                    success: false,
+                    message: `Permission Denied: Your service account needs the 'Service Usage Consumer' role. Please add this in the Google Cloud IAM console for project '${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}'.`,
+                };
+             }
             return {
                 success: false,
-                message: `Permission Denied. Please grant the 'Service Usage Consumer' role to your service account in the Google Cloud IAM console for project '${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}'. This is required to create auth tenants.`,
+                message: `Permission Denied. Please check your service account permissions in the Google Cloud IAM console.`,
+            };
+        }
+
+        if (error.message && error.message.includes('multi-tenancy')) {
+            return {
+                success: false,
+                message: "Firebase Multi-Tenancy is not enabled for this project. Please go to your Google Cloud Console, find 'Identity Platform', and enable it."
             };
         }
 
