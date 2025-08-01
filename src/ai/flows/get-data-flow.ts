@@ -5,6 +5,7 @@ import * as admin from 'firebase-admin';
 import { z } from 'zod';
 
 // Ensure Firebase Admin is initialized (idempotent)
+// The main initialization is now in genkit.ts, this is a safeguard.
 if (!admin.apps.length) {
   admin.initializeApp();
 }
