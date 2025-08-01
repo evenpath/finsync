@@ -1,3 +1,4 @@
+// src/ai/flows/get-partners-flow.ts
 'use server';
 
 /**
@@ -7,6 +8,9 @@
 
 import * as admin from 'firebase-admin';
 import type { Partner } from '@/lib/types';
+import { config } from 'dotenv';
+
+config(); // Load environment variables from .env file
 
 // The Firebase Admin SDK is initialized in `src/ai/genkit.ts`.
 // We can safely get the firestore instance here.
