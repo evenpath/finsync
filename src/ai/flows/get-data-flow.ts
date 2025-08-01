@@ -4,12 +4,8 @@
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 
-// Ensure Firebase Admin is initialized (idempotent)
-// The main initialization is now in genkit.ts, this is a safeguard.
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
+// Firebase Admin is initialized in `src/ai/genkit.ts`.
+// We can directly use the instance here.
 const db = admin.firestore();
 
 const DataSchema = z.object({
