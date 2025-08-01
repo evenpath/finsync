@@ -11,7 +11,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +41,7 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
       </Label>
       <Input
         id="name"
+        name="name"
         value={partnerData.name}
         onChange={handleInputChange}
         className="col-span-3"
@@ -55,6 +55,7 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
       </Label>
       <Input
         id="email"
+        name="email"
         type="email"
         value={partnerData.email}
         onChange={handleInputChange}
@@ -67,7 +68,7 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
       <Label htmlFor="plan" className="text-right">
         Plan
       </Label>
-      <Select value={partnerData.plan} onValueChange={(value) => handleSelectChange('plan', value)}>
+      <Select name="plan" value={partnerData.plan} onValueChange={(value) => handleSelectChange('plan', value)}>
         <SelectTrigger className="col-span-3">
           <SelectValue placeholder="Select a plan" />
         </SelectTrigger>
@@ -82,7 +83,7 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
       <Label htmlFor="industryId" className="text-right">
         Industry
       </Label>
-      <Select value={partnerData.industryId} onValueChange={(value) => handleSelectChange('industryId', value)}>
+      <Select name="industryId" value={partnerData.industryId} onValueChange={(value) => handleSelectChange('industryId', value)}>
         <SelectTrigger className="col-span-3">
           <SelectValue placeholder="Select industry" />
         </SelectTrigger>
@@ -107,10 +108,11 @@ const NoApiKeyMessage = () => (
 );
 
 const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (outlets: any[]) => void }) => {
-  const [newOutlet, setNewOutlet] = useState({ name: '', address: '' });
+  const [newOutletName, setNewOutletName] = useState('');
   const [mapCenter, setMapCenter] = useState({ lat: 37.386051, lng: -122.083855 }); // Default to Mountain View, CA
   const [markerPosition, setMarkerPosition] = useState<{lat: number, lng: number} | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -121,10 +123,8 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
     if (autocompleteRef.current) {
       const place = autocompleteRef.current.getPlace();
       if (place && place.geometry && place.geometry.location) {
-        const address = place.formatted_address || '';
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
-        setNewOutlet(prev => ({ ...prev, address }));
         setMapCenter({ lat, lng });
         setMarkerPosition({ lat, lng });
       }
@@ -132,14 +132,11 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
   }, []);
 
   const handleAddOutlet = () => {
-    if (newOutlet.name && newOutlet.address) {
-      setOutlets([...outlets, { ...newOutlet, location: markerPosition }]);
-      setNewOutlet({ name: '', address: '' });
+    if (newOutletName && addressInputRef.current?.value) {
+      setOutlets([...outlets, { name: newOutletName, address: addressInputRef.current.value, location: markerPosition }]);
+      setNewOutletName('');
+      if(addressInputRef.current) addressInputRef.current.value = '';
       setMarkerPosition(null);
-      if(autocompleteRef.current) {
-        const input = document.getElementById('address') as HTMLInputElement;
-        if(input) input.value = '';
-      }
     }
   };
   
@@ -159,8 +156,8 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
           <Input 
             id="outletName" 
             placeholder="e.g., Downtown Branch" 
-            value={newOutlet.name}
-            onChange={(e) => setNewOutlet({ ...newOutlet, name: e.target.value })}
+            value={newOutletName}
+            onChange={(e) => setNewOutletName(e.target.value)}
           />
         </div>
         <div>
@@ -172,8 +169,7 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
             <Input 
               id="address" 
               placeholder="Search for an address..." 
-              defaultValue={newOutlet.address}
-              onChange={(e) => setNewOutlet({ ...newOutlet, address: e.target.value })}
+              ref={addressInputRef}
             />
           </Autocomplete>
         </div>
@@ -233,12 +229,12 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
   const [outlets, setOutlets] = useState<any[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setPartnerData(prev => ({ ...prev, [id]: value }));
+    const { name, value } = e.target;
+    setPartnerData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (id: string, value: string) => {
-    setPartnerData(prev => ({ ...prev, [id]: value }));
+  const handleSelectChange = (name: string, value: string) => {
+    setPartnerData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -309,3 +305,4 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
     </Dialog>
   );
 }
+
