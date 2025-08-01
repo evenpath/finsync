@@ -35,16 +35,20 @@ const createTenantFlow = ai.defineFlow(
     outputSchema: CreateTenantOutputSchema,
   },
   async (input) => {
+    // This check is crucial. If the adminAuth object from firebase-admin.ts is null,
+    // it means the Admin SDK failed to initialize (likely due to missing credentials).
     if (!adminAuth) {
         return {
             success: false,
-            message: "Firebase Admin SDK is not initialized. Cannot create tenant.",
+            message: "Firebase Admin SDK is not initialized. Cannot create tenant. Ensure your service account environment variables are set correctly on the server.",
         };
     }
 
     try {
+      // The tenantManager is only available on a successfully initialized adminAuth object.
       const tenant = await adminAuth.tenantManager().createTenant({
         displayName: input.partnerName,
+        // Enable email/password sign-in for this new tenant
         emailSignInConfig: {
           enabled: true,
           passwordRequired: true, 
