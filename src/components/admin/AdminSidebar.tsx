@@ -21,7 +21,7 @@ const menuItems = [
   { id: "overview", label: "System Overview", icon: BarChart3, href: "/admin" },
   { id: "partners", label: "Partner Management", icon: Building, href: "/admin/partners" },
   { id: "workflows", label: "Workflow Templates", icon: Zap, href: "/admin/workflows" },
-  { id: "users", label: "User Management", icon: Users, href: "/admin/users", requiredRole: 'Super Admin' },
+  { id: "users", label: "Admin Internal", icon: Users, href: "/admin/users", requiredRole: 'Super Admin' },
   { id: "analytics", label: "System Analytics", icon: TrendingUp, href: "/admin/analytics" },
   { id: "logs", label: "System Logs", icon: FileText, href: "/admin/logs" },
   { id: "settings", label: "Admin Settings", icon: Settings, href: "/admin/settings" },

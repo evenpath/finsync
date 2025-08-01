@@ -40,8 +40,8 @@ export default function AdminUsersPage() {
   return (
     <>
       <AdminHeader
-        title="User Management"
-        subtitle="Manage admin users, roles, and permissions."
+        title="Admin Internal"
+        subtitle="Manage internal admin users, roles, and permissions."
       />
       <main className="flex-1 overflow-auto p-6">
         <UserManagement />
