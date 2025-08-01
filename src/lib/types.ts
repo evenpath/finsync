@@ -14,7 +14,7 @@ export interface FirebaseAuthUser {
   phoneNumber: string | null;
   emailVerified: boolean;
   customClaims?: {
-    roles: ('Super Admin' | 'Admin' | 'partner' | 'employee')[];
+    role: 'Super Admin' | 'Admin' | 'partner' | 'employee';
     partnerId?: string;
   };
   creationTime: string;

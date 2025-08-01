@@ -13,8 +13,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
 
   const isAuthorized = React.useMemo(() => {
     if (!user || loading) return false;
-    const roles = user?.customClaims?.roles || [];
-    return roles.includes('Admin') || roles.includes('Super Admin');
+    const role = user?.customClaims?.role;
+    return role === 'Admin' || role === 'Super Admin';
   }, [user, loading]);
 
   React.useEffect(() => {
