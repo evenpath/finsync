@@ -36,9 +36,14 @@ export default function LoginPage() {
         toast({ title: "Login Successful", description: "Redirecting to admin panel..." });
         router.push('/admin');
       } else {
-        // If a non-admin tries to log in here, treat it as an error.
+        // If a non-admin tries to log in here, sign them out and show a specific error.
         await auth.signOut();
-        throw new Error("Access denied. This login is for administrators only.");
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: "This login page is for administrators only.",
+        });
+        setIsLoading(false);
       }
 
     } catch (error: any) {
