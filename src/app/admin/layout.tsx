@@ -1,4 +1,3 @@
-
 // src/app/admin/layout.tsx
 "use client";
 
@@ -13,23 +12,19 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {
-    if (loading || !isAuthenticated) return false;
+    if (!isAuthenticated || loading) return false;
     const role = user?.customClaims?.role;
-    // Allow both 'Admin' and 'Super Admin' to access the admin panel
     return role === 'Admin' || role === 'Super Admin';
   }, [isAuthenticated, user, loading]);
 
   React.useEffect(() => {
-    // Only perform the check once the loading is complete
-    if (!loading) {
-      if (!isAuthorized) {
+    if (!loading && !isAuthenticated) {
         router.push('/auth/login');
-      }
     }
-  }, [loading, isAuthorized, router]);
+  }, [loading, isAuthenticated, router]);
 
   if (loading || !isAuthorized) {
-    // Show a loading skeleton while checking auth
+    // Show a loading skeleton while checking auth and authorization
     return (
        <div className="flex h-screen">
             <div className="w-64 p-4 border-r">
