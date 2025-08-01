@@ -113,10 +113,14 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
   const [markerPosition, setMarkerPosition] = useState<{lat: number, lng: number} | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const addressInputRef = useRef<HTMLInputElement | null>(null);
+  
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+  console.log("DEBUG: Google Maps API Key loaded in component:", googleMapsApiKey);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey,
     libraries,
+    preventGoogleFontsLoading: true,
   });
 
   const handlePlaceSelect = useCallback(() => {
