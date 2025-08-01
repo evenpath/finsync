@@ -1,29 +1,23 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import * as admin from 'firebase-admin';
-import {config} from 'dotenv';
-
-config(); // Load environment variables from .env file
+import { serviceAccount } from '@/lib/firebase-admin-config';
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && privateKey && process.env.FIREBASE_CLIENT_EMAIL) {
-      try {
-        admin.initializeApp({
-          credential: admin.credential.cert({
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-            privateKey: privateKey,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          }),
-          databaseURL: `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`
-        });
-        console.log("Firebase Admin SDK initialized successfully.");
-      } catch (error) {
-        console.error("Firebase Admin SDK initialization error:", error);
-      }
-  } else {
-     console.warn("Firebase Admin SDK credentials are not fully set in .env file. Server-side functionality will be limited.");
+  try {
+    // Check if the essential service account properties are available
+    if (serviceAccount.project_id && serviceAccount.private_key && serviceAccount.client_email) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+      });
+      console.log("Firebase Admin SDK initialized successfully.");
+    } else {
+      console.warn("Firebase Admin SDK credentials are not fully set in firebase-admin-config.ts. Server-side functionality will be limited.");
+    }
+  } catch (error) {
+    console.error("Firebase Admin SDK initialization error:", error);
   }
 }
 
@@ -32,12 +26,9 @@ export const ai = genkit({
 });
 
 // Export a function to get the database instance
-// This ensures that db is only accessed where admin has been successfully initialized.
 export function getDb() {
   if (admin.apps.length === 0) {
-    // Throw an error to be caught by the calling function.
-    // This prevents the application from proceeding with a null database instance.
-    throw new Error("Firebase Admin not initialized, Firestore is not available. Please check server logs and .env file.");
+    throw new Error("Firebase Admin not initialized, Firestore is not available. Please check server logs and your service account configuration.");
   }
   return admin.firestore();
 }
