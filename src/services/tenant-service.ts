@@ -2,7 +2,7 @@
 // src/services/tenant-service.ts
 'use server';
 
-import { db } from '@/lib/firebase-admin';
+import { db, adminAuth } from '@/lib/firebase-admin';
 
 export interface TenantLookupResult {
   success: boolean;
@@ -155,10 +155,7 @@ export async function createUserMapping(email: string, tenantId: string, partner
  */
 export async function validateTenantId(tenantId: string): Promise<boolean> {
   if (!tenantId) return false;
-  
-  // Import adminAuth locally to avoid circular dependencies
-  const { adminAuth } = await import('@/lib/firebase-admin');
-  
+    
   if (!adminAuth) {
     console.warn("Admin auth not available, cannot validate tenant");
     return false;

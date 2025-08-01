@@ -55,7 +55,12 @@ export async function migrateUserMappings(): Promise<{
             migratedCount++;
             console.log(`Created user mapping for ${partnerData.email} -> ${partnerData.tenantId}`);
           } else {
-            errors.push(`Failed to create mapping for ${partnerData.email}: ${mappingResult.message}`);
+            // Check if mapping already exists, which isn't an error in this context
+            if (mappingResult.message?.includes('already exists')) {
+               console.log(`Mapping for ${partnerData.email} already exists.`);
+            } else {
+               errors.push(`Failed to create mapping for ${partnerData.email}: ${mappingResult.message}`);
+            }
           }
         } catch (error: any) {
           errors.push(`Error processing ${partnerData.email}: ${error.message}`);
@@ -74,7 +79,7 @@ export async function migrateUserMappings(): Promise<{
 
     return {
       success: true,
-      message: `Migration completed. Created ${migratedCount} user mappings.${errors.length > 0 ? ` ${errors.length} errors occurred.` : ''}`,
+      message: `Migration completed. Processed ${partnersSnapshot.size} partners. Created ${migratedCount} new user mappings.${errors.length > 0 ? ` ${errors.length} errors occurred.` : ''}`,
       migratedCount
     };
 

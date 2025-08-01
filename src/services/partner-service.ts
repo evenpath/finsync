@@ -88,7 +88,7 @@ export async function seedInitialPartners(): Promise<void> {
             businessProfile: dataToSeed.businessProfile || null,
             aiMemory: dataToSeed.aiMemory || null,
             industry: dataToSeed.industry || null,
-            tenantId: `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}` // Add a mock tenantId
+            tenantId: partnerData.tenantId || `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}` // Add a mock tenantId
         };
 
         const partnerRef = db.collection('partners').doc(id);
