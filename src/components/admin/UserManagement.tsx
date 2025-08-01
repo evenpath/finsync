@@ -1,9 +1,7 @@
-
-
 // src/components/admin/UserManagement.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import { mockAdminUsers } from "@/lib/mockData";
 import type { AdminUser } from "@/lib/types";
@@ -22,11 +20,27 @@ import {
   Users
 } from "lucide-react";
 import InviteAdminModal from "./InviteAdminModal";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<AdminUser[]>(mockAdminUsers);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(users[0] || null);
+  const { user: currentUser } = useAuth();
+
+  const manageableUsers = useMemo(() => {
+    if (!currentUser) return [];
+    return mockAdminUsers.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
+  }, [currentUser]);
+
+  const [users, setUsers] = useState<AdminUser[]>(manageableUsers);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(manageableUsers[0] || null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    setUsers(manageableUsers);
+    if (!selectedUser || selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
+      setSelectedUser(manageableUsers[0] || null);
+    }
+  }, [manageableUsers, selectedUser, currentUser]);
+
 
   const handleInviteUser = (newUserData: Omit<AdminUser, 'id' | 'status' | 'lastActive' | 'joinedDate' | 'avatar' | 'permissions'>) => {
     const newUser: AdminUser = {
