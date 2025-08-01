@@ -1,5 +1,42 @@
 // src/lib/mockData.ts
 import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users, Zap, Shield, Building, UserPlus, BarChart3, Activity, AlertTriangle, Send, Copy, ExternalLink, PlayCircle, PauseCircle, RotateCcw, Cpu, Network, Layers, Clock } from "lucide-react";
+import type { Industry, WorkflowTemplate } from './types';
+
+export const industries: Industry[] = [
+    { 
+      id: 'd8f8f8f8-f8f8-f8f8-f8f8-f8f8f8f8f8f8',
+      name: 'Property Management', 
+      slug: 'property-management',
+      icon: '🏢',
+      description: 'Manage rental properties, tenants, and maintenance',
+      workflowPatterns: {},
+      successMetrics: {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    { 
+      id: 'd8f8f8f8-f8f8-f8f8-f8f8-f8f8f8f8f8f9',
+      name: 'HVAC Services',
+      slug: 'hvac-services',
+      icon: '🔧',
+      description: 'Heating, ventilation, and air conditioning',
+      workflowPatterns: {},
+      successMetrics: {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+     { 
+      id: 'd8f8f8f8-f8f8-f8f8-f8f8-f8f8f8f8f810',
+      name: 'Independent Hotels',
+      slug: 'independent-hotels',
+      icon: '🏨',
+      description: 'Boutique and independent hotel operations',
+      workflowPatterns: {},
+      successMetrics: {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+];
 
 
 // Mock Data for Admin
@@ -42,62 +79,94 @@ export const mockPartners = [
   }
 ];
 
-export const mockWorkflowTemplates = [
+export const mockWorkflowTemplates: WorkflowTemplate[] = [
    {
-    id: 1,
+    id: '1',
     title: "Cafe Daily Operations",
     description: "Complete daily workflow for cafe management from opening to closing",
     category: "Hospitality",
     complexity: "simple",
-    steps: 8,
+    steps: [],
     aiAgents: 2,
     estimatedTime: "8 hours",
     usageCount: 45,
     lastModified: "2024-07-30",
     tags: ["Daily Operations", "Food Service", "Inventory"],
-    icon: "☕"
+    icon: "☕",
+    templateType: 'custom',
+    isFeatured: false,
+    successRate: 88,
+    avgSetupTimeHours: 4,
+    roiPercentage: 150,
+    apiIntegrations: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
-    id: 2,
+    id: '2',
     title: "Customer Support AI Pipeline",
     description: "Multi-stage AI-powered customer support with escalation and sentiment analysis",
     category: "Customer Service",
     complexity: "complex",
-    steps: 12,
+    steps: [],
     aiAgents: 5,
     estimatedTime: "2-6 hours",
     usageCount: 128,
     lastModified: "2024-07-28",
     tags: ["AI Support", "Escalation", "Sentiment Analysis"],
-    icon: "🎧"
+    icon: "🎧",
+    templateType: 'ai_generated',
+    isFeatured: true,
+    successRate: 92,
+    avgSetupTimeHours: 8,
+    roiPercentage: 400,
+    apiIntegrations: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
-    id: 3,
+    id: '3',
     title: "Content Creation & Review",
     description: "AI-assisted content creation workflow with human review and approval",
     category: "Content",
     complexity: "medium",
-    steps: 6,
+    steps: [],
     aiAgents: 3,
     estimatedTime: "2-4 hours",
     usageCount: 89,
     lastModified: "2024-07-29",
     tags: ["Content AI", "Review", "Publishing"],
-    icon: "✍️"
+    icon: "✍️",
+    templateType: 'custom',
+    isFeatured: false,
+    successRate: 95,
+    avgSetupTimeHours: 3,
+    roiPercentage: 250,
+    apiIntegrations: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
-    id: 4,
+    id: '4',
     title: "Financial Document Processing",
     description: "Complex financial document analysis with multi-model AI verification",
     category: "Finance",
     complexity: "complex",
-    steps: 15,
+    steps: [],
     aiAgents: 8,
     estimatedTime: "1-3 hours",
     usageCount: 67,
     lastModified: "2024-07-27",
     tags: ["Finance AI", "Document Analysis", "Compliance"],
-    icon: "💰"
+    icon: "💰",
+    templateType: 'ai_generated',
+    isFeatured: false,
+    successRate: 98,
+    avgSetupTimeHours: 12,
+    roiPercentage: 500,
+    apiIntegrations: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 

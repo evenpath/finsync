@@ -1,3 +1,4 @@
+
 export interface UserProfile {
   uid: string
   email: string | null
@@ -39,20 +40,111 @@ export interface PartnerSettings {
   maxWorkers: number
 }
 
-export type WorkflowTemplate = {
-  id: number;
+export interface Industry {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  workflowPatterns: Record<string, any>;
+  successMetrics: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BusinessProfile {
+  id: string;
+  partnerId: string;
+  industryId: string;
+  industry?: Industry;
+  businessName: string;
+  businessSize: 'small' | 'medium' | 'large';
+  employeeCount?: number;
+  locationCity?: string;
+  locationState?: string;
+  locationCountry: string;
+  painPoints: string[];
+  currentTools: Record<string, any>;
+  goals: string[];
+  monthlyRevenueRange?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Enhanced WorkflowTemplate
+export interface WorkflowTemplate {
+  id: string;
   title: string;
   description: string;
   category: string;
+  industryId?: string;
+  industry?: Industry;
+  templateType: 'ready' | 'ai_generated' | 'custom';
   complexity: 'simple' | 'medium' | 'complex';
   steps: number | WorkflowStep[];
-  aiAgents: number;
-  estimatedTime: string;
+  isFeatured: boolean;
+  successRate: number;
+  avgSetupTimeHours: number;
+  roiPercentage: number;
   usageCount: number;
-  lastModified: string;
+  estimatedTime: string;
   tags: string[];
   icon: string;
-};
+  apiIntegrations: string[]; // IDs of required integrations
+  createdAt: Date;
+  updatedAt: Date;
+  aiAgents?: number;
+}
+
+export interface ProblemDescription {
+  id: string;
+  partnerId: string;
+  businessProfileId: string;
+  rawDescription: string;
+  parsedAnalysis?: ProblemAnalysis;
+  generatedWorkflowId?: string;
+  userRating?: number;
+  isSuccessful?: boolean;
+  feedback?: string;
+  createdAt: Date;
+}
+
+export interface ProblemAnalysis {
+  category: string;
+  urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
+  stakeholders: string[];
+  triggerEvents: string[];
+  desiredOutcomes: string[];
+  estimatedComplexity: number;
+  suggestedIntegrations: string[];
+  confidenceScore: number;
+}
+
+export interface APIIntegration {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  logoUrl: string;
+  documentationUrl: string;
+  pricingModel: string;
+  setupDifficulty: 'easy' | 'medium' | 'hard';
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface PartnerAPIConfiguration {
+  id: string;
+  partnerId: string;
+  apiIntegrationId: string;
+  apiIntegration?: APIIntegration;
+  configuration: Record<string, any>;
+  status: 'active' | 'inactive' | 'error';
+  lastTestAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 
 export interface TeamMember {
   id: number;
