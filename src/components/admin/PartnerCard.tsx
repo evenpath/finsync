@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Partner } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreHorizontal, Zap, TrendingUp, Brain } from 'lucide-react';
+import { MoreHorizontal, Zap, TrendingUp, Brain, Building } from 'lucide-react';
 
 interface PartnerCardProps {
   partner: Partner;
@@ -11,7 +11,7 @@ interface PartnerCardProps {
 }
 
 export default function PartnerCard({ partner, isSelected, onSelect }: PartnerCardProps) {
-  const industry = partner.industry || { name: 'N/A', icon: '🏢' };
+  const industryIcon = partner.industry?.icon || <Building className="w-5 h-5 text-muted-foreground" />;
   
   return (
     <Card 
@@ -22,7 +22,7 @@ export default function PartnerCard({ partner, isSelected, onSelect }: PartnerCa
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-lg`}>
-              {industry.icon}
+              {industryIcon}
             </div>
             <div>
               <h3 className="font-semibold text-foreground">{partner.name}</h3>

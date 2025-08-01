@@ -1,7 +1,7 @@
 // src/services/partner-service.ts
 import 'server-only';
 import { db } from '@/lib/firebase-admin';
-import { mockPartners, industries } from '@/lib/mockData';
+import { mockPartners } from '@/lib/mockData';
 import type { Partner } from '@/lib/types';
 import * as admin from 'firebase-admin';
 
@@ -25,7 +25,15 @@ export async function getPartners(): Promise<Partner[]> {
 
     const partners: Partner[] = [];
     snapshot.forEach(doc => {
-        partners.push({ id: doc.id, ...doc.data() } as Partner);
+        const data = doc.data();
+        // Ensure numeric fields are correctly typed
+        const partnerData: Partner = {
+            id: doc.id,
+            ...data,
+            employeeCount: Number(data.employeeCount) || 0,
+            aiProfileCompleteness: Number(data.aiProfileCompleteness) || 0,
+        } as Partner;
+        partners.push(partnerData);
     });
 
     return partners;
@@ -53,31 +61,20 @@ export async function seedInitialPartners(): Promise<void> {
     const batch = db.batch();
     
     mockPartners.forEach(partnerData => {
-        const industryInfo = industries.find(i => i.slug === partnerData.industry?.slug) || null;
-        
-        const partnerToSeed: Omit<Partner, 'id'| 'createdAt' | 'updatedAt'> & { businessProfile: null, aiMemory: null, createdAt: admin.firestore.FieldValue, updatedAt: admin.firestore.FieldValue } = {
-            name: partnerData.name,
-            businessName: partnerData.businessName,
-            contactPerson: partnerData.contactPerson,
-            email: partnerData.email,
-            phone: partnerData.phone,
-            status: partnerData.status,
-            plan: partnerData.plan,
-            joinedDate: partnerData.joinedDate,
-            industry: industryInfo,
-            businessSize: partnerData.businessSize,
-            employeeCount: partnerData.employeeCount,
-            monthlyRevenue: partnerData.monthlyRevenue,
-            location: partnerData.location,
-            aiProfileCompleteness: partnerData.aiProfileCompleteness,
-            stats: partnerData.stats,
-            businessProfile: null, 
-            aiMemory: null,
+        const { id, ...dataToSeed } = partnerData;
+
+        // Ensure the data being seeded matches the expected structure.
+        const partnerToSeed = {
+            ...dataToSeed,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            // Ensure these potentially complex objects are null if not present
+            businessProfile: dataToSeed.businessProfile || null,
+            aiMemory: dataToSeed.aiMemory || null,
+            industry: dataToSeed.industry || null,
         };
 
-        const partnerRef = db.collection('partners').doc(partnerData.id);
+        const partnerRef = db.collection('partners').doc(id);
         batch.set(partnerRef, partnerToSeed);
     });
 
