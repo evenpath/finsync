@@ -1,6 +1,6 @@
 // src/services/partner-service.ts
 import 'server-only';
-import { getDb } from '@/ai/genkit';
+import { db } from '@/ai/genkit';
 import { mockPartners, industries } from '@/lib/mockData';
 import type { Partner } from '@/lib/types';
 import * as admin from 'firebase-admin';
@@ -10,7 +10,6 @@ import * as admin from 'firebase-admin';
  * @returns {Promise<Partner[]>} A promise that resolves to an array of partners.
  */
 export async function getPartners(): Promise<Partner[]> {
-    const db = getDb();
     const partnersRef = db.collection('partners');
     const snapshot = await partnersRef.orderBy('name').get();
     
@@ -31,7 +30,6 @@ export async function getPartners(): Promise<Partner[]> {
  * This should only be run once when the collection is empty.
  */
 export async function seedInitialPartners(): Promise<void> {
-    const db = getDb();
     const partnersRef = db.collection('partners');
     const snapshot = await partnersRef.limit(1).get();
 
