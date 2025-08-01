@@ -12,15 +12,21 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
+  const isAuthorized = React.useMemo(() => {
+    if (!isAuthenticated) return false;
+    const role = user?.customClaims?.role;
+    return role === 'admin' || role === 'Super Admin';
+  }, [isAuthenticated, user]);
+
   React.useEffect(() => {
     if (typeof window !== 'undefined' && !loading) {
-      if (!isAuthenticated || user?.customClaims?.role !== 'admin') {
+      if (!isAuthorized) {
         router.push('/auth/login');
       }
     }
-  }, [user, loading, isAuthenticated, router]);
+  }, [loading, isAuthorized, router]);
 
-  if (loading || !isAuthenticated || user?.customClaims?.role !== 'admin') {
+  if (loading || !isAuthorized) {
     return (
        <div className="flex h-screen">
             <div className="w-64 p-4 border-r">
