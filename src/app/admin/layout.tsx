@@ -12,19 +12,24 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {
-    if (!isAuthenticated || loading) return false;
+    if (!user || loading) return false;
     const role = user?.customClaims?.role;
     return role === 'Admin' || role === 'Super Admin';
-  }, [isAuthenticated, user, loading]);
+  }, [user, loading]);
 
   React.useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading) {
+      if (!isAuthenticated) {
         router.push('/auth/login');
+      } else if (!isAuthorized) {
+        // Optional: redirect to an "unauthorized" page or the main page
+        router.push('/'); 
+      }
     }
-  }, [loading, isAuthenticated, router]);
+  }, [loading, isAuthenticated, isAuthorized, router]);
 
-  if (loading || !isAuthorized) {
-    // Show a loading skeleton while checking auth and authorization
+  if (loading) {
+    // Only show skeleton while the auth state is actually loading
     return (
        <div className="flex h-screen">
             <div className="w-64 p-4 border-r">
@@ -39,6 +44,11 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
             </div>
         </div>
     );
+  }
+
+  if (!isAuthorized) {
+    // This can be a fallback or null while redirecting
+    return null;
   }
 
   return children;
