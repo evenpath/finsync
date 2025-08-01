@@ -1,4 +1,3 @@
-
 // src/app/auth/login/page.tsx
 "use client";
 
@@ -27,7 +26,7 @@ export default function LoginPage() {
     // This is a mock login flow.
     setTimeout(() => {
       // For this mock, we only care about the admin login.
-      if (email.toLowerCase() === 'admin@flowfactory.com') {
+      if (email.toLowerCase() === 'core@suupe.com') {
         // Simulate a successful login by setting a value in sessionStorage.
         // The AuthProvider will read this value.
         sessionStorage.setItem('isMockAuthenticated', 'true');
@@ -62,7 +61,7 @@ export default function LoginPage() {
             <Input 
               id="email" 
               type="email" 
-              placeholder="admin@flowfactory.com" 
+              placeholder="core@suupe.com" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}

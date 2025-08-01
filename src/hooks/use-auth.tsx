@@ -1,4 +1,3 @@
-
 // src/hooks/use-auth.tsx
 "use client";
 
@@ -8,7 +7,7 @@ import type { FirebaseAuthUser, AuthState } from '@/lib/types';
 
 const mockAdminUser: FirebaseAuthUser = {
     uid: process.env.NEXT_PUBLIC_ADMIN_UID || 'admin-uid',
-    email: 'admin@flowfactory.com',
+    email: 'core@suupe.com',
     displayName: 'Admin User',
     photoURL: 'https://placehold.co/100x100.png',
     phoneNumber: null,
