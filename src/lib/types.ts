@@ -15,7 +15,7 @@ export interface FirebaseAuthUser {
   phoneNumber: string | null;
   emailVerified: boolean;
   customClaims?: {
-    role: 'admin' | 'partner' | 'worker';
+    role: 'Super Admin' | 'Admin' | 'partner' | 'worker';
     partnerId?: string;
     permissions?: string[];
   };
@@ -1399,7 +1399,6 @@ export interface FirestoreCollections {
 export interface SecurityContext {
   userId: string;
   userRole: 'admin' | 'partner' | 'worker';
-  partnerId?: string;
   permissions: string[];
   customClaims: any;
 }

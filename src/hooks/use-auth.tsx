@@ -8,12 +8,12 @@ import type { FirebaseAuthUser, AuthState } from '@/lib/types';
 const mockAdminUser: FirebaseAuthUser = {
     uid: process.env.NEXT_PUBLIC_ADMIN_UID || 'admin-uid',
     email: 'core@suupe.com',
-    displayName: 'Admin User',
+    displayName: 'Super Admin',
     photoURL: 'https://placehold.co/100x100.png',
     phoneNumber: null,
     emailVerified: true,
     customClaims: {
-        role: 'admin',
+        role: 'Super Admin',
     },
     creationTime: new Date().toISOString(),
     lastSignInTime: new Date().toISOString(),

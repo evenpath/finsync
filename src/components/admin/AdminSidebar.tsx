@@ -1,4 +1,3 @@
-
 // src/components/admin/AdminSidebar.tsx
 "use client";
 
@@ -16,12 +15,13 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 const menuItems = [
   { id: "overview", label: "System Overview", icon: BarChart3, href: "/admin" },
   { id: "partners", label: "Partner Management", icon: Building, href: "/admin/partners" },
   { id: "workflows", label: "Workflow Templates", icon: Zap, href: "/admin/workflows" },
-  { id: "users", label: "User Management", icon: Users, href: "/admin/users" },
+  { id: "users", label: "User Management", icon: Users, href: "/admin/users", requiredRole: 'Super Admin' },
   { id: "analytics", label: "System Analytics", icon: TrendingUp, href: "/admin/analytics" },
   { id: "logs", label: "System Logs", icon: FileText, href: "/admin/logs" },
   { id: "settings", label: "Admin Settings", icon: Settings, href: "/admin/settings" },
@@ -30,15 +30,14 @@ const menuItems = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleLogout = () => {
     sessionStorage.removeItem('isMockAuthenticated');
     sessionStorage.removeItem('mockUserRole');
-    router.push('/auth/login');
-    router.refresh();
+    // Use window.location to force a full refresh, ensuring all states are cleared
+    window.location.href = '/auth/login';
   };
-
-  const isHomeActive = pathname === '/admin';
   
   return (
     <div className="w-64 bg-card border-r flex flex-col">
@@ -57,7 +56,14 @@ export default function AdminSidebar() {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
-            const isActive = item.id === 'overview' ? isHomeActive : pathname.startsWith(item.href);
+            if (item.requiredRole && user?.customClaims?.role !== item.requiredRole) {
+              return null;
+            }
+
+            const isActive = item.href === '/admin' 
+              ? pathname === item.href 
+              : pathname.startsWith(item.href);
+
             const Icon = item.icon;
             return (
               <li key={item.id}>
@@ -80,15 +86,15 @@ export default function AdminSidebar() {
       </nav>
 
       <div className="p-4 border-t">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
             SA
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              Super Admin
+              {user?.displayName || 'Super Admin'}
             </p>
-            <p className="text-xs text-muted-foreground">System Administrator</p>
+            <p className="text-xs text-muted-foreground">{user?.customClaims?.role}</p>
           </div>
            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
               <LogOut className="w-5 h-5" />
