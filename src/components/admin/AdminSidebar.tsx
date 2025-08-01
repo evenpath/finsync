@@ -34,6 +34,7 @@ export default function AdminSidebar() {
   const router = useRouter();
   const { user } = useAuth();
   const auth = getAuth();
+  const userRoles = user?.customClaims?.roles || [];
 
   const handleLogout = async () => {
     try {
@@ -62,7 +63,7 @@ export default function AdminSidebar() {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
-            if (item.requiredRole && user?.customClaims?.role !== item.requiredRole) {
+            if (item.requiredRole && !userRoles.includes(item.requiredRole)) {
               return null;
             }
 
@@ -99,7 +100,7 @@ export default function AdminSidebar() {
             <p className="text-sm font-medium text-foreground truncate">
               {user?.displayName || user?.email}
             </p>
-            <p className="text-xs text-muted-foreground">{user?.customClaims?.role}</p>
+            <p className="text-xs text-muted-foreground">{userRoles.join(', ')}</p>
           </div>
            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
               <LogOut className="w-5 h-5" />

@@ -13,8 +13,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
 
   const isAuthorized = React.useMemo(() => {
     if (!user || loading) return false;
-    const role = user?.customClaims?.role;
-    return role === 'Admin' || role === 'Super Admin';
+    const roles = user?.customClaims?.roles || [];
+    return roles.includes('Admin') || roles.includes('Super Admin');
   }, [user, loading]);
 
   React.useEffect(() => {
@@ -28,7 +28,7 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [loading, isAuthenticated, isAuthorized, router]);
 
-  if (loading) {
+  if (loading || !isAuthorized) {
     // Only show skeleton while the auth state is actually loading
     return (
        <div className="flex h-screen">
@@ -44,11 +44,6 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
             </div>
         </div>
     );
-  }
-
-  if (!isAuthorized) {
-    // This can be a fallback or null while redirecting
-    return null;
   }
 
   return children;

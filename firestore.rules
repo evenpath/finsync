@@ -1,26 +1,22 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow admins to read and write all partner documents
+    // Allow admins to read and write to the partners collection
     match /partners/{partnerId} {
-      allow read, write: if request.auth != null && (request.auth.token.role == 'Admin' || request.auth.token.role == 'Super Admin');
+      allow read, write: if request.auth != null && ('Admin' in request.auth.token.roles || 'Super Admin' in request.auth.token.roles);
     }
-    
-    // Allow admins to list the partners collection
-    match /partners {
-        allow list: if request.auth != null && (request.auth.token.role == 'Admin' || request.auth.token.role == 'Super Admin');
+    match /partners/{document=**} {
+       allow read, write: if request.auth != null && ('Admin' in request.auth.token.roles || 'Super Admin' in request.auth.token.roles);
     }
 
-    // Allow Super Admins to read and write all admin user documents
+    // Allow Super Admins to manage admin users
     match /adminUsers/{userId} {
-      allow read, write: if request.auth != null && request.auth.token.role == 'Super Admin';
+      allow read, write: if request.auth != null && 'Super Admin' in request.auth.token.roles;
     }
-    
-    // Allow Super Admins to list the adminUsers collection
-    match /adminUsers {
-        allow list: if request.auth != null && request.auth.token.role == 'Super Admin';
+     match /adminUsers/{document=**} {
+       allow read, write: if request.auth != null && 'Super Admin' in request.auth.token.roles;
     }
   }
 }

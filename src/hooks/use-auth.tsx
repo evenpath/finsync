@@ -31,15 +31,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const mockUser = mockAdminUsers.find(u => u.email === firebaseUser.email);
                     
                     const customClaimsFromToken = (idTokenResult.claims || {}) as { 
-                        role?: 'Super Admin' | 'Admin' | 'partner' | 'employee';
+                        roles?: ('Super Admin' | 'Admin' | 'partner' | 'employee')[];
                         partnerId?: string;
-                        permissions?: string[];
                     };
 
                     // Combine mock claims with token claims, giving precedence to mock claims for development.
                     const finalClaims = {
-                      role: mockUser?.role || customClaimsFromToken.role || 'employee',
-                      permissions: mockUser?.permissions || customClaimsFromToken.permissions || [],
+                      roles: mockUser ? [mockUser.role] : customClaimsFromToken.roles || ['employee'],
                       partnerId: customClaimsFromToken.partnerId,
                     };
                     
