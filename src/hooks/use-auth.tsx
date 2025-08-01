@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, collection, query, where } from 'firebase/firestore';
+import { doc, getDocs, collection, query, where } from 'firebase/firestore';
 import type { FirebaseAuthUser, AuthState, AdminUser } from '@/lib/types';
 import { app, db } from '@/lib/firebase';
 
@@ -27,12 +27,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 try {
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    let customClaims: { role?: 'Admin' | 'Super Admin', partnerId?: string | null } = {};
+                    let customClaims: { role?: 'Admin' | 'Super Admin' | 'partner' | 'employee', partnerId?: string | null } = {};
 
                     // Query the adminUsers collection to find the user by email
                     const adminUsersRef = collection(db, 'adminUsers');
                     const q = query(adminUsersRef, where("email", "==", firebaseUser.email));
-                    const querySnapshot = await getDoc(q as any); // Use getDocs for queries
+                    const querySnapshot = await getDocs(q);
                     
                     if (!querySnapshot.empty) {
                         const adminUserData = querySnapshot.docs[0].data() as AdminUser;
