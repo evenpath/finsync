@@ -27,7 +27,6 @@ if (!admin.apps.length) {
   }
 }
 
-
 export const ai = genkit({
   plugins: [googleAI()],
 });

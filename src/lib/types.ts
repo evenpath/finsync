@@ -31,15 +31,15 @@ export interface AuthState {
 }
 
 export interface AdminUser {
-    id: string;
-    name: string;
-    email: string;
-    role: 'Super Admin' | 'Admin';
-    status: 'active' | 'invited' | 'suspended';
-    avatar: string;
-    lastActive: string;
-    joinedDate: string;
-    permissions: string[];
+  id: string;
+  name: string;
+  email: string;
+  role: 'Super Admin' | 'Admin';
+  status: 'active' | 'invited' | 'suspended';
+  avatar: string;
+  lastActive: string;
+  joinedDate: string;
+  permissions: string[];
 }
 
 // ============================================================================
@@ -132,7 +132,6 @@ export interface Partner {
   updatedAt?: any; // Allow for serverTimestamp
   tasksCompleted?: number; // Added for mock data compatibility
 }
-
 
 export interface PartnerSettings {
   allowEmployeeCustomization: boolean;
@@ -243,11 +242,11 @@ export interface BusinessProfile {
 }
 
 export interface AIMemory {
-    businessUnderstanding: string;
-    keyInsights: string[];
-    successPatterns: string;
-    workflowPreferences: string;
-    concernsRisks: string;
+  businessUnderstanding: string;
+  keyInsights: string[];
+  successPatterns: string;
+  workflowPreferences: string;
+  concernsRisks: string;
 }
 
 export interface BusinessLocation {
@@ -605,82 +604,97 @@ export interface ExecutionContext {
 }
 
 // ============================================================================
-// 7. AI GENERATION VARIABLES
+// 7. AI & PROBLEM DESCRIPTION VARIABLES
 // ============================================================================
 
 export interface ProblemDescription {
   id: string;
   partnerId: string;
-  businessProfileId?: string;
-  rawDescription: string;
-  parsedAnalysis?: ProblemAnalysis;
-  generatedWorkflowId?: string;
-  generationStatus: 'pending' | 'analyzing' | 'generating' | 'completed' | 'failed';
-  userRating?: number;
-  isSuccessful?: boolean;
-  feedback?: string;
-  improvementSuggestions?: string[];
+  title: string;
+  description: string;
+  category?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'analyzing' | 'solution_ready' | 'implemented' | 'closed';
+  aiAnalysis?: AIAnalysis;
+  generatedWorkflows?: GeneratedWorkflow[];
+  selectedWorkflowId?: string;
+  feedback?: ProblemFeedback;
   createdBy: string;
   createdAt: Date;
-  processedAt?: Date;
+  updatedAt: Date;
 }
 
-export interface ProblemAnalysis {
+export interface AIAnalysis {
   category: string;
-  urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
+  complexity: 'simple' | 'medium' | 'complex';
   stakeholders: string[];
   triggerEvents: string[];
-  desiredOutcomes: string[];
-  estimatedComplexity: number;
-  suggestedIntegrations: string[];
+  successCriteria: string[];
+  estimatedTimeToSolve: string;
   confidenceScore: number;
-  similarProblems?: string[];
-  industryContext?: string;
-  businessImpact: BusinessImpact;
+  recommendedApproach: string;
+  potentialChallenges: string[];
+  requiredResources: string[];
 }
 
-export interface BusinessImpact {
-  timeSpent: string;
-  costEstimate: number;
-  frequencyPerMonth: number;
-  peopleInvolved: number;
-  riskLevel: 'low' | 'medium' | 'high';
-  automationPotential: number;
+export interface GeneratedWorkflow {
+  id: string;
+  problemDescriptionId: string;
+  title: string;
+  description: string;
+  steps: WorkflowStep[];
+  estimatedROI: number;
+  estimatedSetupTime: string;
+  confidenceScore: number;
+  requiredIntegrations: string[];
+  isSelected: boolean;
+  createdAt: Date;
+}
+
+export interface ProblemFeedback {
+  solutionRating: 1 | 2 | 3 | 4 | 5;
+  implementationSuccess: boolean;
+  comments: string;
+  improvements: string[];
+  wouldRecommend: boolean;
+  createdAt: Date;
 }
 
 export interface AIGenerationLog {
   id: string;
-  problemDescriptionId: string;
+  type: 'problem_analysis' | 'workflow_generation' | 'optimization_suggestion';
+  inputData: any;
+  outputData: any;
   model: string;
-  provider: string;
-  prompt: string;
-  response: string;
-  tokensUsed: number;
-  cost: number;
+  provider: 'openai' | 'anthropic' | 'google';
+  tokenUsage: TokenUsage;
   processingTime: number;
+  confidenceScore?: number;
   success: boolean;
   errorMessage?: string;
-  timestamp: Date;
+  createdAt: Date;
+}
+
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  cost?: number;
 }
 
 export interface AITrainingData {
   id: string;
-  problemDescription: string;
-  generatedWorkflow: any;
-  userFeedback: AIFeedback;
-  industryContext: string;
-  businessSize: string;
-  successMetrics: any;
+  type: 'problem_example' | 'workflow_template' | 'success_pattern' | 'failure_pattern';
+  industryId?: string;
+  category: string;
+  inputData: any;
+  expectedOutput: any;
+  actualOutput?: any;
+  performance?: number;
+  isValidated: boolean;
+  validatedBy?: string;
+  validatedAt?: Date;
   createdAt: Date;
-}
-
-export interface AIFeedback {
-  rating: 1 | 2 | 3 | 4 | 5;
-  usefulSteps: string[];
-  unnecessarySteps: string[];
-  missingSteps: string[];
-  comments: string;
-  wouldRecommend: boolean;
 }
 
 // ============================================================================
@@ -690,22 +704,21 @@ export interface AIFeedback {
 export interface APIIntegration {
   id: string;
   name: string;
-  displayName: string;
-  category: 'communication' | 'business_ops' | 'industry_specific' | 'storage' | 'analytics' | 'payment';
+  provider: string;
+  category: 'communication' | 'payment' | 'calendar' | 'crm' | 'storage' | 'analytics' | 'industry_specific';
   description: string;
-  logoUrl: string;
-  documentationUrl: string;
-  websiteUrl: string;
-  pricingModel: 'free' | 'freemium' | 'paid' | 'enterprise';
-  setupDifficulty: 'easy' | 'medium' | 'hard';
-  popularityScore: number;
-  isActive: boolean;
+  icon: string;
   supportedActions: APIAction[];
-  authenticationMethods: AuthMethod[];
-  requiredFields: APIField[];
-  optionalFields: APIField[];
-  webhookSupport: boolean;
-  rateLimits: RateLimit[];
+  authType: 'api_key' | 'oauth2' | 'basic_auth' | 'bearer_token';
+  baseUrl: string;
+  documentation: string;
+  isActive: boolean;
+  popularityScore: number;
+  reliabilityScore: number;
+  avgResponseTime: number;
+  cost: APICosting;
+  limitations: APILimitation[];
+  requiredCredentials: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -727,37 +740,35 @@ export interface APIParameter {
   required: boolean;
   description: string;
   defaultValue?: any;
-  validation?: ValidationRule;
+  validation?: ValidationRule[];
 }
 
 export interface APIExample {
-  name: string;
+  title: string;
   description: string;
   request: any;
   response: any;
 }
 
-export interface AuthMethod {
-  type: 'api_key' | 'oauth2' | 'basic_auth' | 'bearer_token' | 'custom';
-  fields: string[];
-  instructions: string;
-  testEndpoint?: string;
+export interface APICosting {
+  model: 'free' | 'freemium' | 'per_request' | 'subscription';
+  freeLimit?: number;
+  costPerRequest?: number;
+  subscriptionTiers?: SubscriptionTier[];
 }
 
-export interface APIField {
+export interface SubscriptionTier {
   name: string;
-  label: string;
-  type: 'text' | 'password' | 'url' | 'select' | 'textarea';
-  placeholder?: string;
-  helpText?: string;
-  options?: string[];
-  validation?: ValidationRule[];
+  monthlyPrice: number;
+  requestLimit: number;
+  features: string[];
 }
 
-export interface RateLimit {
-  type: 'requests_per_minute' | 'requests_per_hour' | 'requests_per_day';
-  limit: number;
-  tier?: string;
+export interface APILimitation {
+  type: 'rate_limit' | 'data_limit' | 'feature_restriction';
+  description: string;
+  value?: number;
+  unit?: string;
 }
 
 export interface PartnerAPIConfiguration {
@@ -798,15 +809,17 @@ export interface APIUsageStats {
 // ============================================================================
 // 9. TEAM MANAGEMENT VARIABLES
 // ============================================================================
+
 export interface Task {
-    id: number;
-    title: string;
-    workflow: string;
-    priority: 'high' | 'medium' | 'low';
-    status: 'assigned' | 'in_progress' | 'awaiting_approval' | 'completed';
-    dueDate?: string;
-    assignee?: string;
+  id: number;
+  title: string;
+  workflow: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'assigned' | 'in_progress' | 'awaiting_approval' | 'completed';
+  dueDate?: string;
+  assignee?: string;
 }
+
 export interface TeamMember {
   id: number;
   userId?: string;
@@ -940,41 +953,44 @@ export interface AnalyticsMetrics {
 
 export interface WorkflowStat {
   workflowId: string;
-  name: string;
+  workflowName: string;
   executions: number;
   successRate: number;
-  averageTime: number;
-  roi: number;
+  avgDuration: number;
+  roiGenerated: number;
 }
 
 export interface StepStat {
   stepId: string;
   stepName: string;
-  averageTime: number;
+  stepType: string;
   failureRate: number;
+  avgDuration: number;
   bottleneckScore: number;
 }
 
 export interface TeamMemberStat {
-  userId: string;
-  name: string;
+  memberId: string;
+  memberName: string;
   tasksCompleted: number;
-  averageTime: number;
+  avgCompletionTime: number;
   qualityScore: number;
+  productivityScore: number;
 }
 
 export interface DashboardWidget {
   id: string;
   partnerId: string;
-  userId: string;
-  type: 'chart' | 'metric' | 'table' | 'progress' | 'list';
+  type: 'chart' | 'metric' | 'table' | 'progress' | 'alert';
   title: string;
+  description?: string;
   position: WidgetPosition;
   size: WidgetSize;
-  configuration: WidgetConfig;
+  configuration: WidgetConfiguration;
   dataSource: string;
   refreshInterval: number;
-  isVisible: boolean;
+  isActive: boolean;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -983,112 +999,114 @@ export interface WidgetPosition {
   x: number;
   y: number;
   row: number;
-  column: number;
+  col: number;
 }
 
 export interface WidgetSize {
   width: number;
   height: number;
-  minWidth: number;
-  minHeight: number;
+  minWidth?: number;
+  minHeight?: number;
 }
 
-export interface WidgetConfig {
+export interface WidgetConfiguration {
   chartType?: 'line' | 'bar' | 'pie' | 'doughnut' | 'area';
   metrics?: string[];
-  timeframe?: string;
   filters?: any[];
+  timeRange?: string;
+  groupBy?: string;
+  sortBy?: string;
   colors?: string[];
   showLegend?: boolean;
-  showGridlines?: boolean;
+  showGrid?: boolean;
 }
 
 // ============================================================================
-// 11. NOTIFICATION & COMMUNICATION VARIABLES
+// 11. COMMUNICATION & NOTIFICATION VARIABLES
 // ============================================================================
 
 export interface Notification {
   id: string;
-  recipientId: string;
-  recipientType: 'user' | 'partner' | 'team';
-  type: 'workflow_completed' | 'workflow_failed' | 'task_assigned' | 'team_invitation' | 'system_update' | 'billing_alert';
+  partnerId: string;
+  userId?: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  category: 'workflow' | 'system' | 'team' | 'billing' | 'integration';
   title: string;
   message: string;
   data?: any;
   channels: NotificationChannel[];
+  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'read';
   priority: 'low' | 'normal' | 'high' | 'urgent';
-  status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+  actionUrl?: string;
+  actionText?: string;
+  isRead: boolean;
   readAt?: Date;
   expiresAt?: Date;
   createdAt: Date;
-  sentAt?: Date;
 }
 
 export interface NotificationChannel {
-  type: 'push' | 'email' | 'sms' | 'in_app';
-  address?: string;
+  type: 'email' | 'sms' | 'push' | 'in_app' | 'webhook';
+  address: string;
   status: 'pending' | 'sent' | 'delivered' | 'failed';
-  errorMessage?: string;
   deliveredAt?: Date;
-}
-
-export interface ChatMessage {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar?: string;
-  message: string;
-  messageType: 'text' | 'image' | 'file' | 'system' | 'workflow_update';
-  attachments?: MessageAttachment[];
-  replyTo?: string;
-  reactions?: MessageReaction[];
-  isEdited: boolean;
-  editedAt?: Date;
-  isDeleted: boolean;
-  deletedAt?: Date;
-  createdAt: Date;
-}
-
-export interface MessageAttachment {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  thumbnailUrl?: string;
-}
-
-export interface MessageReaction {
-  userId: string;
-  emoji: string;
-  createdAt: Date;
+  errorMessage?: string;
 }
 
 export interface Conversation {
   id: string;
-  type: 'direct' | 'group' | 'workflow' | 'support';
-  name?: string;
+  partnerId: string;
+  type: 'general' | 'workflow_specific' | 'support' | 'direct_message';
+  title: string;
   description?: string;
   participants: ConversationParticipant[];
   workflowId?: string;
-  partnerId?: string;
-  lastMessage?: ChatMessage;
-  lastMessageAt?: Date;
   isActive: boolean;
+  lastMessageAt?: Date;
+  messageCount: number;
   createdBy: string;
   createdAt: Date;
 }
 
 export interface ConversationParticipant {
   userId: string;
-  role: 'member' | 'admin' | 'observer';
+  user?: UserProfile;
+  role: 'admin' | 'member' | 'observer';
   joinedAt: Date;
   lastReadAt?: Date;
-  notificationSettings: {
-    muted: boolean;
-    muteUntil?: Date;
-  };
+  isActive: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  sender?: UserProfile;
+  type: 'text' | 'file' | 'image' | 'system' | 'workflow_update';
+  content: string;
+  attachments?: MessageAttachment[];
+  metadata?: any;
+  isEdited: boolean;
+  editedAt?: Date;
+  reactions?: MessageReaction[];
+  replyToId?: string;
+  mentions?: string[];
+  createdAt: Date;
+}
+
+export interface MessageAttachment {
+  id: string;
+  type: 'file' | 'image' | 'document';
+  name: string;
+  url: string;
+  size: number;
+  mimeType: string;
+}
+
+export interface MessageReaction {
+  emoji: string;
+  users: string[];
+  count: number;
 }
 
 // ============================================================================
@@ -1097,94 +1115,87 @@ export interface ConversationParticipant {
 
 export interface SystemConfig {
   id: string;
-  category: 'ai' | 'integrations' | 'security' | 'billing' | 'features';
+  category: 'general' | 'ai' | 'integrations' | 'billing' | 'security';
   key: string;
   value: any;
-  dataType: 'string' | 'number' | 'boolean' | 'object' | 'array';
   description: string;
-  isEditable: boolean;
-  requiresRestart: boolean;
-  lastModifiedBy?: string;
-  lastModifiedAt?: Date;
+  isSecret: boolean;
+  environment: 'development' | 'staging' | 'production';
+  lastModifiedBy: string;
+  lastModifiedAt: Date;
+  createdAt: Date;
 }
 
 export interface FeatureFlag {
   id: string;
   name: string;
+  key: string;
   description: string;
   isEnabled: boolean;
-  rolloutPercentage: number;
-  targetUsers?: string[];
-  targetPartners?: string[];
   conditions?: FeatureFlagCondition[];
+  rolloutPercentage: number;
+  targetAudience?: 'all' | 'partners' | 'admins' | 'specific_users';
+  targetUserIds?: string[];
+  targetPartnerIds?: string[];
+  environment: 'development' | 'staging' | 'production';
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface FeatureFlagCondition {
-  type: 'user_role' | 'partner_plan' | 'industry' | 'custom';
-  operator: 'equals' | 'not_equals' | 'in' | 'not_in';
+  attribute: string;
+  operator: 'equals' | 'not_equals' | 'in' | 'not_in' | 'greater_than' | 'less_than';
   value: any;
 }
 
 export interface AuditLog {
   id: string;
-  userId: string;
   action: string;
   resource: string;
   resourceId: string;
-  details: any;
-  ipAddress: string;
-  userAgent: string;
-  timestamp: Date;
   partnerId?: string;
+  userId: string;
+  user?: UserProfile;
+  details: any;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: Date;
+  severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
 // ============================================================================
-// 13. FILE & STORAGE VARIABLES
+// 13. FILE MANAGEMENT VARIABLES
 // ============================================================================
 
 export interface FileUpload {
   id: string;
-  name: string;
+  partnerId: string;
+  userId: string;
+  fileName: string;
   originalName: string;
-  type: string;
+  mimeType: string;
   size: number;
   url: string;
-  downloadUrl: string;
   thumbnailUrl?: string;
-  ownerId: string;
-  ownerType: 'user' | 'partner' | 'workflow';
-  partnerId?: string;
+  category: 'workflow_attachment' | 'profile_image' | 'document' | 'temporary';
   workflowId?: string;
   executionId?: string;
   isPublic: boolean;
-  tags: string[];
-  metadata: FileMetadata;
-  virusScanResult?: 'clean' | 'infected' | 'pending';
-  createdAt: Date;
   expiresAt?: Date;
-}
-
-export interface FileMetadata {
-  width?: number;
-  height?: number;
-  duration?: number;
-  pages?: number;
-  language?: string;
-  extractedText?: string;
-  checksum: string;
+  downloadCount: number;
+  lastAccessedAt?: Date;
+  createdAt: Date;
 }
 
 export interface StorageQuota {
   partnerId: string;
-  totalLimit: number; // bytes
-  usedSpace: number; // bytes
+  totalLimit: number;
+  usedSpace: number;
   fileCount: number;
   lastCalculatedAt: Date;
-  alertThreshold: number; // percentage
-  alertSent: boolean;
+  warningThreshold: number;
+  isOverLimit: boolean;
 }
 
 // ============================================================================
@@ -1195,44 +1206,42 @@ export interface Invoice {
   id: string;
   partnerId: string;
   invoiceNumber: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
   amount: number;
-  tax: number;
-  total: number;
   currency: string;
+  taxAmount?: number;
+  discountAmount?: number;
+  subtotal: number;
   lineItems: InvoiceLineItem[];
-  billingPeriod: BillingPeriod;
+  billingPeriodStart: Date;
+  billingPeriodEnd: Date;
   issueDate: Date;
   dueDate: Date;
   paidAt?: Date;
-  paymentMethod?: string;
   stripeInvoiceId?: string;
-  downloadUrl?: string;
+  paymentIntentId?: string;
+  createdAt: Date;
 }
 
 export interface InvoiceLineItem {
   description: string;
   quantity: number;
   unitPrice: number;
-  total: number;
-  type: 'subscription' | 'usage' | 'setup' | 'addon';
-}
-
-export interface BillingPeriod {
-  start: Date;
-  end: Date;
-  type: 'monthly' | 'quarterly' | 'yearly';
+  amount: number;
+  type: 'subscription' | 'usage' | 'one_time' | 'discount';
 }
 
 export interface UsageRecord {
   id: string;
   partnerId: string;
-  metric: string;
-  value: number;
+  type: 'workflow_execution' | 'api_call' | 'storage' | 'ai_generation';
+  quantity: number;
   unit: string;
-  timestamp: Date;
+  unitPrice?: number;
+  totalCost?: number;
   billingPeriod: string;
-  details?: any;
+  metadata?: any;
+  recordedAt: Date;
 }
 
 export interface PricingPlan {
@@ -1438,9 +1447,3 @@ export interface ResourceAccess {
   allowed: boolean;
   conditions?: any[];
 }
-
-// ============================================================================
-// 19. Genkit Flow Types
-// ============================================================================
-export const GetPartnersOutputSchema = z.array(z.any());
-export type GetPartnersOutput = z.infer<typeof GetPartnersOutputSchema>;

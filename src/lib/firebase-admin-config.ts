@@ -1,4 +1,3 @@
-
 // This file is used to store the service account key for Firebase Admin SDK.
 // It should be handled securely and not exposed to the client side.
 

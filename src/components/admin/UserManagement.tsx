@@ -22,69 +22,28 @@ import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { mockAdminUsers } from "@/lib/mockData";
-import { getDb } from "@/ai/genkit";
-import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
-  const db = getDb();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAdmins = useCallback(async () => {
-    if (!db) {
-        toast({
-            variant: "destructive",
-            title: "Database not connected",
-            description: "Cannot fetch admin users. Please check server configuration.",
-        });
-        setIsLoading(false);
-        return;
-    }
-    if (currentUser?.customClaims?.role !== 'Super Admin') {
-        setIsLoading(false);
-        return;
-    };
-    setIsLoading(true);
-    try {
-      const adminUsersCollection = collection(db, 'adminUsers');
-      let adminSnapshot = await getDocs(adminUsersCollection);
-
-      if (adminSnapshot.empty) {
-        console.log("Admin users collection is empty, seeding with mock data...");
-        for (const user of mockAdminUsers) {
-           const q = query(collection(db, "adminUsers"), where("email", "==", user.email));
-           const existing = await getDocs(q);
-           if(existing.empty) {
-              await addDoc(collection(db, "adminUsers"), user);
-           }
-        }
-        adminSnapshot = await getDocs(adminUsersCollection);
-      }
-      
-      const usersList = adminSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
-      setUsers(usersList);
-      
-    } catch (error) {
-      console.error("Error fetching admin users: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error fetching admin users",
-        description: "You may not have sufficient permissions. Check Firestore rules.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser, toast, db]);
-  
+  // This is a placeholder for fetching/seeding data.
+  // In a real application, this data would be fetched via a server action.
   useEffect(() => {
-    fetchAdmins();
-  }, [fetchAdmins]);
+    setIsLoading(true);
+    // Using mock data directly to avoid server-side calls in a client component.
+    setUsers(mockAdminUsers);
+    // Set a default selected user, excluding the current user.
+    const defaultUser = mockAdminUsers.find(u => u.email !== currentUser?.email);
+    setSelectedUser(defaultUser || null); 
+    setIsLoading(false);
+  }, [currentUser?.email]);
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
@@ -98,30 +57,40 @@ export default function UserManagement() {
   }, [manageableUsers, selectedUser, currentUser]);
 
 
-  const handleInviteUser = async (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
-    // This function should eventually be a server action to securely handle user creation.
-    // For now, we'll just update the local state to fix the build error.
+  const handleInviteUser = (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
+    // This is a simulation of inviting a user. In a real app, this would be a server action.
     console.log("Simulating invite for:", newUserData);
     setIsLoading(true);
 
-    const newUser: AdminUser = {
-      id: `new-${Math.random()}`,
-      ...newUserData,
-      status: 'invited',
-      lastActive: 'Never',
-      joinedDate: new Date().toISOString().split('T')[0],
-      avatar: `https://placehold.co/40x40.png?text=${newUserData.name.charAt(0)}`,
-      permissions: newUserData.role === 'Super Admin' ? ['all'] : ['read', 'write']
-    };
+    try {
+        const newUser: AdminUser = {
+            id: `new-${Math.random().toString(36).substr(2, 9)}`,
+            ...newUserData,
+            status: 'invited',
+            lastActive: 'Never',
+            joinedDate: new Date().toISOString().split('T')[0],
+            avatar: `https://placehold.co/40x40.png?text=${newUserData.name.charAt(0)}`,
+            permissions: newUserData.role === 'Super Admin' ? ['all'] : ['read', 'write']
+        };
 
-    setUsers(prev => [...prev, newUser]);
-    setIsInviteModalOpen(false);
-    
-    toast({
-      title: "Success (Simulated)",
-      description: `Invitation would be sent to ${newUserData.email}.`,
-    });
-    setIsLoading(false);
+        setUsers(prev => [...prev, newUser]);
+        setIsInviteModalOpen(false);
+        
+        toast({
+            title: "Success (Simulated)",
+            description: `An invitation would be sent to ${newUserData.email}.`,
+        });
+
+    } catch (error) {
+        console.error("Error inviting admin user:", error);
+        toast({
+            variant: "destructive",
+            title: "Error inviting admin",
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
