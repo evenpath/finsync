@@ -1,6 +1,7 @@
 // ============================================================================
 // FIREBASE BACKEND VARIABLES
 // ============================================================================
+import { z } from 'zod';
 
 // ============================================================================
 // 1. FIREBASE AUTHENTICATION VARIABLES
@@ -14,7 +15,7 @@ export interface FirebaseAuthUser {
   phoneNumber: string | null;
   emailVerified: boolean;
   customClaims?: {
-    role: 'Super Admin' | 'Admin' | 'partner' | 'employee';
+    role?: 'Super Admin' | 'Admin' | 'partner' | 'employee';
     partnerId?: string;
   };
   creationTime: string;
@@ -1437,3 +1438,9 @@ export interface ResourceAccess {
   allowed: boolean;
   conditions?: any[];
 }
+
+// ============================================================================
+// 19. Genkit Flow Types
+// ============================================================================
+export const GetPartnersOutputSchema = z.array(z.any());
+export type GetPartnersOutput = z.infer<typeof GetPartnersOutputSchema>;

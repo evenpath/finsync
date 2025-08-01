@@ -9,16 +9,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, collection, getDocs } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { Partner } from '@/lib/types';
+import { Partner, GetPartnersOutputSchema } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!getApps().length) {
   initializeApp();
 }
 const db = getFirestore();
-
-export const GetPartnersOutputSchema = z.array(z.any());
-export type GetPartnersOutput = z.infer<typeof GetPartnersOutputSchema>;
 
 async function fetchPartnersFromFirestore(): Promise<Partner[]> {
   const partnersCollection = collection(db, 'partners');
@@ -49,7 +46,7 @@ async function fetchPartnersFromFirestore(): Promise<Partner[]> {
   return partnersList;
 }
 
-export const getPartnersFlow = ai.defineFlow(
+const getPartnersFlow = ai.defineFlow(
   {
     name: 'getPartnersFlow',
     inputSchema: z.void(),
