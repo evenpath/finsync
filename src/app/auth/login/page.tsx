@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,35 +18,44 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    console.log("Attempting to log in with:", email);
 
-    // This is a mock login flow.
-    setTimeout(() => {
-      // For this mock, we only care about the admin login.
-      if (email.toLowerCase() === 'core@suupe.com') {
-        // Simulate a successful login by setting a value in sessionStorage.
-        // The AuthProvider will read this value.
+    // This is a mock login flow that will be replaced with real Firebase Auth.
+    // We check for a specific email to simulate admin login.
+    if (email.toLowerCase() === 'core@suupe.com') {
+      console.log("Simulating admin login...");
+      try {
+        // In a real scenario, you would use signInWithEmailAndPassword from Firebase.
+        // For now, we simulate success and set a session flag.
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         sessionStorage.setItem('isMockAuthenticated', 'true');
-        sessionStorage.setItem('mockUserRole', 'admin');
+        sessionStorage.setItem('mockUserRole', 'admin'); // this will be used by useAuth
         
         toast({ title: "Login Successful", description: "Redirecting to admin dashboard..." });
-        // Use window.location.href to force a full page reload and ensure auth state is picked up
+        
+        // Force a full page reload to ensure the AuthProvider picks up the new state
         window.location.href = '/admin';
-      } else {
-        sessionStorage.removeItem('isMockAuthenticated');
-        sessionStorage.removeItem('mockUserRole');
+
+      } catch (error) {
+        console.error("Mock Login Error:", error);
         toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "An unexpected error occurred.",
+        });
+        setIsLoading(false);
+      }
+    } else {
+       toast({
           variant: "destructive",
           title: "Login Failed",
           description: "Invalid credentials. Please use the designated admin credentials.",
         });
         setIsLoading(false);
-      }
-    }, 1000);
+    }
   };
 
   return (

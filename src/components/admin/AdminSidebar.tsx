@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { getAuth, signOut } from "firebase/auth";
 
 const menuItems = [
   { id: "overview", label: "System Overview", icon: BarChart3, href: "/admin" },
@@ -31,10 +32,20 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
+  const auth = getAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear the mock session storage
     sessionStorage.removeItem('isMockAuthenticated');
     sessionStorage.removeItem('mockUserRole');
+    
+    // Also sign out from Firebase if the user was authenticated
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out from Firebase:", error);
+    }
+
     // Use window.location to force a full refresh, ensuring all states are cleared
     window.location.href = '/auth/login';
   };
