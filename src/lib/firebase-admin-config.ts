@@ -1,6 +1,10 @@
 // This file is used to store the service account key for Firebase Admin SDK.
 // It should be handled securely and not exposed to the client side.
 
+if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+    console.warn("WARNING: Firebase Admin credentials are not set in the .env file. Server-side Firebase services will not be available.");
+}
+
 export const serviceAccount = {
   "type": "service_account",
   "project_id": process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -12,5 +16,4 @@ export const serviceAccount = {
   "token_uri": "https://oauth2.googleapis.com/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": process.env.FIREBASE_CLIENT_X509_CERT_URL,
-  "databaseURL": `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`
 };

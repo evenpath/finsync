@@ -14,6 +14,7 @@ if (!admin.apps.length) {
       });
       console.log("Firebase Admin SDK initialized successfully.");
     } else {
+      // This warning will be logged on the server if credentials are not set
       console.warn("Firebase Admin SDK credentials are not fully set in firebase-admin-config.ts. Server-side functionality will be limited.");
     }
   } catch (error) {
@@ -27,7 +28,8 @@ export const ai = genkit({
 
 // Export a function to get the database instance
 export function getDb() {
-  if (admin.apps.length === 0) {
+  if (admin.apps.length === 0 || !admin.apps[0]) {
+    // This error will be caught by pages/services that try to use the DB
     throw new Error("Firebase Admin not initialized, Firestore is not available. Please check server logs and your service account configuration.");
   }
   return admin.firestore();
