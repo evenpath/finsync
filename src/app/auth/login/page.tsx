@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+
+const auth = getAuth(app);
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,39 +25,34 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // This is a mock login flow that will be replaced with real Firebase Auth.
-    // We check for a specific email to simulate admin login.
-    if (email.toLowerCase() === 'core@suupe.com') {
-      console.log("Simulating admin login...");
-      try {
-        // In a real scenario, you would use signInWithEmailAndPassword from Firebase.
-        // For now, we simulate success and set a session flag.
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        sessionStorage.setItem('isMockAuthenticated', 'true');
-        sessionStorage.setItem('mockUserRole', 'admin'); // this will be used by useAuth
-        
-        toast({ title: "Login Successful", description: "Redirecting to admin dashboard..." });
-        
-        // Force a full page reload to ensure the AuthProvider picks up the new state
-        window.location.href = '/admin';
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Get the user's ID token to access custom claims
+      const idTokenResult = await user.getIdTokenResult();
+      const userRole = idTokenResult.claims.role;
 
-      } catch (error) {
-        console.error("Mock Login Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "An unexpected error occurred.",
-        });
-        setIsLoading(false);
+      toast({ title: "Login Successful", description: "Redirecting..." });
+      
+      // Redirect based on role
+      if (userRole === 'Super Admin' || userRole === 'Admin') {
+        router.push('/admin');
+      } else if (userRole === 'partner' || userRole === 'employee') {
+        // Assuming partner admins and employees go to the partner dashboard first
+        router.push('/partner');
+      } else {
+        router.push('/'); // Default redirect
       }
-    } else {
-       toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid credentials. Please use the designated admin credentials.",
-        });
-        setIsLoading(false);
+
+    } catch (error: any) {
+      console.error("Firebase Login Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials or user not found.",
+      });
+      setIsLoading(false);
     }
   };
 
@@ -71,7 +69,7 @@ export default function LoginPage() {
             <Input 
               id="email" 
               type="email" 
-              placeholder="core@suupe.com" 
+              placeholder="m@example.com" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -87,7 +85,6 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              placeholder="Enter any password"
             />
           </div>
         </CardContent>

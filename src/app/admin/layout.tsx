@@ -20,11 +20,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, user, loading]);
 
   React.useEffect(() => {
-    // We need to check for window to ensure this runs only on the client
-    if (typeof window !== 'undefined' && !loading) {
-      if (!isAuthorized) {
-        router.push('/auth/login');
-      }
+    if (!loading && !isAuthorized) {
+      router.push('/auth/login');
     }
   }, [loading, isAuthorized, router]);
 
