@@ -29,23 +29,16 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Get the user's ID token to access custom claims
       const idTokenResult = await user.getIdTokenResult();
       const userRole = idTokenResult.claims.role;
 
-      toast({ title: "Login Successful", description: "Redirecting..." });
-      
-      // Redirect based on role
       if (userRole === 'Super Admin' || userRole === 'Admin') {
+        toast({ title: "Login Successful", description: "Redirecting to admin panel..." });
         router.push('/admin');
-      } else if (userRole === 'partner') {
-        // Assuming partner admins and employees go to the partner dashboard first
-        router.push('/partner');
-      } else if (userRole === 'employee') {
-        router.push('/employee');
-      }
-      else {
-        router.push('/'); // Default redirect
+      } else {
+        // If a non-admin tries to log in here, treat it as an error.
+        await auth.signOut();
+        throw new Error("Access denied. This login is for administrators only.");
       }
 
     } catch (error: any) {
@@ -63,8 +56,8 @@ export default function LoginPage() {
     <Card className="w-full max-w-sm">
       <form onSubmit={handleLogin}>
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Login to Flow Factory</CardTitle>
-          <CardDescription>Enter your email below to login to your account.</CardDescription>
+          <CardTitle className="font-headline text-2xl">Admin Login</CardTitle>
+          <CardDescription>Enter your email below to login to the admin panel.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
@@ -95,10 +88,6 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
-          <div className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="underline">Sign up</Link>
-          </div>
         </CardFooter>
       </form>
     </Card>

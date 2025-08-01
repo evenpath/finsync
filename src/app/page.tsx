@@ -16,7 +16,7 @@ export default function Home() {
       </header>
 
       <main className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
-        <Link href="/admin">
+        <Link href="/auth/login">
           <Card className="h-full hover:border-primary hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="font-headline text-2xl">Admin Panel</CardTitle>
@@ -33,7 +33,7 @@ export default function Home() {
           </Card>
         </Link>
         
-        <Link href="/partner">
+        <Link href="/partner/login">
           <Card className="h-full hover:border-primary hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="font-headline text-2xl">Partner App</CardTitle>
@@ -50,7 +50,7 @@ export default function Home() {
           </Card>
         </Link>
         
-        <Link href="/employee">
+        <Link href="/partner/login">
           <Card className="h-full hover:border-primary hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="font-headline text-2xl">Employee Dashboard</CardTitle>
