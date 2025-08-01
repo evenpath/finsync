@@ -46,15 +46,32 @@ export async function seedInitialPartners(): Promise<void> {
     mockPartners.forEach(partnerData => {
         const industryInfo = industries.find(i => i.slug === partnerData.industry?.slug) || null;
         
-        const fullPartnerData: Omit<Partner, 'id'> & { createdAt: admin.firestore.FieldValue } = {
-            ...partnerData,
+        // Create a new object that conforms to the Partner type for seeding
+        const partnerToSeed: Omit<Partner, 'id' | 'businessProfile' | 'aiMemory'> & { businessProfile: null, aiMemory: null, createdAt: admin.firestore.FieldValue, updatedAt: admin.firestore.FieldValue } = {
+            name: partnerData.name,
+            businessName: partnerData.businessName,
+            contactPerson: partnerData.contactPerson,
+            email: partnerData.email,
+            phone: partnerData.phone,
+            status: partnerData.status,
+            plan: partnerData.plan,
+            joinedDate: partnerData.joinedDate,
             industry: industryInfo,
+            businessSize: partnerData.businessSize,
+            employeeCount: partnerData.employeeCount,
+            monthlyRevenue: partnerData.monthlyRevenue,
+            location: partnerData.location,
+            aiProfileCompleteness: partnerData.aiProfileCompleteness,
+            stats: partnerData.stats,
+            // Explicitly set to null as per the type for initial seeding
+            businessProfile: null, 
+            aiMemory: null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
         const partnerRef = db.collection('partners').doc(partnerData.id);
-        batch.set(partnerRef, fullPartnerData);
+        batch.set(partnerRef, partnerToSeed);
     });
 
     await batch.commit();
