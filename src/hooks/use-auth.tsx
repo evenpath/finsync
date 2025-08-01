@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
 import type { FirebaseAuthUser, AuthState, AdminUser } from '@/lib/types';
 import { app, db } from '@/lib/firebase';
 
@@ -22,32 +22,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
             if (firebaseUser) {
                 try {
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    // In a real app, custom claims are set on the backend.
-                    // For this app, we will fetch the user's role from the 'adminUsers' collection in Firestore.
-                    const userDocRef = doc(db, 'adminUsers', firebaseUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
-                    
-                    let customClaims = { role: 'employee', partnerId: null };
-                    
-                    if (userDocSnap.exists()) {
-                        const adminUserData = userDocSnap.data() as AdminUser;
-                        customClaims.role = adminUserData.role;
-                    } else {
-                         // Fallback for mock users not in the DB, like 'core@suupe.com'
-                         if (firebaseUser.email === 'core@suupe.com') {
-                            customClaims.role = 'Super Admin';
-                         }
-                    }
+                    let customClaims: { role?: 'Admin' | 'Super Admin', partnerId?: string | null } = {};
 
-                    const finalClaims = {
-                      ...idTokenResult.claims,
-                      ...customClaims
-                    };
+                    // Query the adminUsers collection to find the user by email
+                    const adminUsersRef = collection(db, 'adminUsers');
+                    const q = query(adminUsersRef, where("email", "==", firebaseUser.email));
+                    const querySnapshot = await getDoc(q as any); // Use getDocs for queries
+                    
+                    if (!querySnapshot.empty) {
+                        const adminUserData = querySnapshot.docs[0].data() as AdminUser;
+                        customClaims.role = adminUserData.role;
+                    } else if (firebaseUser.email === 'core@suupe.com') {
+                        // Hardcoded fallback for the primary super admin
+                        customClaims.role = 'Super Admin';
+                    } else {
+                        // Handle partner users or employees if necessary in the future
+                    }
 
                     const authUser: FirebaseAuthUser = {
                         uid: firebaseUser.uid,
@@ -56,22 +51,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         photoURL: firebaseUser.photoURL,
                         phoneNumber: firebaseUser.phoneNumber,
                         emailVerified: firebaseUser.emailVerified,
-                        customClaims: finalClaims,
+                        customClaims: {
+                            ...idTokenResult.claims,
+                            ...customClaims,
+                        },
                         creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
                         providerData: firebaseUser.providerData
                     };
                     
                     setUser(authUser);
-                } catch (e) {
+                } catch (e: any) {
                     console.error("Error processing user auth state:", e);
-                    setError("Failed to process user permissions.");
+                    setError(e.message || "Failed to process user permissions.");
                     setUser(null);
                 }
             } else {
                 setUser(null);
             }
-            // Only set loading to false after all async operations are complete.
             setLoading(false);
         });
 
