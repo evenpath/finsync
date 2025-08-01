@@ -57,12 +57,13 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
             // This is a server action and is safe to call from a client component.
             const result = await createTenant({ partnerName: newPartnerData.name });
 
-            if (result.success) {
+            if (result.success && result.tenantId) {
                 console.log("Tenant created successfully:", result.tenantId);
                 // Here, you would typically write the new partner to Firestore using the tenantId.
                 // For now, we'll just optimistically update the UI with mock data.
                  const newPartner: Partner = {
-                    id: result.tenantId || `partner-${Date.now()}`,
+                    id: result.tenantId, // Use tenantId as the document ID for consistency
+                    tenantId: result.tenantId,
                     name: newPartnerData.name,
                     businessName: newPartnerData.name,
                     contactPerson: newPartnerData.name,

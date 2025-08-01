@@ -1,3 +1,4 @@
+
 // src/services/partner-service.ts
 import 'server-only';
 import { db } from '@/lib/firebase-admin';
@@ -87,7 +88,7 @@ export async function seedInitialPartners(): Promise<void> {
             businessProfile: dataToSeed.businessProfile || null,
             aiMemory: dataToSeed.aiMemory || null,
             industry: dataToSeed.industry || null,
-            tenantId: `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}` // Add a mock tenantId
+            tenantId: `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}` // Add a mock tenantId
         };
 
         const partnerRef = db.collection('partners').doc(id);
