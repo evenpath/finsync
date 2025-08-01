@@ -36,21 +36,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         // Mocking authentication state using sessionStorage.
         // In a real app, this would be replaced with Firebase's onAuthStateChanged listener.
-        try {
-            const isAuthenticated = sessionStorage.getItem('isMockAuthenticated') === 'true';
-            const role = sessionStorage.getItem('mockUserRole');
+        const checkAuth = () => {
+            try {
+                const isAuthenticated = sessionStorage.getItem('isMockAuthenticated') === 'true';
+                const role = sessionStorage.getItem('mockUserRole');
 
-            if (isAuthenticated && role === 'admin') {
-                setUser(mockAdminUser);
-            } else {
+                if (isAuthenticated && role === 'admin') {
+                    setUser(mockAdminUser);
+                } else {
+                    setUser(null);
+                }
+            } catch (error) {
+                // sessionStorage is not available on the server, so we can ignore this error.
                 setUser(null);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            // sessionStorage is not available on the server, so we can ignore this error.
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
+        };
+        
+        checkAuth();
+        
+        // Listen for changes in sessionStorage
+        window.addEventListener('storage', checkAuth);
+        return () => {
+            window.removeEventListener('storage', checkAuth);
+        };
     }, []);
 
     const value: AuthState = {

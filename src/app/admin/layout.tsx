@@ -1,3 +1,4 @@
+
 // src/app/admin/layout.tsx
 "use client";
 
@@ -12,8 +13,10 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!loading && (!isAuthenticated || user?.customClaims?.role !== 'admin')) {
-      router.push('/auth/login');
+    if (typeof window !== 'undefined' && !loading) {
+      if (!isAuthenticated || user?.customClaims?.role !== 'admin') {
+        router.push('/auth/login');
+      }
     }
   }, [user, loading, isAuthenticated, router]);
 
