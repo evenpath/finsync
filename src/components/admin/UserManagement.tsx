@@ -1,3 +1,4 @@
+
 // src/components/admin/UserManagement.tsx
 "use client";
 
@@ -33,10 +34,12 @@ export default function UserManagement() {
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
+    // Ensure we don't show the current user in the list of users they can manage
     return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser, users]);
 
   React.useEffect(() => {
+    // If the selected user is the current user, deselect them
     if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
       setSelectedUser(null);
     }

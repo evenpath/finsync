@@ -1,3 +1,4 @@
+
 // src/components/admin/AdminSidebar.tsx
 "use client";
 
@@ -35,19 +36,13 @@ export default function AdminSidebar() {
   const auth = getAuth();
 
   const handleLogout = async () => {
-    // Clear the mock session storage
-    sessionStorage.removeItem('isMockAuthenticated');
-    sessionStorage.removeItem('mockUserRole');
-    
-    // Also sign out from Firebase if the user was authenticated
     try {
       await signOut(auth);
+      // Use window.location to force a full refresh, ensuring all states are cleared
+      window.location.href = '/auth/login';
     } catch (error) {
       console.error("Error signing out from Firebase:", error);
     }
-
-    // Use window.location to force a full refresh, ensuring all states are cleared
-    window.location.href = '/auth/login';
   };
   
   return (
@@ -99,11 +94,11 @@ export default function AdminSidebar() {
       <div className="p-4 border-t">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-            SA
+            {(user?.displayName || user?.email || 'A').charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              {user?.displayName || 'Super Admin'}
+              {user?.displayName || 'Admin User'}
             </p>
             <p className="text-xs text-muted-foreground">{user?.customClaims?.role}</p>
           </div>

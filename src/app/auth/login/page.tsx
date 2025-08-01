@@ -1,3 +1,4 @@
+
 // src/app/auth/login/page.tsx
 "use client";
 
@@ -29,7 +30,8 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      const idTokenResult = await user.getIdTokenResult();
+      // Force refresh of the token to get the latest custom claims.
+      const idTokenResult = await user.getIdTokenResult(true);
       const userRole = idTokenResult.claims.role;
 
       if (userRole === 'Super Admin' || userRole === 'Admin') {
