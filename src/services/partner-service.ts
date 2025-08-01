@@ -1,17 +1,21 @@
-
 // src/services/partner-service.ts
 import 'server-only';
-import { db } from '@/lib/firebase-admin'; // Use the centralized admin instance
+import { db } from '@/lib/firebase-admin';
 import { mockPartners, industries } from '@/lib/mockData';
 import type { Partner } from '@/lib/types';
 import * as admin from 'firebase-admin';
 
 /**
- * Fetches all partners from the Firestore collection.
+ * Fetches all partners. If a database connection is available, it fetches from Firestore.
+ * Otherwise, it returns mock data.
  * @returns {Promise<Partner[]>} A promise that resolves to an array of partners.
  */
 export async function getPartners(): Promise<Partner[]> {
-    // No need to call getDb() anymore, just use the imported db instance.
+    if (!db) {
+        console.log("Database not connected, returning mock partners.");
+        return Promise.resolve(mockPartners);
+    }
+    
     const partnersRef = db.collection('partners');
     const snapshot = await partnersRef.orderBy('name').get();
     
@@ -28,10 +32,15 @@ export async function getPartners(): Promise<Partner[]> {
 }
 
 /**
- * Seeds the Firestore database with initial mock partner data.
- * This should only be run once when the collection is empty.
+ * Seeds the Firestore database with initial mock partner data if the collection is empty
+ * and a database connection is available.
  */
 export async function seedInitialPartners(): Promise<void> {
+    if (!db) {
+        console.log("Database not connected, skipping partner seeding.");
+        return;
+    }
+
     const partnersRef = db.collection('partners');
     const snapshot = await partnersRef.limit(1).get();
 
@@ -46,7 +55,7 @@ export async function seedInitialPartners(): Promise<void> {
     mockPartners.forEach(partnerData => {
         const industryInfo = industries.find(i => i.slug === partnerData.industry?.slug) || null;
         
-        const partnerToSeed: Omit<Partner, 'id' | 'businessProfile' | 'aiMemory'> & { businessProfile: null, aiMemory: null, createdAt: admin.firestore.FieldValue, updatedAt: admin.firestore.FieldValue } = {
+        const partnerToSeed: Omit<Partner, 'id'| 'createdAt' | 'updatedAt'> & { businessProfile: null, aiMemory: null, createdAt: admin.firestore.FieldValue, updatedAt: admin.firestore.FieldValue } = {
             name: partnerData.name,
             businessName: partnerData.businessName,
             contactPerson: partnerData.contactPerson,
