@@ -1,9 +1,8 @@
-
 // src/components/admin/PartnerManagement.tsx
 "use client";
 
 import React, { useState } from 'react';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Users } from 'lucide-react';
 import { mockPartners } from '@/lib/mockData';
 import type { Partner } from '@/lib/types';
 import PartnerCard from './PartnerCard';
@@ -11,7 +10,7 @@ import PartnerDetailView from './PartnerDetailView';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import AddPartnerModal from './AddPartnerModal';
 
 const industries = [
   { value: 'all', label: 'All Industries' },
@@ -25,6 +24,14 @@ export default function PartnerManagement() {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(mockPartners[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterIndustry, setFilterIndustry] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+   const handleAddPartner = (partnerData: any) => {
+    console.log("Adding new partner:", partnerData);
+    // Here you would typically add logic to save the new partner to your database.
+    // For now, we'll just close the modal.
+    setIsModalOpen(false);
+  };
 
   const filteredPartners = mockPartners.filter(partner => {
     const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -35,19 +42,6 @@ export default function PartnerManagement() {
 
   return (
     <div className="h-full flex flex-col">
-      <header className="bg-card border-b p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Partner Management</h1>
-            <p className="text-muted-foreground mt-1">Build comprehensive business profiles for AI-powered workflows</p>
-          </div>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Partner
-          </Button>
-        </div>
-      </header>
-
       <div className="flex-1 flex overflow-hidden">
         {/* Partners List */}
         <div className="w-1/3 border-r bg-card flex flex-col">
@@ -109,6 +103,11 @@ export default function PartnerManagement() {
           )}
         </div>
       </div>
+      <AddPartnerModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddPartner={handleAddPartner}
+      />
     </div>
   );
 }
