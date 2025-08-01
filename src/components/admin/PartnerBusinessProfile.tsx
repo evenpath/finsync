@@ -9,6 +9,16 @@ interface PartnerBusinessProfileProps {
   partner: Partner;
 }
 
+const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
+    <div>
+        <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Icon className="w-4 h-4" />
+            {label}
+        </dt>
+        <dd className="mt-1 text-md font-semibold text-foreground">{value}</dd>
+    </div>
+);
+
 export default function PartnerBusinessProfile({ partner }: PartnerBusinessProfileProps) {
   const profile = partner.businessProfile;
 
@@ -21,35 +31,14 @@ export default function PartnerBusinessProfile({ partner }: PartnerBusinessProfi
           <CardTitle>Business Context & Profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="space-y-4">
-              <h4 className="font-medium text-foreground">Basic Information</h4>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-3"><Building className="w-4 h-4" /><span>{partner.businessName}</span></div>
-                <div className="flex items-center gap-3"><Users className="w-4 h-4" /><span>{partner.employeeCount} employees ({partner.businessSize})</span></div>
-                <div className="flex items-center gap-3"><MapPin className="w-4 h-4" /><span>{partner.location.city}, {partner.location.state}</span></div>
-                <div className="flex items-center gap-3"><DollarSign className="w-4 h-4" /><span>{partner.monthlyRevenue}/month</span></div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-medium text-foreground">Contact Information</h4>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-3"><Users className="w-4 h-4" /><span>{partner.contactPerson}</span></div>
-                <div className="flex items-center gap-3"><Mail className="w-4 h-4" /><span>{partner.email}</span></div>
-                <div className="flex items-center gap-3"><Phone className="w-4 h-4" /><span>{partner.phone}</span></div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-medium text-foreground">Performance</h4>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Success Rate</span><span className="font-medium text-green-600">{partner.stats.successRate}%</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Avg ROI</span><span className="font-medium text-blue-600">{partner.stats.avgROI}%</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Time Saved</span><span className="font-medium text-purple-600">{partner.stats.timeSaved}</span></div>
-              </div>
-            </div>
-          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+            <InfoItem icon={Building} label="Business Name" value={partner.businessName} />
+            <InfoItem icon={Users} label="Employees" value={`${partner.employeeCount} (${partner.businessSize})`} />
+            <InfoItem icon={MapPin} label="Location" value={`${partner.location.city}, ${partner.location.state}`} />
+            <InfoItem icon={DollarSign} label="Monthly Revenue" value={`$${partner.monthlyRevenue}`} />
+            <InfoItem icon={Users} label="Contact Person" value={partner.contactPerson} />
+            <InfoItem icon={Mail} label="Contact Email" value={partner.email} />
+          </dl>
         </CardContent>
       </Card>
       

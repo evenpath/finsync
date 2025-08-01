@@ -1,3 +1,4 @@
+
 // src/components/admin/PartnerDetailView.tsx
 "use client";
 
@@ -83,31 +84,33 @@ export default function PartnerDetailView({ partner }: PartnerDetailViewProps) {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-6 mt-6 border-b">
-          {[
-            { id: 'overview', label: 'Overview', icon: Building },
-            { id: 'profile', label: 'Business Profile', icon: FileText },
-            { id: 'ai-memory', label: 'AI Memory', icon: Brain },
-            { id: 'workflows', label: 'Workflows', icon: Zap }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setView(tab.id)}
-              className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors ${
-                view === tab.id 
-                  ? 'border-primary text-primary' 
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+        <div className="mt-6 border-b">
+            <nav className="flex gap-4 -mb-px">
+            {[
+                { id: 'overview', label: 'Overview', icon: Building },
+                { id: 'profile', label: 'Business Profile', icon: FileText },
+                { id: 'ai-memory', label: 'AI Memory', icon: Brain },
+                { id: 'workflows', label: 'Workflows', icon: Zap }
+            ].map(tab => (
+                <button
+                key={tab.id}
+                onClick={() => setView(tab.id)}
+                className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
+                    view === tab.id 
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+                >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+                </button>
+            ))}
+            </nav>
         </div>
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 bg-secondary/30">
         {renderContent()}
       </div>
     </div>
