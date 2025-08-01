@@ -245,17 +245,8 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here we would call a backend flow to:
-    // 1. Create a new Tenant in Firebase Auth -> get tenantId
-    // 2. Create a new Partner document in Firestore with the tenantId
-    // 3. Invite the admin user to that tenant
-    onAddPartner({ ...partnerData, outlets, tenantId: `tenant_${Date.now()}` }); // Mock tenantId
-    
-    // Reset state on close
-    setStep(1);
-    setPartnerData({ name: '', email: '', plan: 'Starter', industryId: '' });
-    setOutlets([]);
-    onClose();
+    onAddPartner({ ...partnerData, outlets }); 
+    handleClose();
   };
   
   const handleClose = () => {
