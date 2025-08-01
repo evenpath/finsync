@@ -21,12 +21,16 @@ import {
 } from "lucide-react";
 import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
+import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
+    // This will be replaced by a fetch from your database
     return mockAdminUsers.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser]);
 
@@ -42,19 +46,45 @@ export default function UserManagement() {
   }, [manageableUsers, selectedUser, currentUser]);
 
 
-  const handleInviteUser = (newUserData: Omit<AdminUser, 'id' | 'status' | 'lastActive' | 'joinedDate' | 'avatar' | 'permissions'>) => {
-    const newUser: AdminUser = {
-      ...newUserData,
-      id: (users.length + 1).toString(),
-      status: 'invited',
-      lastActive: 'Never',
-      joinedDate: new Date().toISOString().split('T')[0],
-      avatar: `https://placehold.co/40x40.png?text=${newUserData.name.charAt(0)}`,
-      permissions: newUserData.role === 'Super Admin' ? ['all'] : ['read', 'write']
-    };
-    console.log("Inviting new admin user:", newUser);
-    setUsers(prev => [...prev, newUser]);
-    setIsInviteModalOpen(false);
+  const handleInviteUser = async (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
+    // In a real app, you would first create the user in Firebase Auth, get their UID,
+    // and then call the manageAdminUser flow.
+    // For this simulation, we'll use a mock UID and assume the user exists.
+    const mockUid = `mock-uid-${Math.random().toString(36).substring(7)}`;
+    console.log(`Simulating invitation for ${newUserData.email} with role ${newUserData.role} and mock UID ${mockUid}`);
+
+    try {
+      const result = await manageAdminUser({ uid: mockUid, role: newUserData.role });
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+
+        // Add the new user to the local state to update the UI
+        const newUser: AdminUser = {
+          ...newUserData,
+          id: mockUid,
+          status: 'invited',
+          lastActive: 'Never',
+          joinedDate: new Date().toISOString().split('T')[0],
+          avatar: `https://placehold.co/40x40.png?text=${newUserData.name.charAt(0)}`,
+          permissions: newUserData.role === 'Super Admin' ? ['all'] : ['read', 'write']
+        };
+        setUsers(prev => [...prev, newUser]);
+        setIsInviteModalOpen(false);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Failed to manage admin user:", error);
+      toast({
+        variant: "destructive",
+        title: "Operation Failed",
+        description: (error as Error).message || "An unexpected error occurred.",
+      });
+    }
   };
 
   return (
