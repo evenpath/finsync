@@ -21,7 +21,7 @@ interface PartnerManagementUIProps {
     error?: string | null;
 }
 
-export default function PartnerManagementUI({ initialPartners, error = null }: PartnerManagementUIProps) {
+export default function PartnerManagementUI({ initialPartners = [], error = null }: PartnerManagementUIProps) {
     const [partners, setPartners] = useState<Partner[]>(initialPartners);
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
