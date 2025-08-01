@@ -24,7 +24,6 @@ export async function migrateUserMappings(): Promise<{
   try {
     console.log("Starting user mapping migration...");
     
-    // Get all partners from Firestore
     const partnersSnapshot = await db.collection('partners').get();
     
     if (partnersSnapshot.empty) {
@@ -38,7 +37,6 @@ export async function migrateUserMappings(): Promise<{
     let migratedCount = 0;
     const errors: string[] = [];
 
-    // Process each partner
     for (const partnerDoc of partnersSnapshot.docs) {
       const partnerData = partnerDoc.data();
       const partnerId = partnerDoc.id;
@@ -55,7 +53,6 @@ export async function migrateUserMappings(): Promise<{
             migratedCount++;
             console.log(`Created user mapping for ${partnerData.email} -> ${partnerData.tenantId}`);
           } else {
-            // Check if mapping already exists, which isn't an error in this context
             if (mappingResult.message?.includes('already exists')) {
                console.log(`Mapping for ${partnerData.email} already exists.`);
             } else {

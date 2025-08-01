@@ -50,7 +50,6 @@ const createUserInTenantFlow = ai.defineFlow(
     }
 
     try {
-      // 1. Validate that the tenant exists
       const isValidTenant = await validateTenantId(input.tenantId);
       if (!isValidTenant) {
         return {
@@ -59,10 +58,8 @@ const createUserInTenantFlow = ai.defineFlow(
         };
       }
 
-      // 2. Get the tenant auth instance
       const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
 
-      // 3. Create the user within the tenant
       const userRecord = await tenantAuth.createUser({
         email: input.email,
         password: input.password,
@@ -72,7 +69,6 @@ const createUserInTenantFlow = ai.defineFlow(
 
       console.log(`Successfully created user ${input.email} in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
 
-      // 4. Create user mapping for future tenant lookups
       const mappingResult = await createUserMapping(input.email, input.tenantId, input.partnerId);
       if (!mappingResult.success) {
         console.warn(`Failed to create user mapping for ${input.email}:`, mappingResult.message);
@@ -87,7 +83,6 @@ const createUserInTenantFlow = ai.defineFlow(
     } catch (error: any) {
       console.error("Error creating user in tenant:", error);
       
-      // Handle specific Firebase errors
       let errorMessage = `Failed to create user: ${error.message}`;
       
       if (error.code === 'auth/email-already-exists') {

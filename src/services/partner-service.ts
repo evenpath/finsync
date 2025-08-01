@@ -35,8 +35,6 @@ export async function getPartners(tenantId?: string): Promise<Partner[]> {
     const snapshot = await query.get();
     
     if (snapshot.empty) {
-        // If it was a tenant-specific query and nothing was found, it's not an error.
-        // If it was a global query, it means the collection is empty.
         return [];
     }
 
@@ -84,11 +82,10 @@ export async function seedInitialPartners(): Promise<void> {
             ...dataToSeed,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            // Ensure these potentially complex objects are null if not present
             businessProfile: dataToSeed.businessProfile || null,
             aiMemory: dataToSeed.aiMemory || null,
             industry: dataToSeed.industry || null,
-            tenantId: partnerData.tenantId || `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}` // Add a mock tenantId
+            tenantId: partnerData.tenantId || `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`
         };
 
         const partnerRef = db.collection('partners').doc(id);
