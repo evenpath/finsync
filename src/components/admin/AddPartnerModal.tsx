@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Plus, Building, Trash2 } from 'lucide-react';
+import { UserPlus, Plus, Building, Trash2, AlertTriangle } from 'lucide-react';
 import { industries as mockIndustries } from '@/lib/mockData';
 import { useJsApiLoader, GoogleMap, Autocomplete, Marker } from '@react-google-maps/api';
 
@@ -98,8 +98,10 @@ const StepOne = ({ partnerData, setPartnerData, handleSelectChange, handleInputC
 const StepTwo = ({ outlets, setOutlets }: any) => {
   const [newOutlet, setNewOutlet] = useState({ name: '', address: '' });
   const [mapCenter, setMapCenter] = useState({ lat: 37.386051, lng: -122.083855 }); // Default to Mountain View, CA
-  const [markerPosition, setMarkerPosition] = useState(null);
+  const [markerPosition, setMarkerPosition] = useState<{lat: number, lng: number} | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  
+  const hasApiKey = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -125,6 +127,10 @@ const StepTwo = ({ outlets, setOutlets }: any) => {
       setOutlets([...outlets, { ...newOutlet, location: markerPosition }]);
       setNewOutlet({ name: '', address: '' });
       setMarkerPosition(null);
+      if(autocompleteRef.current) {
+        const input = document.getElementById('address') as HTMLInputElement;
+        if(input) input.value = '';
+      }
     }
   };
   
@@ -132,7 +138,19 @@ const StepTwo = ({ outlets, setOutlets }: any) => {
     setOutlets(outlets.filter((_:any, i:number) => i !== index));
   }
 
-  if (loadError) return <div>Error loading maps</div>;
+  if (!hasApiKey) {
+    return (
+      <div className="flex items-center gap-4 rounded-lg border border-destructive/50 bg-red-50 p-4 text-sm text-destructive">
+        <AlertTriangle className="h-6 w-6" />
+        <div className="flex-1">
+          <h4 className="font-semibold">Google Maps API Key is Missing</h4>
+          <p className="text-xs">Please add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to your .env file to enable location features.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) return <div>Error loading maps. Please check your API key and network connection.</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;
 
   return (
@@ -157,7 +175,7 @@ const StepTwo = ({ outlets, setOutlets }: any) => {
             <Input 
               id="address" 
               placeholder="Search for an address..." 
-              value={newOutlet.address}
+              defaultValue={newOutlet.address}
               onChange={(e) => setNewOutlet({ ...newOutlet, address: e.target.value })}
             />
           </Autocomplete>
