@@ -53,7 +53,7 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
         );
     }
     
-    const handleAddPartner = async (newPartnerData: { name: string }) => {
+    const handleAddPartner = async (newPartnerData: { name: string; email: string; }) => {
         console.log("Adding new partner:", newPartnerData.name);
         try {
             const result = await createTenant({ partnerName: newPartnerData.name });
@@ -66,7 +66,7 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
                     name: newPartnerData.name,
                     businessName: newPartnerData.name,
                     contactPerson: '',
-                    email: '',
+                    email: newPartnerData.email,
                     phone: '',
                     status: 'active',
                     plan: 'Starter',

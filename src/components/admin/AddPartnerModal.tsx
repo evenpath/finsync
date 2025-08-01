@@ -18,20 +18,22 @@ import { UserPlus } from 'lucide-react';
 interface AddPartnerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddPartner: (partnerData: { name: string }) => void;
+  onAddPartner: (partnerData: { name: string; email: string; }) => void;
 }
 
 export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPartnerModalProps) {
   const [partnerName, setPartnerName] = useState('');
+  const [email, setEmail] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddPartner({ name: partnerName });
+    onAddPartner({ name: partnerName, email });
     handleClose();
   };
   
   const handleClose = () => {
     setPartnerName('');
+    setEmail('');
     onClose();
   }
 
@@ -45,11 +47,11 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
               Create New Partner
             </DialogTitle>
             <DialogDescription>
-             Enter the business name for the new partner organization.
+             Enter the business name and contact email for the new partner.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
+          <div className="py-4 space-y-4">
              <div className="space-y-2">
                 <Label htmlFor="name">
                     Business Name
@@ -63,11 +65,25 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
                     required
                 />
             </div>
+             <div className="space-y-2">
+                <Label htmlFor="email">
+                    Email
+                </Label>
+                <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="contact@sunnyvale.com"
+                    required
+                />
+            </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" disabled={!partnerName.trim()}>
+            <Button type="submit" disabled={!partnerName.trim() || !email.trim()}>
                 Create Partner
             </Button>
           </DialogFooter>
