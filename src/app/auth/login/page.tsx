@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from 'react';
-import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,29 +25,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      const idTokenResult = await userCredential.user.getIdTokenResult(true);
-      const claims = idTokenResult.claims;
-      const userRole = claims.role;
-
-      if (userRole === 'Admin' || userRole === 'Super Admin') {
-        toast({ title: "Login Successful", description: "Redirecting to admin panel..." });
-        router.push('/admin');
-      } else {
-        await auth.signOut();
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: "This login is for administrators only.",
-        });
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "Login Successful", description: "Redirecting..." });
+      router.push('/admin');
     } catch (error: any) {
       console.error("Firebase Login Error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid email or password.",
+        description: "Invalid email or password. Please try again.",
       });
     } finally {
         setIsLoading(false);
