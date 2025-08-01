@@ -1,4 +1,3 @@
-
 // src/services/partner-service.ts
 import 'server-only';
 import { db } from '@/lib/firebase-admin';
@@ -9,20 +8,16 @@ import * as admin from 'firebase-admin';
 /**
  * Fetches partners. If a tenantId is provided, it fetches the specific partner for that tenant.
  * If no tenantId is provided (e.g., for an admin), it fetches all partners.
- * Falls back to mock data if the database is not connected.
  * @param {string} [tenantId] - The tenant ID to filter partners.
  * @returns {Promise<Partner[]>} A promise that resolves to an array of partners.
  */
 export async function getPartners(tenantId?: string): Promise<Partner[]> {
     if (!db) {
-        console.log("Database not connected, returning mock partners.");
-        // If a tenantId is provided, we would ideally filter mock data too.
-        // For now, returning all mock partners for any case.
-        return Promise.resolve(mockPartners);
+        throw new Error("Database not connected. Cannot fetch partners.");
     }
     
     const partnersRef = db.collection('partners');
-    let query: admin.firestore.Query<admin.firestore.DocumentData> = partnersRef;
+    let query: admin.firestore.Query = partnersRef;
 
     // If a tenantId is provided, filter the query to only get that partner.
     if (tenantId) {
@@ -59,7 +54,7 @@ export async function getPartners(tenantId?: string): Promise<Partner[]> {
  */
 export async function seedInitialPartners(): Promise<void> {
     if (!db) {
-        console.log("Database not connected, skipping partner seeding.");
+        console.warn("Database not connected, skipping partner seeding.");
         return;
     }
 
@@ -75,21 +70,16 @@ export async function seedInitialPartners(): Promise<void> {
     const batch = db.batch();
     
     mockPartners.forEach(partnerData => {
+        // Use the ID from mock data if available, otherwise let Firestore generate one
+        const docRef = partnerData.id ? partnersRef.doc(partnerData.id) : partnersRef.doc();
         const { id, ...dataToSeed } = partnerData;
 
-        // Ensure the data being seeded matches the expected structure.
         const partnerToSeed = {
             ...dataToSeed,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            businessProfile: dataToSeed.businessProfile || null,
-            aiMemory: dataToSeed.aiMemory || null,
-            industry: dataToSeed.industry || null,
-            tenantId: partnerData.tenantId || `tenant_${dataToSeed.name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`
         };
-
-        const partnerRef = db.collection('partners').doc(id);
-        batch.set(partnerRef, partnerToSeed);
+        batch.set(docRef, partnerToSeed);
     });
 
     await batch.commit();

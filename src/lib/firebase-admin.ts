@@ -8,6 +8,7 @@ let app: admin.app.App;
 let db: admin.firestore.Firestore;
 let adminAuth: admin.auth.Auth;
 
+// This pattern ensures that the SDK is initialized only once.
 if (admin.apps.length === 0) {
   try {
     const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64
@@ -27,27 +28,20 @@ if (admin.apps.length === 0) {
       console.warn(
         'Firebase Admin credentials not found. App will run in a limited mode. Please set FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 environment variable for full functionality.'
       );
-      // Fallback to mock/dummy initialization if needed, or just leave uninitialized
-      // For this case, we expect an error if used without real creds.
+      // Fallback to a "not initialized" state which can be checked in services.
     }
-  } catch (error) {
-    console.error("Error initializing Firebase Admin SDK:", error);
+  } catch (error: any) {
+    console.error("Error initializing Firebase Admin SDK:", error.message);
   }
 } else {
   app = admin.apps[0]!;
 }
 
-// @ts-ignore
-if (app) {
+// @ts-ignore - This allows db and adminAuth to be uninitialized if creds are missing.
+// Services that use them will check for their existence and handle the error gracefully.
+if (app!) {
   db = getFirestore(app);
   adminAuth = getAuth(app);
-} else {
-    // This will cause the flows to fail with a clear message if initialization failed.
-    // @ts-ignore
-    db = null;
-    // @ts-ignore
-    adminAuth = null;
 }
-
 
 export { db, adminAuth };

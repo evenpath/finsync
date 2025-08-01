@@ -14,7 +14,7 @@ import { createTenant } from '@/ai/flows/create-tenant-flow';
 import { useToast } from "@/hooks/use-toast";
 import { updatePartner } from '@/ai/flows/update-partner-flow';
 import { db } from '@/lib/firebase';
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -56,10 +56,13 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
     const handleAddPartner = async (newPartnerData: any) => {
         console.log("Adding new partner:", newPartnerData.name);
         try {
+            // 1. Create the tenant via the server-side flow
             const result = await createTenant({ partnerName: newPartnerData.name });
 
             if (result.success && result.tenantId) {
                 console.log("Tenant created successfully:", result.tenantId);
+                
+                // 2. Create the partner document in Firestore
                 const newPartner: Omit<Partner, 'id'> = {
                     tenantId: result.tenantId,
                     name: newPartnerData.name,
@@ -85,12 +88,16 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
                     },
                     businessProfile: null,
                     aiMemory: null,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
                 };
 
+                // This addDoc call uses the client-side SDK. This is acceptable for this action
+                // as it's fire-and-forget and the UI will update optimistically/on refresh.
+                // The crucial tenant creation step is handled by the secure server flow.
                 const docRef = await addDoc(collection(db, "partners"), newPartner);
 
+                // Add the new partner to the local state to update the UI
                 setPartners(prev => [...prev, {id: docRef.id, ...newPartner}]);
                 toast({ title: "Partner Added", description: `Partner ${newPartner.name} has been added.` });
 
@@ -109,8 +116,10 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
 
     const handleUpdatePartner = async (updatedPartner: Partner) => {
         try {
+            // Use the secure server-side flow to update the partner
             const result = await updatePartner(JSON.stringify(updatedPartner));
             if (result.success) {
+                // Update local state to reflect the changes immediately
                 setPartners(prev => prev.map(p => p.id === updatedPartner.id ? updatedPartner : p));
                 if (selectedPartner?.id === updatedPartner.id) {
                     setSelectedPartner(updatedPartner);
