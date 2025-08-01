@@ -1,0 +1,20 @@
+import WorkspaceHeader from "@/components/worker/WorkspaceHeader";
+import WorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
+
+export default function EmployeeLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+      <div className="flex h-screen bg-secondary/30">
+        <WorkspaceSwitcher />
+        <div className="flex flex-1 flex-col">
+          <WorkspaceHeader />
+          <main className="flex-1 overflow-auto p-6">
+            {children}
+          </main>
+        </div>
+      </div>
+  );
+}

@@ -41,7 +41,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-6">
-                Customize workflows, manage your team of workers, and track task progress in your workspace.
+                Customize workflows, manage your team of employees, and track task progress in your workspace.
               </p>
               <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground">
                 Go to Partner App <ArrowRight className="ml-2 h-4 w-4" />
@@ -50,10 +50,10 @@ export default function Home() {
           </Card>
         </Link>
         
-        <Link href="/worker">
+        <Link href="/employee">
           <Card className="h-full hover:border-primary hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-headline text-2xl">Worker Dashboard</CardTitle>
+              <CardTitle className="font-headline text-2xl">Employee Dashboard</CardTitle>
               <UserCheck className="h-8 w-8 text-primary" />
             </CardHeader>
             <CardContent>
@@ -61,7 +61,7 @@ export default function Home() {
                 Access your assigned tasks, execute workflows step-by-step, and collaborate with your team.
               </p>
               <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground">
-                Go to Worker Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                Go to Employee Dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>
           </Card>

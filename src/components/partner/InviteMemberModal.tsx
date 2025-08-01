@@ -97,7 +97,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: I
                   <SelectItem value="Senior Analyst">Senior Analyst</SelectItem>
                   <SelectItem value="Process Specialist">Process Specialist</SelectItem>
                   <SelectItem value="Junior Analyst">Junior Analyst</SelectItem>
-                  <SelectItem value="Worker">Worker</SelectItem>
+                  <SelectItem value="Employee">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>

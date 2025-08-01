@@ -1,5 +1,3 @@
-
-
 // src/lib/mockData.ts
 import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users, Zap, Shield, Building, UserPlus, BarChart3, Activity, AlertTriangle, Send, Copy, ExternalLink, PlayCircle, PauseCircle, RotateCcw, Cpu, Network, Layers, Clock } from "lucide-react";
 import type { Industry, Partner, WorkflowTemplate, AdminUser } from './types';

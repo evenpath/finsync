@@ -16,7 +16,7 @@ export interface FirebaseAuthUser {
   phoneNumber: string | null;
   emailVerified: boolean;
   customClaims?: {
-    role: 'Super Admin' | 'Admin' | 'partner' | 'worker';
+    role: 'Super Admin' | 'Admin' | 'partner' | 'employee';
     partnerId?: string;
     permissions?: string[];
   };
@@ -54,7 +54,7 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   phoneNumber: string | null;
-  role: 'admin' | 'partner' | 'worker';
+  role: 'admin' | 'partner' | 'employee';
   onboardingCompleted: boolean;
   workspaces?: UserWorkspaceLink[];
   preferences: UserPreferences;
@@ -68,7 +68,7 @@ export interface UserProfile {
 export interface UserWorkspaceLink {
   userId: string;
   partnerId: string;
-  role: 'partner_admin' | 'worker';
+  role: 'partner_admin' | 'employee';
   status: 'active' | 'invited' | 'suspended';
   permissions: string[];
   joinedAt: FirebaseTimestamp;
@@ -114,7 +114,7 @@ export interface Partner {
   industry?: Industry;
   businessSize: 'small' | 'medium' | 'large';
   adminIds: string[];
-  workerIds: string[];
+  employeeIds: string[];
   workflowIds: string[];
   settings: PartnerSettings;
   subscription: PartnerSubscription;
@@ -126,10 +126,10 @@ export interface Partner {
 }
 
 export interface PartnerSettings {
-  allowWorkerCustomization: boolean;
+  allowEmployeeCustomization: boolean;
   requireApprovalForTasks: boolean;
   chatEnabled: boolean;
-  maxWorkers: number;
+  maxEmployees: number;
   workflowExecutionLimits: {
     daily: number;
     monthly: number;
@@ -1399,7 +1399,7 @@ export interface FirestoreCollections {
 
 export interface SecurityContext {
   userId: string;
-  userRole: 'admin' | 'partner' | 'worker';
+  userRole: 'admin' | 'partner' | 'employee';
   permissions: string[];
   customClaims: any;
 }
