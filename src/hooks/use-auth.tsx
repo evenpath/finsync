@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import type { FirebaseAuthUser, AuthState } from '@/lib/types';
-import { app } from '@/lib/firebase';
-import { mockAdminUsers } from '@/lib/mockData';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import type { FirebaseAuthUser, AuthState, AdminUser } from '@/lib/types';
+import { app, db } from '@/lib/firebase';
 
 const auth = getAuth(app);
 
@@ -27,17 +27,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 try {
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    // This is a mock-up of how custom claims would work in a real app.
-                    // In a production environment, these claims would be set on the backend
-                    // (e.g., via a Cloud Function when a user is created or their role changes)
-                    // and would be automatically present in idTokenResult.claims.
-                    const mockUser = mockAdminUsers.find(u => u.email === firebaseUser.email);
+                    // In a real app, custom claims are set on the backend.
+                    // For this app, we will fetch the user's role from the 'adminUsers' collection in Firestore.
+                    const userDocRef = doc(db, 'adminUsers', firebaseUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
                     
+                    let customClaims = { role: 'employee', partnerId: null };
+                    
+                    if (userDocSnap.exists()) {
+                        const adminUserData = userDocSnap.data() as AdminUser;
+                        customClaims.role = adminUserData.role;
+                    } else {
+                         // Fallback for mock users not in the DB, like 'core@suupe.com'
+                         if (firebaseUser.email === 'core@suupe.com') {
+                            customClaims.role = 'Super Admin';
+                         }
+                    }
+
                     const finalClaims = {
-                      role: 'employee', // Default role
-                      partnerId: null, // Default
-                      ...idTokenResult.claims, // Real claims from token
-                      ...(mockUser && { role: mockUser.role }), // Override with mock role if found
+                      ...idTokenResult.claims,
+                      ...customClaims
                     };
 
                     const authUser: FirebaseAuthUser = {
@@ -62,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 setUser(null);
             }
+            // Only set loading to false after all async operations are complete.
             setLoading(false);
         });
 

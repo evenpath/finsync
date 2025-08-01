@@ -11,25 +11,32 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
+  // The user is authorized if they are authenticated and have the 'Admin' or 'Super Admin' role.
   const isAuthorized = React.useMemo(() => {
-    if (!user || loading) return false;
-    const role = user?.customClaims?.role;
+    if (loading || !isAuthenticated || !user?.customClaims) {
+      return false;
+    }
+    const role = user.customClaims.role;
     return role === 'Admin' || role === 'Super Admin';
-  }, [user, loading]);
+  }, [user, loading, isAuthenticated]);
+
 
   React.useEffect(() => {
+    // Wait until the loading is complete before checking auth state.
     if (!loading) {
       if (!isAuthenticated) {
+        // If not authenticated, redirect to login.
         router.push('/auth/login');
       } else if (!isAuthorized) {
-        // Optional: redirect to an "unauthorized" page or the main page
+        // If authenticated but not authorized, redirect to the home page.
         router.push('/'); 
       }
     }
   }, [loading, isAuthenticated, isAuthorized, router]);
 
+  // Display a skeleton loader while authentication is in progress OR if the user is not authorized yet.
+  // This prevents child components from attempting to fetch data before permissions are confirmed.
   if (loading || !isAuthorized) {
-    // Only show skeleton while the auth state is actually loading
     return (
        <div className="flex h-screen">
             <div className="w-64 p-4 border-r">
@@ -45,7 +52,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
         </div>
     );
   }
-
+  
+  // If authenticated and authorized, render the children.
   return children;
 }
 
