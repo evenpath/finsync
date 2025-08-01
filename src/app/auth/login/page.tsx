@@ -26,33 +26,20 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Step 1: Just sign the user in.
+      await signInWithEmailAndPassword(auth, email, password);
       
-      // Force refresh of the token to get the latest custom claims.
-      const idTokenResult = await user.getIdTokenResult(true);
-      const userRole = idTokenResult.claims.role;
-
-      if (userRole === 'Super Admin' || userRole === 'Admin') {
-        toast({ title: "Login Successful", description: "Redirecting to admin panel..." });
-        router.push('/admin');
-      } else {
-        // If a non-admin tries to log in here, sign them out and show a specific error.
-        await auth.signOut();
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: "This login page is for administrators only.",
-        });
-        setIsLoading(false);
-      }
+      // Step 2: Redirect to the admin panel.
+      // The AdminLayout will handle authorization.
+      toast({ title: "Login Successful", description: "Redirecting to admin panel..." });
+      router.push('/admin');
 
     } catch (error: any) {
       console.error("Firebase Login Error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid credentials or user not found.",
+        description: "Invalid email or password.",
       });
       setIsLoading(false);
     }
