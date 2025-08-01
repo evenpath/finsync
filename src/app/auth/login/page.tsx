@@ -27,7 +27,7 @@ export default function LoginPage() {
     // This is a mock login flow.
     setTimeout(() => {
       // For this mock, we only care about the admin login.
-      if (email.toLowerCase().includes('admin')) {
+      if (email.toLowerCase() === 'admin@flowfactory.com') {
         // Simulate a successful login by setting a value in sessionStorage.
         // The AuthProvider will read this value.
         sessionStorage.setItem('isMockAuthenticated', 'true');
@@ -42,7 +42,7 @@ export default function LoginPage() {
         toast({
           variant: "destructive",
           title: "Login Failed",
-          description: "For this demo, please use an email containing 'admin'.",
+          description: "Invalid credentials. Please use the designated admin credentials.",
         });
         setIsLoading(false);
       }
@@ -62,7 +62,7 @@ export default function LoginPage() {
             <Input 
               id="email" 
               type="email" 
-              placeholder="admin@example.com" 
+              placeholder="admin@flowfactory.com" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
