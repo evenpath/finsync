@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import AddPartnerModal from './AddPartnerModal';
 import { useToast } from '@/hooks/use-toast';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { getPartners } from '@/ai/flows/get-partners-flow';
 
 
 const industryOptions = [
@@ -34,14 +35,14 @@ export default function PartnerManagement() {
   const fetchPartners = useCallback(async () => {
     setIsLoading(true);
     try {
-      const partnersCollection = collection(db, 'partners');
-      let partnerSnapshot = await getDocs(partnersCollection);
+      const partnersList = await getPartners();
 
-      // If the collection is empty, seed it with mock data
-      if (partnerSnapshot.empty) {
-        console.log("Partners collection is empty, seeding with mock data...");
+      setPartners(partnersList);
+      if (partnersList.length > 0 && !selectedPartner) {
+        setSelectedPartner(partnersList[0]);
+      } else if (partnersList.length === 0) {
+         console.log("Partners collection is empty, seeding with mock data...");
         for (const partner of mockPartners) {
-          // Ensure we don't duplicate seeding if multiple clients load at once
           const q = query(collection(db, "partners"), where("name", "==", partner.name));
           const existing = await getDocs(q);
           if(existing.empty) {
@@ -49,21 +50,11 @@ export default function PartnerManagement() {
           }
         }
         // Fetch again after seeding
-        partnerSnapshot = await getDocs(partnersCollection);
-      }
-      
-      const partnersList = partnerSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return { 
-              id: doc.id,
-              ...data,
-              industry: data.industry || null // Ensure industry is at least null
-          } as Partner;
-      });
-
-      setPartners(partnersList);
-      if (partnersList.length > 0 && !selectedPartner) {
-        setSelectedPartner(partnersList[0]);
+        const seededPartners = await getPartners();
+        setPartners(seededPartners);
+        if (seededPartners.length > 0) {
+            setSelectedPartner(seededPartners[0]);
+        }
       }
 
     } catch (error) {
@@ -71,7 +62,7 @@ export default function PartnerManagement() {
       toast({
         variant: "destructive",
         title: "Error fetching partners",
-        description: "You may not have sufficient permissions to view this data. Check Firestore rules.",
+        description: (error as Error).message || "An unexpected error occurred.",
       });
     } finally {
       setIsLoading(false);
