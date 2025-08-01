@@ -1384,6 +1384,7 @@ export interface FirestoreCollections {
   partners: 'partners';
   industries: 'industries';
   businessProfiles: 'businessProfiles';
+  admins: 'admins';
   
   // Workflow Collections
   workflowTemplates: 'workflowTemplates';

@@ -12,6 +12,9 @@ import AddPartnerModal from "@/components/admin/AddPartnerModal";
 import { Card, CardContent } from '@/components/ui/card';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
 import { useToast } from "@/hooks/use-toast";
+import { updatePartner } from '@/ai/flows/update-partner-flow';
+import { db } from '@/lib/firebase';
+import { collection, addDoc } from "firebase/firestore";
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -50,19 +53,14 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
         );
     }
     
-    // In a real app, this would be wired up to a backend.
     const handleAddPartner = async (newPartnerData: any) => {
         console.log("Adding new partner:", newPartnerData.name);
         try {
-            // This is a server action and is safe to call from a client component.
             const result = await createTenant({ partnerName: newPartnerData.name });
 
             if (result.success && result.tenantId) {
                 console.log("Tenant created successfully:", result.tenantId);
-                // Here, you would typically write the new partner to Firestore using the tenantId.
-                // For now, we'll just optimistically update the UI with mock data.
-                 const newPartner: Partner = {
-                    id: result.tenantId, // Use tenantId as the document ID for consistency
+                const newPartner: Omit<Partner, 'id'> = {
                     tenantId: result.tenantId,
                     name: newPartnerData.name,
                     businessName: newPartnerData.name,
@@ -87,8 +85,13 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
                     },
                     businessProfile: null,
                     aiMemory: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 };
-                setPartners(prev => [...prev, newPartner]);
+
+                const docRef = await addDoc(collection(db, "partners"), newPartner);
+
+                setPartners(prev => [...prev, {id: docRef.id, ...newPartner}]);
                 toast({ title: "Partner Added", description: `Partner ${newPartner.name} has been added.` });
 
             } else {
@@ -104,17 +107,22 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
         setIsAddModalOpen(false);
     };
 
-    const handleUpdatePartner = (updatedPartner: Partner) => {
-        // Here you would call a server action to update the partner in Firestore
-        console.log("Updating partner (UI only):", updatedPartner);
-        
-        setPartners(prev => prev.map(p => p.id === updatedPartner.id ? updatedPartner : p));
-        
-        if (selectedPartner?.id === updatedPartner.id) {
-            setSelectedPartner(updatedPartner);
+    const handleUpdatePartner = async (updatedPartner: Partner) => {
+        try {
+            const result = await updatePartner(JSON.stringify(updatedPartner));
+            if (result.success) {
+                setPartners(prev => prev.map(p => p.id === updatedPartner.id ? updatedPartner : p));
+                if (selectedPartner?.id === updatedPartner.id) {
+                    setSelectedPartner(updatedPartner);
+                }
+                toast({ title: "Partner Updated", description: result.message });
+            } else {
+                toast({ variant: "destructive", title: "Update Failed", description: result.message });
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            toast({ variant: "destructive", title: "Update Error", description: errorMessage });
         }
-
-        toast({ title: "Partner Updated (Mock)", description: `${updatedPartner.name}'s details have been updated.` });
     }
 
     return (

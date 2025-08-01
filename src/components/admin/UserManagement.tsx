@@ -22,6 +22,9 @@ import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { mockAdminUsers } from "@/lib/mockData";
+import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 export default function UserManagement() {
@@ -33,17 +36,26 @@ export default function UserManagement() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // This is a placeholder for fetching/seeding data.
-  // In a real application, this data would be fetched via a server action.
   useEffect(() => {
     setIsLoading(true);
-    // Using mock data directly to avoid server-side calls in a client component.
-    setUsers(mockAdminUsers);
-    // Set a default selected user, excluding the current user.
-    const defaultUser = mockAdminUsers.find(u => u.email !== currentUser?.email);
-    setSelectedUser(defaultUser || null); 
-    setIsLoading(false);
-  }, [currentUser?.email]);
+    const unsub = onSnapshot(collection(db, "admins"), (snapshot) => {
+        const adminUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
+        setUsers(adminUsers);
+        
+        if (!selectedUser && adminUsers.length > 0) {
+            const defaultUser = adminUsers.find(u => u.email !== currentUser?.email);
+            setSelectedUser(defaultUser || null);
+        }
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching admins:", error);
+        toast({ variant: "destructive", title: "Error fetching admins", description: error.message });
+        setIsLoading(false);
+    });
+
+    return () => unsub();
+}, [currentUser?.email, selectedUser, toast]);
+
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
@@ -52,35 +64,29 @@ export default function UserManagement() {
 
   useEffect(() => {
     if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
-      setSelectedUser(null);
+      setSelectedUser(manageableUsers[0] || null);
     }
-  }, [manageableUsers, selectedUser, currentUser]);
+  }, [manageableUsers, selectedUser, currentUser?.email]);
 
 
-  const handleInviteUser = (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
-    // This is a simulation of inviting a user. In a real app, this would be a server action.
-    console.log("Simulating invite for:", newUserData);
+  const handleInviteUser = async (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
     setIsLoading(true);
-
     try {
-        const newUser: AdminUser = {
-            id: `new-${Math.random().toString(36).substr(2, 9)}`,
-            ...newUserData,
-            status: 'invited',
-            lastActive: 'Never',
-            joinedDate: new Date().toISOString().split('T')[0],
-            avatar: `https://placehold.co/40x40.png?text=${newUserData.name.charAt(0)}`,
-            permissions: newUserData.role === 'Super Admin' ? ['all'] : ['read', 'write']
-        };
-
-        setUsers(prev => [...prev, newUser]);
-        setIsInviteModalOpen(false);
+        const result = await manageAdminUser(newUserData);
         
-        toast({
-            title: "Success (Simulated)",
-            description: `An invitation would be sent to ${newUserData.email}.`,
-        });
-
+        if (result.success) {
+            toast({
+                title: "Success",
+                description: result.message,
+            });
+            setIsInviteModalOpen(false);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error inviting admin",
+                description: result.message,
+            });
+        }
     } catch (error) {
         console.error("Error inviting admin user:", error);
         toast({
@@ -177,7 +183,7 @@ export default function UserManagement() {
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">Permissions</label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedUser.permissions.length > 0 ? selectedUser.permissions.map(p => (
+                            {selectedUser.permissions && selectedUser.permissions.length > 0 ? selectedUser.permissions.map(p => (
                                 <Badge key={p} variant="purple" className="capitalize">{p}</Badge>
                             )) : <p className="text-sm text-muted-foreground">No permissions assigned</p>}
                         </div>
