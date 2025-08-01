@@ -7,8 +7,8 @@ export default function PartnerAnalyticsPage() {
   return (
     <>
       <PartnerHeader
-        title="Analytics"
-        subtitle="Performance insights for your workspace and team."
+        title="Workspace Analytics"
+        subtitle="Performance insights for your clients, workflows, and team."
         actions={
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4" />

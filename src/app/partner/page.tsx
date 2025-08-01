@@ -7,12 +7,12 @@ export default function PartnerHomePage() {
   return (
     <>
       <PartnerHeader
-        title="Dashboard"
-        subtitle="Overview of your workspace activities and performance."
+        title="Partner Dashboard"
+        subtitle="Your command center for managing clients and workflows."
         actions={
           <Button>
             <Plus className="w-4 h-4" />
-            Quick Action
+            New Workflow
           </Button>
         }
       />

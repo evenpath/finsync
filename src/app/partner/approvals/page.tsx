@@ -6,7 +6,7 @@ export default function PartnerApprovalsPage() {
     <>
       <PartnerHeader
         title="Pending Approvals"
-        subtitle="Review and approve tasks submitted by your team."
+        subtitle="Review and action tasks that require your approval."
       />
       <main className="flex-1 overflow-auto p-6">
         <PendingApprovals />

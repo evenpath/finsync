@@ -6,7 +6,7 @@ export default function PartnerWorkflowsPage() {
     <>
       <PartnerHeader
         title="My Workflows"
-        subtitle="Customize and manage your assigned workflows."
+        subtitle="Manage and customize workflows for your clients."
       />
       <main className="flex-1 overflow-auto p-6">
         <WorkflowManagement />

@@ -1,126 +1,121 @@
+// src/components/partner/PartnerDashboard.tsx
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/shared/Badge";
 import {
-  Target,
   CheckCircle,
-  Users,
-  Clock,
-  TrendingUp,
   Plus,
   ArrowRight,
-  Award,
-  Workflow as WorkflowIcon,
-  Eye,
+  Zap,
+  Cpu,
+  Settings,
+  FileText
 } from "lucide-react";
-import { mockWorkspaceStats, mockAssignedWorkflows, mockTeamMembers, mockPendingApprovals } from "@/lib/mockData";
-import Image from "next/image";
+import { mockAssignedWorkflows, mockPendingApprovals } from "@/lib/mockData";
 
 export default function PartnerDashboard() {
-  const statCards = [
-    {
-      label: "Total Tasks",
-      value: mockWorkspaceStats.totalTasks,
-      change: mockWorkspaceStats.monthlyTasks,
-      icon: Target,
-      color: "blue",
-    },
-    {
-      label: "Completed",
-      value: mockWorkspaceStats.completedTasks,
-      change: `${Math.round((mockWorkspaceStats.completedTasks / mockWorkspaceStats.totalTasks) * 100)}%`,
-      icon: CheckCircle,
-      color: "green",
-    },
-    {
-      label: "Team Members",
-      value: mockWorkspaceStats.activeWorkers,
-      change: "+2 this month",
-      icon: Users,
-      color: "purple",
-    },
-    {
-      label: "Avg Completion",
-      value: mockWorkspaceStats.avgCompletionTime,
-      change: "-0.3h",
-      icon: Clock,
-      color: "orange",
-    },
+  
+  const readyTemplates = [
+    { id: 1, title: 'Emergency Maintenance Response', category: 'Property Management', executions: 23, icon: '🔧' },
+    { id: 2, title: 'Rent Collection & Late Payments', category: 'Property Management', executions: 156, icon: '💰' },
+    { id: 3, title: 'Tenant Move-In Coordination', category: 'Property Management', recommended: true, icon: '🚚' },
+    { id: 4, title: 'Seasonal HVAC Maintenance', category: 'HVAC', recommended: true, icon: '❄️' },
   ];
 
-  const colorClasses: Record<string, string> = {
-      blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300",
-      green: "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
-      purple: "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
-      orange: "bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-300",
-  };
+  const aiWorkflows = [
+    { id: 1, title: 'VIP Tenant Service Requests', executions: 12, status: 'Live' },
+    { id: 2, title: 'Automated Rent Increase Notices', executions: 0, status: 'Testing' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorClasses[stat.color]}`}>
-                    <Icon className="w-4 h-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-green-600 flex items-center">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    {stat.change}
-                </p>
+      
+      {/* Ready Templates Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-headline flex items-center gap-2">
+                <FileText className="w-6 h-6 text-primary"/>
+                Ready Templates
+              </CardTitle>
+              <CardDescription>Deploy proven, industry-specific workflows in one click.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm">View All Templates</Button>
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {readyTemplates.map(template => (
+            <Card key={template.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="text-2xl mb-4">{template.icon}</div>
+                <h3 className="font-semibold text-foreground truncate">{template.title}</h3>
+                <p className="text-sm text-muted-foreground mb-3">{template.category}</p>
+                {template.recommended ? (
+                   <Button className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Deploy
+                  </Button>
+                ) : (
+                  <div className="text-xs text-muted-foreground">{template.executions} executions</div>
+                )}
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* AI-Generated Workflows */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-primary"/>
+              AI-Generated Workflows
+            </CardTitle>
+            <CardDescription>Describe a problem in natural language to generate a custom workflow.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+             {aiWorkflows.map(workflow => (
+              <div key={workflow.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary">
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{workflow.title}</p>
+                  <p className="text-sm text-muted-foreground">{workflow.executions} executions</p>
+                </div>
+                <Badge variant={workflow.status === 'Live' ? 'success' : 'warning'}>{workflow.status}</Badge>
+                <Button variant="ghost" size="icon" className="w-8 h-8"><Settings className="w-4 h-4"/></Button>
+              </div>
+            ))}
+            <Button variant="outline" className="w-full mt-2">
+              <Plus className="w-4 h-4 mr-2" />
+              Describe New Problem
+            </Button>
+          </CardContent>
+        </Card>
+        
+        {/* Active Workflows (previously pending approvals) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-headline">Active Workflows</CardTitle>
-            <Button variant="outline" size="sm"><Plus className="w-4 h-4 mr-2" />New</Button>
+            <div>
+              <CardTitle className="font-headline flex items-center gap-2">
+                <Zap className="w-6 h-6 text-primary"/>
+                Active Workflows
+              </CardTitle>
+              <CardDescription>Monitor your currently running workflow instances.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm">View All <ArrowRight className="w-4 h-4 ml-2" /></Button>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {mockAssignedWorkflows.filter(w => w.status === 'active').map(workflow => (
-              <div key={workflow.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-secondary">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center shrink-0">
-                  <WorkflowIcon className="w-6 h-6 text-blue-600" />
-                </div>
+          <CardContent className="space-y-3">
+            {mockAssignedWorkflows.filter(w => w.status === 'active').slice(0, 2).map(workflow => (
+              <div key={workflow.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary">
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{workflow.title}</p>
                   <p className="text-sm text-muted-foreground">{workflow.completedTasks} completed • {workflow.pendingTasks} pending</p>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Team Performance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mockTeamMembers.filter(member => member.status === 'active').map(member => (
-              <div key={member.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-secondary">
-                <Image src={member.avatar} alt={member.name} width={48} height={48} className="rounded-full" data-ai-hint="woman person" />
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">{member.name}</p>
-                  <p className="text-sm text-muted-foreground">{member.role}</p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center justify-end gap-2 mb-1">
-                    <Award className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm font-medium">{member.tasksCompleted}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Avg: {member.avgCompletionTime}</p>
+                <div className="flex items-center gap-2">
+                   <Button size="sm" variant="outline">View</Button>
                 </div>
               </div>
             ))}
@@ -128,25 +123,28 @@ export default function PartnerDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-headline">Pending Approvals</CardTitle>
-            <Button variant="outline" size="sm">View All <ArrowRight className="w-4 h-4 ml-2" /></Button>
+       {/* Pending Approvals */}
+       <Card>
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <CheckCircle className="w-6 h-6 text-yellow-600"/>
+            Pending Approvals
+          </CardTitle>
+          <CardDescription>Tasks that require your review before proceeding.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {mockPendingApprovals.slice(0, 2).map(approval => (
             <div key={approval.id} className="flex flex-wrap items-center gap-4 p-4 rounded-lg border border-yellow-200 bg-yellow-100/50 dark:bg-yellow-900/20">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full shrink-0"></div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-[200px]">
                 <p className="font-medium text-foreground">{approval.taskTitle}</p>
-                <p className="text-sm text-muted-foreground">{approval.workflow} • {approval.assignee}</p>
+                <p className="text-sm text-muted-foreground">{approval.workflow} • Submitted by {approval.assignee}</p>
               </div>
               <Badge variant={approval.priority === 'high' ? 'danger' : approval.priority === 'medium' ? 'warning' : 'info'}>
                 {approval.priority}
               </Badge>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="success"><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>
-                <Button size="sm" variant="outline"><Eye className="w-4 h-4 mr-1" />Review</Button>
+                <Button size="sm" variant="success">Approve</Button>
+                <Button size="sm" variant="outline">Review</Button>
               </div>
             </div>
           ))}

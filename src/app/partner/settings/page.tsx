@@ -7,7 +7,7 @@ export default function PartnerSettingsPage() {
     <>
       <PartnerHeader
         title="Workspace Settings"
-        subtitle="Manage your workspace preferences."
+        subtitle="Manage your workspace, integrations, and billing."
       />
       <main className="flex-1 overflow-auto p-6">
         <Card>
@@ -18,7 +18,7 @@ export default function PartnerSettingsPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">This is where you will configure settings specific to your workspace, such as member permissions, notification preferences, and integrations.</p>
+                <p className="text-muted-foreground">This is where you will configure settings specific to your workspace, such as API keys for integrations, notification preferences, and billing information.</p>
             </CardContent>
         </Card>
       </main>

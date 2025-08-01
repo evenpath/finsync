@@ -1,24 +1,25 @@
+// src/components/partner/PartnerSidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
+  LayoutDashboard,
   Users,
   Settings,
-  Target,
+  ListTodo,
   CheckCircle,
   TrendingUp,
   Briefcase,
-  Workflow as WorkflowIcon,
+  Zap,
 } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: BarChart3, href: "/partner" },
-  { id: "workflows", label: "My Workflows", icon: WorkflowIcon, href: "/partner/workflows" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/partner" },
+  { id: "workflows", label: "My Workflows", icon: Zap, href: "/partner/workflows" },
   { id: "team", label: "Team Management", icon: Users, href: "/partner/team" },
-  { id: "tasks", label: "Task Overview", icon: Target, href: "/partner/tasks" },
+  { id: "tasks", label: "Task Overview", icon: ListTodo, href: "/partner/tasks" },
   { id: "approvals", label: "Pending Approvals", icon: CheckCircle, href: "/partner/approvals" },
   { id: "analytics", label: "Analytics", icon: TrendingUp, href: "/partner/analytics" },
   { id: "settings", label: "Workspace Settings", icon: Settings, href: "/partner/settings" },
@@ -35,8 +36,8 @@ export default function PartnerSidebar() {
             <Briefcase className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold font-headline text-foreground">TechCorp</h1>
-            <p className="text-sm text-muted-foreground">Partner Admin</p>
+            <h1 className="text-xl font-bold font-headline text-foreground">Flow Factory</h1>
+            <p className="text-sm text-muted-foreground">Partner Workspace</p>
           </div>
         </div>
       </div>

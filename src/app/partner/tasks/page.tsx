@@ -5,10 +5,10 @@ export default function PartnerTasksPage() {
   return (
     <>
       <PartnerHeader
-        title="Task Board"
-        subtitle="Visualize and manage your team's workflow."
+        title="Task Overview"
+        subtitle="Visualize and manage your team's workflow and assignments."
       />
-      <main className="flex-1 overflow-x-auto">
+      <main className="flex-1 overflow-x-auto p-6">
         <TaskBoard />
       </main>
     </>

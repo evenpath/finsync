@@ -6,7 +6,7 @@ export default function PartnerTeamPage() {
     <>
       <PartnerHeader
         title="Team Management"
-        subtitle="Manage your team members and their permissions."
+        subtitle="Manage your team members, roles, and permissions."
       />
       <main className="flex-1 overflow-auto p-6">
         <TeamManagement />
