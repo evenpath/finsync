@@ -52,7 +52,15 @@ export default function PartnerManagement() {
         partnerSnapshot = await getDocs(partnersCollection);
       }
       
-      const partnersList = partnerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
+      const partnersList = partnerSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return { 
+              id: doc.id,
+              ...data,
+              industry: data.industry || null // Ensure industry is at least null
+          } as Partner;
+      });
+
       setPartners(partnersList);
       if (partnersList.length > 0 && !selectedPartner) {
         setSelectedPartner(partnersList[0]);
@@ -96,7 +104,7 @@ export default function PartnerManagement() {
         status: 'active',
         plan: partnerData.plan,
         joinedDate: new Date().toISOString(),
-        industry: selectedIndustry,
+        industry: selectedIndustry || null,
         businessSize: 'small',
         employeeCount: 0,
         monthlyRevenue: '0',

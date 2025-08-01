@@ -129,6 +129,7 @@ export interface Partner {
   aiMemory: AIMemory | null;
   createdAt?: any; // Allow for serverTimestamp
   updatedAt?: any; // Allow for serverTimestamp
+  tasksCompleted?: number; // Added for mock data compatibility
 }
 
 
