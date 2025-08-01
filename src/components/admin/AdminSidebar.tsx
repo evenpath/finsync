@@ -14,6 +14,7 @@ import {
   Shield,
   LogOut,
   Users,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +27,7 @@ const menuItems = [
   { id: "users", label: "Admin Internal", icon: Users, href: "/admin/users", requiredRole: 'Super Admin' },
   { id: "analytics", label: "System Analytics", icon: TrendingUp, href: "/admin/analytics" },
   { id: "logs", label: "System Logs", icon: FileText, href: "/admin/logs" },
+  { id: "system", label: "System Management", icon: Database, href: "/admin/system" },
   { id: "settings", label: "Admin Settings", icon: Settings, href: "/admin/settings" },
 ];
 
