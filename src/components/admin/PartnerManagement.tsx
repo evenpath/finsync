@@ -5,11 +5,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { getData } from '@/ai/flows/get-data-flow';
+import { getData } from '@/app/admin/actions';
 
 interface DataItem {
     id: string;
-    Name?: string;
     [key: string]: any;
 }
 
@@ -22,12 +21,17 @@ export default function PartnerManagement() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const fetchedData = await getData();
-        setData(fetchedData);
+        const result = await getData();
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        setData(result.data || []);
 
         toast({
           title: "Success",
-          description: `Successfully fetched ${fetchedData.length} documents from the 'data' collection.`,
+          description: `Successfully fetched ${result.data?.length || 0} documents from the 'data' collection.`,
         });
 
       } catch (error: any) {
@@ -51,7 +55,7 @@ export default function PartnerManagement() {
           <CardTitle>Firestore `data` Collection Test</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">This component now fetches all documents from the 'data' collection using the Admin SDK to verify the database connection.</p>
+          <p className="mb-4">This component fetches all documents from the 'data' collection using a Next.js Server Action with the Admin SDK to verify the database connection.</p>
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-8 w-1/2" />
@@ -72,7 +76,7 @@ export default function PartnerManagement() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">No documents found in the 'data' collection. This could be due to an empty collection.</p>
+            <p className="text-muted-foreground">No documents found in the 'data' collection or the collection is empty.</p>
           )}
         </CardContent>
       </Card>
