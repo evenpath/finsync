@@ -115,7 +115,7 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
   const addressInputRef = useRef<HTMLInputElement | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 
@@ -214,7 +214,11 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
 const StepTwo = ({ outlets, setOutlets }: any) => {
     const hasApiKey = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-    return hasApiKey ? <MapComponent outlets={outlets} setOutlets={setOutlets} /> : <NoApiKeyMessage />;
+    if (!hasApiKey) {
+        return <NoApiKeyMessage />;
+    }
+
+    return <MapComponent outlets={outlets} setOutlets={setOutlets} />;
 };
 
 
@@ -305,4 +309,3 @@ export default function AddPartnerModal({ isOpen, onClose, onAddPartner }: AddPa
     </Dialog>
   );
 }
-
