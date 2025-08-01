@@ -104,6 +104,7 @@ export interface DashboardPreferences {
 
 export interface Partner {
   id: string;
+  tenantId?: string;
   name: string;
   businessName: string;
   contactPerson: string;

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import AddPartnerModal from './AddPartnerModal';
 import { useToast } from '@/hooks/use-toast';
+import { createTenant } from '@/ai/flows/create-tenant-flow';
 
 
 const industries = [
@@ -60,10 +61,24 @@ export default function PartnerManagement() {
 
   const handleAddPartner = async (partnerData: any) => {
     try {
+      // Step 1: Call the Genkit flow to create a tenant
+      const tenantResult = await createTenant({ partnerName: partnerData.name });
+
+      if (!tenantResult.success || !tenantResult.tenantId) {
+        throw new Error(tenantResult.message || "Failed to create tenant.");
+      }
+
+      toast({
+        title: "Tenant Created",
+        description: tenantResult.message,
+      });
+
+      // Step 2: Create the partner document in Firestore with the new tenantId
       const selectedIndustry = mockIndustries.find(i => i.id === partnerData.industryId) as Industry;
 
       const newPartner: Omit<Partner, 'id'> = {
         name: partnerData.name,
+        tenantId: tenantResult.tenantId, // Add tenantId to the partner document
         contactPerson: partnerData.name,
         email: partnerData.email,
         businessName: partnerData.name,
@@ -107,7 +122,7 @@ export default function PartnerManagement() {
       toast({
         variant: "destructive",
         title: "Error adding partner",
-        description: "An unexpected error occurred while saving the partner.",
+        description: (error as Error).message || "An unexpected error occurred.",
       });
     }
   };
