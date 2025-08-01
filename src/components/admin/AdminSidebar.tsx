@@ -1,7 +1,8 @@
+// src/components/admin/AdminSidebar.tsx
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   Building,
@@ -10,7 +11,9 @@ import {
   FileText,
   Settings,
   Shield,
+  LogOut,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { id: "overview", label: "System Overview", icon: BarChart3, href: "/admin" },
@@ -23,6 +26,14 @@ const menuItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('isMockAuthenticated');
+    sessionStorage.removeItem('mockUserRole');
+    router.push('/auth/login');
+    router.refresh();
+  };
 
   const isHomeActive = pathname === '/admin';
   
@@ -76,6 +87,9 @@ export default function AdminSidebar() {
             </p>
             <p className="text-xs text-muted-foreground">System Administrator</p>
           </div>
+           <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+              <LogOut className="w-5 h-5" />
+           </Button>
         </div>
       </div>
     </div>
