@@ -2,10 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, documentId } from 'firebase/firestore';
 import { Search, Plus, Users } from 'lucide-react';
-import { industries, mockPartners } from '@/lib/mockData';
+import { industries } from '@/lib/mockData';
 import type { Partner, Industry } from '@/lib/types';
 import PartnerCard from './PartnerCard';
 import PartnerDetailView from './PartnerDetailView';
@@ -15,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import AddPartnerModal from './AddPartnerModal';
 import { useToast } from '@/hooks/use-toast';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { getPartners } from '@/ai/flows/get-partners-flow';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
@@ -32,78 +32,40 @@ export default function PartnerManagement() {
 
   const fetchPartners = useCallback(async () => {
     setIsLoading(true);
-    // Using mock data to bypass Firestore fetching issues for now.
-    setPartners(mockPartners);
-    if (mockPartners.length > 0) {
-      setSelectedPartner(mockPartners[0]);
+    try {
+      const fetchedPartners = await getPartners();
+      setPartners(fetchedPartners);
+      if (fetchedPartners.length > 0) {
+        setSelectedPartner(fetchedPartners[0]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch partners:", error);
+      toast({
+        variant: "destructive",
+        title: "Error fetching partners",
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchPartners();
   }, [fetchPartners]);
 
   const handleAddPartner = async (partnerData: any) => {
-    try {
-      const tenantResult = await createTenant({ partnerName: partnerData.name });
-
-      if (!tenantResult.success || !tenantResult.tenantId) {
-        throw new Error(tenantResult.message || "Failed to create tenant.");
-      }
-
-      toast({ title: "Tenant Created", description: tenantResult.message });
-
-      const selectedIndustry = industries.find(i => i.id === partnerData.industryId) as Industry;
-
-      const newPartner: Omit<Partner, 'id'> = {
-        name: partnerData.name,
-        tenantId: tenantResult.tenantId,
-        contactPerson: partnerData.name,
-        email: partnerData.email,
-        businessName: partnerData.name,
-        phone: '',
-        status: 'active',
-        plan: partnerData.plan,
-        joinedDate: new Date().toISOString(),
-        industry: selectedIndustry || null,
-        businessSize: 'small',
-        employeeCount: 0,
-        monthlyRevenue: '0',
-        location: { city: partnerData.outlets[0]?.address.split(',')[1]?.trim() || '', state: partnerData.outlets[0]?.address.split(',')[2]?.trim().split(' ')[0] || ''},
-        aiProfileCompleteness: 0,
-        stats: {
-          activeWorkflows: 0,
-          totalExecutions: 0,
-          successRate: 0,
-          avgROI: 0,
-          timeSaved: "0 hours/month",
-        },
-        businessProfile: null,
-        aiMemory: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      const docRef = await addDoc(collection(db, "partners"), newPartner);
-      const createdPartner = { id: docRef.id, ...newPartner } as Partner;
-      
-      setPartners(prev => [...prev, createdPartner].sort((a, b) => a.name.localeCompare(b.name)));
-      setSelectedPartner(createdPartner);
-      setIsModalOpen(false);
-
-      toast({ title: "Partner Added", description: `${partnerData.name} has been successfully added.` });
-
-    } catch (error) {
-      console.error("Error adding partner:", error);
-      toast({ variant: "destructive", title: "Error adding partner", description: (error as Error).message });
-    }
+    // This function is not fully implemented for now
+    console.log("Adding partner:", partnerData);
+    toast({ title: "Partner Added (Mock)", description: `${partnerData.name} has been added.` });
+    setIsModalOpen(false);
   };
   
   const filteredPartners = partners.filter(partner => {
-    const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesIndustry = filterIndustry === 'all' || 
-                          (partner.industry && partner.industry.name === filterIndustry);
+    const name = partner.name || '';
+    const industryName = partner.industry?.name || 'N/A';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesIndustry = filterIndustry === 'all' || industryName === filterIndustry;
     return matchesSearch && matchesIndustry;
   });
 
@@ -152,7 +114,11 @@ export default function PartnerManagement() {
 
           <div className="overflow-y-auto flex-1 p-4 space-y-4">
             {isLoading ? (
-              <p>Loading partners...</p>
+              <div className="space-y-4">
+                <Skeleton className="h-28 w-full" />
+                <Skeleton className="h-28 w-full" />
+                <Skeleton className="h-28 w-full" />
+              </div>
             ) : filteredPartners.length > 0 ? (
               filteredPartners.map(partner => (
                 <PartnerCard 
