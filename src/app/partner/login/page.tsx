@@ -30,17 +30,19 @@ async function getTenantIdForEmail(email: string): Promise<string | null> {
     'sara@techcorp.com': 'tenant_techcorp_industries',
     'mike@techcorp.com': 'tenant_techcorp_industries',
     'user@sunnyvale.com': 'tenant_sunnyvale_properties',
+    'sigiravi2@gmail.com': 'tenant_brew_and_bonbon_cafe', // Added for your partner
   };
   
-  const tenantId = Object.keys(emailToTenantMap).find(key => email.toLowerCase() === key.toLowerCase());
+  const lowercasedEmail = email.toLowerCase();
+  const tenantId = emailToTenantMap[lowercasedEmail];
 
   if (tenantId) {
-    console.log(`(Mock) Found tenant: ${emailToTenantMap[tenantId]}`);
-    return emailToTenantMap[tenantId];
+    console.log(`(Mock) Found tenant: ${tenantId}`);
+    return tenantId;
   }
   
   console.log(`(Mock) No tenant found for email: ${email}`);
-  // Fallback for any email to allow login for demo purposes.
+  // Fallback for any other email to allow login for demo purposes.
   return "tenant_fallback_demo_id"; 
 }
 
