@@ -1,3 +1,4 @@
+import '@/ai/genkit'; // This will now handle the admin initialization
 import { config } from 'dotenv';
 config();
 

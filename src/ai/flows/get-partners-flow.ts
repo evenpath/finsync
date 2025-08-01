@@ -8,10 +8,8 @@
 import * as admin from 'firebase-admin';
 import type { Partner } from '@/lib/types';
 
-// Initialize Firebase Admin SDK if not already initialized
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+// The Firebase Admin SDK is initialized in `src/ai/genkit.ts`.
+// We can safely get the firestore instance here.
 const db = admin.firestore();
 
 // This function is called from the client component.
