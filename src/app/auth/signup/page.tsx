@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { db } from '@/lib/firebase';
+import { doc, setDoc } from "firebase/firestore"; 
 
 export default function SignupPage() {
     const [name, setName] = useState('');
@@ -33,7 +35,16 @@ export default function SignupPage() {
 
             // 2. In a real app, you would create a new Partner document in Firestore
             //    with the `tenantId` from the previous step.
-            //    e.g., await db.collection('partners').doc().set({ name, email, tenantId: tenantResult.tenantId });
+            //    Using the client SDK for this for simplicity, though this could be a server-action.
+            await setDoc(doc(db, "partners", tenantResult.tenantId), {
+                name: name,
+                businessName: name,
+                email: email,
+                tenantId: tenantResult.tenantId,
+                status: 'pending',
+                plan: 'Starter',
+                createdAt: new Date(),
+            });
             console.log(`(Mock) Saving partner ${name} to Firestore with tenantId ${tenantResult.tenantId}`);
 
             // 3. Then, you would create the new user account *within* that tenant.

@@ -89,7 +89,7 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
                     aiMemory: null,
                 };
                 setPartners(prev => [...prev, newPartner]);
-                toast({ title: "Partner Added (Mock)", description: `Partner ${newPartner.name} has been added.` });
+                toast({ title: "Partner Added", description: `Partner ${newPartner.name} has been added.` });
 
             } else {
                 console.error("Failed to create tenant:", result.message);
@@ -97,7 +97,8 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
             }
         } catch (e) {
             console.error("Error calling createTenant flow:", e);
-            toast({ variant: "destructive", title: "Error", description: "Could not create partner." });
+            const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+            toast({ variant: "destructive", title: "Error", description: `Could not create partner: ${errorMessage}` });
         }
 
         setIsAddModalOpen(false);
