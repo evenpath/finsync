@@ -22,23 +22,27 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // This is where you would integrate Firebase Auth.
-    // For now, we'll simulate a login flow.
     console.log("Attempting to log in with:", email, password);
 
+    // This is a mock login flow.
     setTimeout(() => {
-      // Mock check: if email contains 'admin', redirect to admin, else to partner
-      if (email.includes('admin')) {
+      // For this mock, we only care about the admin login.
+      if (email.toLowerCase().includes('admin')) {
+        // Simulate a successful login by setting a value in sessionStorage.
+        // The AuthProvider will read this value.
+        sessionStorage.setItem('isMockAuthenticated', 'true');
+        sessionStorage.setItem('mockUserRole', 'admin');
+        
         toast({ title: "Login Successful", description: "Redirecting to admin dashboard..." });
         router.push('/admin');
-      } else if (email.includes('partner')) {
-        toast({ title: "Login Successful", description: "Redirecting to partner dashboard..." });
-        router.push('/partner');
+        router.refresh(); // Force a refresh to re-evaluate the auth state in the layout
       } else {
+        sessionStorage.removeItem('isMockAuthenticated');
+        sessionStorage.removeItem('mockUserRole');
         toast({
           variant: "destructive",
           title: "Login Failed",
-          description: "Invalid email or password.",
+          description: "For this demo, please use an email containing 'admin'.",
         });
         setIsLoading(false);
       }
@@ -58,7 +62,7 @@ export default function LoginPage() {
             <Input 
               id="email" 
               type="email" 
-              placeholder="m@example.com" 
+              placeholder="admin@example.com" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}

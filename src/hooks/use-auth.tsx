@@ -2,13 +2,9 @@
 // src/hooks/use-auth.tsx
 "use client";
 
-import React, { useState, useEffect, useContext, createContext } from 'react';
-import type { User } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // We'll use this later
-import type { AuthState, FirebaseAuthUser } from '@/lib/types';
-
-// For now, we'll create a mock auth state.
-// In a real app, you would use onAuthStateChanged from Firebase.
+import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import type { FirebaseAuthUser, AuthState } from '@/lib/types';
 
 const mockAdminUser: FirebaseAuthUser = {
     uid: process.env.NEXT_PUBLIC_ADMIN_UID || 'admin-uid',
@@ -38,19 +34,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Mocking authentication state for the admin section.
+        // Mocking authentication state using sessionStorage.
         // In a real app, this would be replaced with Firebase's onAuthStateChanged listener.
-        const currentPath = window.location.pathname;
-        if (currentPath.startsWith('/admin')) {
-             // For now, we automatically "log in" the mock admin user if they are in the admin section.
-             setUser(mockAdminUser);
-        } else {
-            // For any other section, we ensure no user is logged in for this mock setup.
-            setUser(null);
-        }
-       
-        setLoading(false);
+        try {
+            const isAuthenticated = sessionStorage.getItem('isMockAuthenticated') === 'true';
+            const role = sessionStorage.getItem('mockUserRole');
 
+            if (isAuthenticated && role === 'admin') {
+                setUser(mockAdminUser);
+            } else {
+                setUser(null);
+            }
+        } catch (error) {
+            // sessionStorage is not available on the server, so we can ignore this error.
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     const value: AuthState = {
