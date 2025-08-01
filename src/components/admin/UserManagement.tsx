@@ -23,13 +23,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
 import { useToast } from "@/hooks/use-toast";
 import { mockAdminUsers } from "@/lib/mockData";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/ai/genkit";
 import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
 
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
+  const db = getDb();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -37,6 +38,15 @@ export default function UserManagement() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAdmins = useCallback(async () => {
+    if (!db) {
+        toast({
+            variant: "destructive",
+            title: "Database not connected",
+            description: "Cannot fetch admin users. Please check server configuration.",
+        });
+        setIsLoading(false);
+        return;
+    }
     if (currentUser?.customClaims?.role !== 'Super Admin') {
         setIsLoading(false);
         return;
@@ -71,7 +81,7 @@ export default function UserManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, toast]);
+  }, [currentUser, toast, db]);
   
   useEffect(() => {
     fetchAdmins();
@@ -90,6 +100,10 @@ export default function UserManagement() {
 
 
   const handleInviteUser = async (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
+    if (!db) {
+      toast({ variant: "destructive", title: "Database not connected" });
+      return;
+    }
     setIsLoading(true);
     try {
       const q = query(collection(db, "adminUsers"), where("email", "==", newUserData.email));
@@ -246,7 +260,7 @@ export default function UserManagement() {
        <InviteAdminModal 
         isOpen={isInviteModalOpen} 
         onClose={() => setIsInviteModalOpen(false)}
-        onInviteUser={handleInviteUser}
+        onInviteMember={handleInviteMember}
       />
     </div>
   );

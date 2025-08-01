@@ -114,7 +114,6 @@ const MapComponent = ({ outlets, setOutlets }: { outlets: any[], setOutlets: (ou
   const addressInputRef = useRef<HTMLInputElement | null>(null);
   
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-  console.log("DEBUG: Google Maps API Key loaded in component:", googleMapsApiKey);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey,

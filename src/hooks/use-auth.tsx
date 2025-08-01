@@ -5,7 +5,8 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDocs, collection, query, where } from 'firebase/firestore';
 import type { FirebaseAuthUser, AuthState, AdminUser } from '@/lib/types';
-import { app, db } from '@/lib/firebase';
+import { app } from '@/lib/firebase';
+import { getDb } from '@/ai/genkit';
 
 const auth = getAuth(app);
 
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<FirebaseAuthUser | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const db = getDb();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
@@ -29,20 +31,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     
                     let customClaims: { role?: 'Admin' | 'Super Admin' | 'partner' | 'employee', partnerId?: string | null } = {};
 
-                    // Query the adminUsers collection to find the user by email
-                    const adminUsersRef = collection(db, 'adminUsers');
-                    const q = query(adminUsersRef, where("email", "==", firebaseUser.email));
-                    const querySnapshot = await getDocs(q);
-                    
-                    if (!querySnapshot.empty) {
-                        const adminUserData = querySnapshot.docs[0].data() as AdminUser;
-                        customClaims.role = adminUserData.role;
-                    } else if (firebaseUser.email === 'core@suupe.com') {
-                        // Hardcoded fallback for the primary super admin
-                        customClaims.role = 'Super Admin';
+                    if (db) {
+                        // Query the adminUsers collection to find the user by email
+                        const adminUsersRef = collection(db, 'adminUsers');
+                        const q = query(adminUsersRef, where("email", "==", firebaseUser.email));
+                        const querySnapshot = await getDocs(q);
+                        
+                        if (!querySnapshot.empty) {
+                            const adminUserData = querySnapshot.docs[0].data() as AdminUser;
+                            customClaims.role = adminUserData.role;
+                        } else if (firebaseUser.email === 'core@suupe.com') {
+                            // Hardcoded fallback for the primary super admin
+                            customClaims.role = 'Super Admin';
+                        }
                     } else {
-                        // Handle partner users or employees if necessary in the future
+                        console.warn("Firestore not available for role lookup.");
+                         if (firebaseUser.email === 'core@suupe.com') {
+                            customClaims.role = 'Super Admin';
+                        }
                     }
+
 
                     const authUser: FirebaseAuthUser = {
                         uid: firebaseUser.uid,
@@ -73,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [db]);
 
     const value: AuthState = {
         user,
