@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import AddPartnerModal from "@/components/admin/AddPartnerModal";
 import { Card, CardContent } from '@/components/ui/card';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { useToast } from "@/hooks/use-toast";
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -21,6 +22,7 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
     const [partners, setPartners] = useState<Partner[]>(initialPartners);
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const { toast } = useToast();
 
     // Set the first partner as selected by default when the component loads
     useEffect(() => {
@@ -86,17 +88,32 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
                     aiMemory: null,
                 };
                 setPartners(prev => [...prev, newPartner]);
+                toast({ title: "Partner Added (Mock)", description: `Partner ${newPartner.name} has been added.` });
 
             } else {
                 console.error("Failed to create tenant:", result.message);
-                // Optionally show a toast notification with the error.
+                toast({ variant: "destructive", title: "Tenant Creation Failed", description: result.message });
             }
         } catch (e) {
             console.error("Error calling createTenant flow:", e);
+            toast({ variant: "destructive", title: "Error", description: "Could not create partner." });
         }
 
         setIsAddModalOpen(false);
     };
+
+    const handleUpdatePartner = (updatedPartner: Partner) => {
+        // Here you would call a server action to update the partner in Firestore
+        console.log("Updating partner (UI only):", updatedPartner);
+        
+        setPartners(prev => prev.map(p => p.id === updatedPartner.id ? updatedPartner : p));
+        
+        if (selectedPartner?.id === updatedPartner.id) {
+            setSelectedPartner(updatedPartner);
+        }
+
+        toast({ title: "Partner Updated (Mock)", description: `${updatedPartner.name}'s details have been updated.` });
+    }
 
     return (
         <>
@@ -137,7 +154,7 @@ export default function PartnerManagementUI({ initialPartners, error = null }: P
                     {/* Partner Detail View */}
                     <div className="w-2/3 overflow-y-auto">
                         {selectedPartner ? (
-                            <PartnerDetailView partner={selectedPartner} />
+                            <PartnerDetailView partner={selectedPartner} onUpdatePartner={handleUpdatePartner} />
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground">
                                 Select a partner to see details

@@ -2,22 +2,31 @@
 // src/components/admin/PartnerDetailView.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState }from 'react';
 import type { Partner } from '@/lib/types';
-import { Building, FileText, Brain, Zap } from 'lucide-react';
+import { Building, FileText, Brain, Zap, Edit } from 'lucide-react';
 import PartnerOverview from './PartnerOverview';
 import PartnerBusinessProfile from './PartnerBusinessProfile';
 import PartnerAIMemory from './PartnerAIMemory';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import EditPartnerModal from './EditPartnerModal';
 
 interface PartnerDetailViewProps {
   partner: Partner;
+  onUpdatePartner: (updatedPartner: Partner) => void;
 }
 
-export default function PartnerDetailView({ partner }: PartnerDetailViewProps) {
+export default function PartnerDetailView({ partner, onUpdatePartner }: PartnerDetailViewProps) {
   const [view, setView] = useState('overview'); // overview, profile, ai-memory, workflows
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const industry = partner.industry || { name: 'N/A', icon: '🏢' };
+  
+  const handleUpdate = (updatedData: Partner) => {
+    onUpdatePartner(updatedData);
+    setIsEditModalOpen(false);
+  }
 
   const renderContent = () => {
     switch (view) {
@@ -56,63 +65,82 @@ export default function PartnerDetailView({ partner }: PartnerDetailViewProps) {
         );
       case 'overview':
       default:
-        return <PartnerOverview partner={partner} />;
+        return (
+          <>
+            <PartnerOverview partner={partner} />
+            <div className="mt-6">
+              <PartnerBusinessProfile partner={partner} />
+            </div>
+          </>
+        );
     }
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Partner Header */}
-      <div className="bg-card border-b p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-xl`}>
-              {industry.icon}
+    <>
+      <div className="h-full flex flex-col">
+        {/* Partner Header */}
+        <div className="bg-card border-b p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-xl`}>
+                {industry.icon}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{partner.name}</h2>
+                <p className="text-muted-foreground">{partner.industry?.name || 'No Industry Set'} • {partner.location.city}, {partner.location.state}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">{partner.name}</h2>
-              <p className="text-muted-foreground">{industry.name} • {partner.location.city}, {partner.location.state}</p>
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                partner.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+              }`}>
+                {partner.status}
+              </span>
+               <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Partner
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              partner.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-            }`}>
-              {partner.status}
-            </span>
+
+          {/* Tab Navigation */}
+          <div className="mt-6 border-b">
+              <nav className="flex gap-4 -mb-px">
+              {[
+                  { id: 'overview', label: 'Overview', icon: Building },
+                  { id: 'profile', label: 'Business Profile', icon: FileText },
+                  { id: 'ai-memory', label: 'AI Memory', icon: Brain },
+                  { id: 'workflows', label: 'Workflows', icon: Zap }
+              ].map(tab => (
+                  <button
+                  key={tab.id}
+                  onClick={() => setView(tab.id)}
+                  className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
+                      view === tab.id 
+                      ? 'border-primary text-primary' 
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                  >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                  </button>
+              ))}
+              </nav>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mt-6 border-b">
-            <nav className="flex gap-4 -mb-px">
-            {[
-                { id: 'overview', label: 'Overview', icon: Building },
-                { id: 'profile', label: 'Business Profile', icon: FileText },
-                { id: 'ai-memory', label: 'AI Memory', icon: Brain },
-                { id: 'workflows', label: 'Workflows', icon: Zap }
-            ].map(tab => (
-                <button
-                key={tab.id}
-                onClick={() => setView(tab.id)}
-                className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
-                    view === tab.id 
-                    ? 'border-primary text-primary' 
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-                >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-                </button>
-            ))}
-            </nav>
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-6 bg-secondary/30">
+          {renderContent()}
         </div>
       </div>
-
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 bg-secondary/30">
-        {renderContent()}
-      </div>
-    </div>
+      <EditPartnerModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        partner={partner}
+        onSave={handleUpdate}
+      />
+    </>
   );
 }
