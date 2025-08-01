@@ -60,6 +60,15 @@ const createTenantFlow = ai.defineFlow(
       };
     } catch (error: any) {
         console.error("Error creating Firebase Auth tenant:", error);
+
+        // Check for specific permission denied error
+        if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('permission'))) {
+            return {
+                success: false,
+                message: `Permission Denied. Please grant the 'Service Usage Consumer' role to your service account in the Google Cloud IAM console for project '${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}'. This is required to create auth tenants.`,
+            };
+        }
+
         return {
             success: false,
             message: `Failed to create tenant: ${error.message}`,
