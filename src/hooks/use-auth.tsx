@@ -1,3 +1,4 @@
+
 // src/hooks/use-auth.tsx
 "use client";
 
@@ -37,14 +38,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Mocking authentication state.
+        // Mocking authentication state for the admin section.
         // In a real app, this would be replaced with Firebase's onAuthStateChanged listener.
         const currentPath = window.location.pathname;
         if (currentPath.startsWith('/admin')) {
+             // For now, we automatically "log in" the mock admin user if they are in the admin section.
              setUser(mockAdminUser);
         } else {
-            // For other sections like partner or worker, you could set a different mock user
-            // or leave it as null to force login. For now, we leave it null.
+            // For any other section, we ensure no user is logged in for this mock setup.
             setUser(null);
         }
        
