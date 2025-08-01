@@ -1,9 +1,9 @@
 // src/components/admin/PartnerManagement.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, documentId } from 'firebase/firestore';
 import { Search, Plus, Users } from 'lucide-react';
 import { industries, mockPartners } from '@/lib/mockData';
 import type { Partner, Industry } from '@/lib/types';
@@ -19,10 +19,7 @@ import { createTenant } from '@/ai/flows/create-tenant-flow';
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
-  { value: 'Property Management', label: 'Property Management' },
-  { value: 'HVAC Services', label: 'HVAC Services' },
-  { value: 'Hotels', label: 'Hotels & Hospitality' },
-  { value: 'other', label: 'Other' }
+  ...industries.map(i => ({ value: i.name, label: i.name }))
 ];
 
 export default function PartnerManagement() {
@@ -34,61 +31,59 @@ export default function PartnerManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchPartners = async () => {
-      setIsLoading(true);
-      try {
-        const partnersCollection = collection(db, 'partners');
-        const partnerSnapshot = await getDocs(partnersCollection);
-        if (partnerSnapshot.empty) {
-          // If the collection is empty, seed it with mock data
-          console.log("Partners collection is empty, seeding with mock data...");
-          for (const partner of mockPartners) {
-            await addDoc(collection(db, "partners"), partner);
+  const fetchPartners = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const partnersCollection = collection(db, 'partners');
+      let partnerSnapshot = await getDocs(partnersCollection);
+
+      // If the collection is empty, seed it with mock data
+      if (partnerSnapshot.empty) {
+        console.log("Partners collection is empty, seeding with mock data...");
+        for (const partner of mockPartners) {
+          // Ensure we don't duplicate seeding if multiple clients load at once
+          const q = query(collection(db, "partners"), where("name", "==", partner.name));
+          const existing = await getDocs(q);
+          if(existing.empty) {
+             await addDoc(collection(db, "partners"), partner);
           }
-          // Fetch again after seeding
-           const seededSnapshot = await getDocs(partnersCollection);
-           const partnersList = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
-           setPartners(partnersList);
-           if (partnersList.length > 0) {
-              setSelectedPartner(partnersList[0]);
-           }
-        } else {
-          const partnersList = partnerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
-          setPartners(partnersList);
-           if (partnersList.length > 0) {
-              setSelectedPartner(partnersList[0]);
-           }
         }
-      } catch (error) {
-        console.error("Error fetching partners: ", error);
-        toast({
-          variant: "destructive",
-          title: "Error fetching partners",
-          description: (error as Error).message,
-        });
-      } finally {
-        setIsLoading(false);
+        // Fetch again after seeding
+        partnerSnapshot = await getDocs(partnersCollection);
       }
-    };
+      
+      const partnersList = partnerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
+      setPartners(partnersList);
+      if (partnersList.length > 0 && !selectedPartner) {
+        setSelectedPartner(partnersList[0]);
+      }
+
+    } catch (error) {
+      console.error("Error fetching partners: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error fetching partners",
+        description: "You may not have sufficient permissions to view this data. Check Firestore rules.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast, selectedPartner]);
+
+  useEffect(() => {
     fetchPartners();
-  }, [toast]);
+  }, [fetchPartners]);
 
   const handleAddPartner = async (partnerData: any) => {
     try {
-      // Step 1: Call the Genkit flow to create a tenant
       const tenantResult = await createTenant({ partnerName: partnerData.name });
 
       if (!tenantResult.success || !tenantResult.tenantId) {
         throw new Error(tenantResult.message || "Failed to create tenant.");
       }
 
-      toast({
-        title: "Tenant Created",
-        description: tenantResult.message,
-      });
+      toast({ title: "Tenant Created", description: tenantResult.message });
 
-      // Step 2: Create the partner object and add to Firestore
       const selectedIndustry = industries.find(i => i.id === partnerData.industryId) as Industry;
 
       const newPartner: Omit<Partner, 'id'> = {
@@ -123,29 +118,22 @@ export default function PartnerManagement() {
       const docRef = await addDoc(collection(db, "partners"), newPartner);
       const createdPartner = { id: docRef.id, ...newPartner } as Partner;
       
-      setPartners(prev => [...prev, createdPartner]);
+      setPartners(prev => [...prev, createdPartner].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedPartner(createdPartner);
       setIsModalOpen(false);
 
-      toast({
-        title: "Partner Added",
-        description: `${partnerData.name} has been successfully added to Firestore.`,
-      });
+      toast({ title: "Partner Added", description: `${partnerData.name} has been successfully added.` });
 
     } catch (error) {
       console.error("Error adding partner:", error);
-      toast({
-        variant: "destructive",
-        title: "Error adding partner",
-        description: (error as Error).message || "An unexpected error occurred.",
-      });
+      toast({ variant: "destructive", title: "Error adding partner", description: (error as Error).message });
     }
   };
   
   const filteredPartners = partners.filter(partner => {
     const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesIndustry = filterIndustry === 'all' || 
-                          (partner.industry && partner.industry.name.toLowerCase().includes(filterIndustry.toLowerCase()));
+                          (partner.industry && partner.industry.name === filterIndustry);
     return matchesSearch && matchesIndustry;
   });
 

@@ -1,7 +1,7 @@
 // src/components/admin/UserManagement.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Image from "next/image";
 import type { AdminUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -36,49 +36,53 @@ export default function UserManagement() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAdmins = async () => {
-        setIsLoading(true);
-        try {
-            const adminUsersCollection = collection(db, 'adminUsers');
-            const adminSnapshot = await getDocs(adminUsersCollection);
-            
-            if (adminSnapshot.empty) {
-                console.log("Admin users collection is empty, seeding with mock data...");
-                for (const user of mockAdminUsers) {
-                    await addDoc(collection(db, "adminUsers"), user);
-                }
-                const seededSnapshot = await getDocs(adminUsersCollection);
-                const usersList = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
-                setUsers(usersList);
-            } else {
-                const usersList = adminSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
-                setUsers(usersList);
-            }
-        } catch (error) {
-            console.error("Error fetching admin users: ", error);
-            toast({
-                variant: "destructive",
-                title: "Error fetching admin users",
-                description: (error as Error).message,
-            });
-        } finally {
-            setIsLoading(false);
-        }
+  const fetchAdmins = useCallback(async () => {
+    if (currentUser?.customClaims?.role !== 'Super Admin') {
+        setIsLoading(false);
+        return;
     };
-    if (currentUser?.customClaims?.role === 'Super Admin') {
-        fetchAdmins();
+    setIsLoading(true);
+    try {
+      const adminUsersCollection = collection(db, 'adminUsers');
+      let adminSnapshot = await getDocs(adminUsersCollection);
+
+      if (adminSnapshot.empty) {
+        console.log("Admin users collection is empty, seeding with mock data...");
+        for (const user of mockAdminUsers) {
+           const q = query(collection(db, "adminUsers"), where("email", "==", user.email));
+           const existing = await getDocs(q);
+           if(existing.empty) {
+              await addDoc(collection(db, "adminUsers"), user);
+           }
+        }
+        adminSnapshot = await getDocs(adminUsersCollection);
+      }
+      
+      const usersList = adminSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
+      setUsers(usersList);
+      
+    } catch (error) {
+      console.error("Error fetching admin users: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error fetching admin users",
+        description: "You may not have sufficient permissions. Check Firestore rules.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   }, [currentUser, toast]);
+  
+  useEffect(() => {
+    fetchAdmins();
+  }, [fetchAdmins]);
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
-    // Ensure we don't show the current user in the list of users they can manage
     return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser, users]);
 
-  React.useEffect(() => {
-    // If the selected user is the current user, deselect them
+  useEffect(() => {
     if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
       setSelectedUser(null);
     }
@@ -88,11 +92,6 @@ export default function UserManagement() {
   const handleInviteUser = async (newUserData: { name: string; email: string; role: 'Admin' | 'Super Admin'; }) => {
     setIsLoading(true);
     try {
-      // In a real app, you would first create the user in Firebase Auth.
-      // For this simulation, we assume user is created separately or invited to sign up.
-      // We'll call the flow to set their claims, and then add them to our adminUsers collection in Firestore.
-
-      // Check if user already exists
       const q = query(collection(db, "adminUsers"), where("email", "==", newUserData.email));
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
