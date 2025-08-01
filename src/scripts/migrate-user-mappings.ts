@@ -76,7 +76,7 @@ export async function migrateUserMappings(): Promise<{
 
     return {
       success: true,
-      message: `Migration completed. Processed ${partnersSnapshot.size} partners. Created ${migratedCount} new user mappings.${errors.length > 0 ? ` ${errors.length} errors occurred.` : ''}`,
+      message: `Migration completed. Processed ${partnersSnapshot.size} partners. Created ${migratedCount} new user mappings.${errors.length > 0 ? ` ${errors.length} occurred.` : ''}`,
       migratedCount
     };
 
