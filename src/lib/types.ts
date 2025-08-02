@@ -292,7 +292,7 @@ export const IndustryTemplateSchema = z.object({
   category: z.string().describe("A one-word category for the workflow (e.g., 'Emergency', 'Financial', 'Leasing')."),
   popularity: z.enum(['Most Popular', 'Popular', 'New']).optional().describe("A popularity ranking."),
   steps: z.number().int().describe("An estimated number of steps in the workflow."),
-  icon: z.string().length(1, { message: "Icon must be a single emoji character." }).describe("A single emoji character to represent the workflow."),
+  icon: z.string().min(1, { message: "Icon must be a single emoji character." }).describe("A single emoji character to represent the workflow."),
 });
 export type IndustryTemplate = z.infer<typeof IndustryTemplateSchema>;
 
@@ -1465,13 +1465,6 @@ export interface FirestoreCollections {
 // ============================================================================
 // 18. SECURITY RULES VARIABLES
 // ============================================================================
-
-export interface SecurityContext {
-  userId: string;
-  userRole: 'admin' | 'partner' | 'employee';
-  permissions: string[];
-  customClaims: any;
-}
 
 export interface ResourceAccess {
   resource: string;
