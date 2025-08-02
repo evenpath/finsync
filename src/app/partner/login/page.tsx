@@ -29,6 +29,7 @@ export default function PartnerLoginPage() {
 
     try {
       // 1. Find the tenant ID for the user's email using the server action
+      console.log('Looking up tenant for email:', email);
       const tenantLookup = await getTenantForEmailAction(email);
 
       if (!tenantLookup.success || !tenantLookup.tenantId) {
@@ -45,9 +46,11 @@ export default function PartnerLoginPage() {
 
       // 3. Set the tenant ID on the auth instance
       auth.tenantId = tenantLookup.tenantId;
+      console.log('Set tenant ID on auth instance:', auth.tenantId);
       
       // 4. Sign in the user within their designated tenant
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('User signed in successfully:', userCredential.user.uid);
 
       toast({ 
         title: "Login Successful", 
@@ -65,9 +68,9 @@ export default function PartnerLoginPage() {
       if (error.code === 'auth/invalid-tenant-id') {
         errorMessage = "Your organization's authentication is not properly configured. Please contact support.";
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          errorMessage = "Invalid email or password for your organization.";
+        errorMessage = "Invalid email or password for your organization.";
       } else if (error.code === 'auth/invalid-email') {
-          errorMessage = "Please enter a valid email address.";
+        errorMessage = "Please enter a valid email address.";
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many failed attempts. Please try again later.";
       } else if (error.message) {
@@ -87,51 +90,59 @@ export default function PartnerLoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
-        <CardDescription>Enter your work email to access your workspace.</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleLogin}>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="you@company.com" 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              required 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign in'}
-          </Button>
-          <div className="text-center text-sm text-muted-foreground">
-            Need to create an organization?{" "}
-            <Link href="/auth/signup" className="underline">Sign up</Link>
-          </div>
-           <div className="text-center text-sm text-muted-foreground">
-            Joining a team?{" "}
-            <Link href="/partner/join" className="underline">Join here</Link>
-          </div>
-        </CardFooter>
-      </form>
-    </Card>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-sm">
+        <form onSubmit={handleLogin}>
+          <CardHeader>
+            <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
+            <CardDescription>Enter your work email to access your workspace.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="you@company.com" 
+                required 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                autoComplete="email"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                autoComplete="current-password"
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Need to create an organization?{" "}
+              <Link href="/auth/signup" className="underline hover:text-primary">
+                Sign up
+              </Link>
+            </div>
+            <div className="text-center text-sm text-muted-foreground">
+              Joining a team?{" "}
+              <Link href="/partner/join" className="underline hover:text-primary">
+                Join here
+              </Link>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   );
 }
