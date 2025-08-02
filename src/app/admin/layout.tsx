@@ -15,12 +15,12 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {
-    if (loading || !isAuthenticated || !user?.customClaims) {
+    if (loading || !user) {
       return false;
     }
     // Only 'Super Admin' can access the /admin section.
-    return user.customClaims.role === 'Super Admin';
-  }, [user, loading, isAuthenticated]);
+    return user.customClaims?.role === 'Super Admin';
+  }, [user, loading]);
 
 
   React.useEffect(() => {
@@ -47,13 +47,13 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // After loading, if user is not authorized, show access denied message.
-  if (!isAuthorized) {
+  // After loading, if user is authenticated but not authorized, show access denied message.
+  if (isAuthenticated && !isAuthorized) {
     return (
         <div className="flex h-screen bg-secondary/30 text-foreground">
           <AdminSidebar />
-          <div className="flex-1 flex flex-col overflow-hidden p-6">
-            <Card className="border-destructive">
+          <div className="flex-1 flex flex-col items-center justify-center overflow-hidden p-6">
+            <Card className="border-destructive w-full max-w-lg">
                 <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                     <ShieldAlert />
@@ -74,8 +74,13 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     )
   }
   
-  // If authenticated and authorized, render the children.
-  return children;
+  // If authorized, render the children.
+  if (isAuthenticated && isAuthorized) {
+    return children;
+  }
+  
+  // Fallback for when not authenticated (will be redirected by useEffect)
+  return null;
 }
 
 
