@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2 } from 'lucide-react';
+import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2, Bot } from 'lucide-react';
 import { suggestIndustryTemplates, type IndustryTemplate } from '@/ai/flows/suggest-industry-templates';
 import { suggestWorkflowSteps, type SuggestWorkflowStepsOutput, type StepSchema } from '@/ai/flows/suggest-workflow-steps';
 
@@ -13,6 +13,15 @@ const communicationChannels = {
   sms: { icon: Phone, label: 'SMS', color: 'bg-green-500', textColor: 'text-green-600' },
   whatsapp: { icon: MessageCircle, label: 'WhatsApp', color: 'bg-green-600', textColor: 'text-green-700' },
   email: { icon: Mail, label: 'Email', color: 'bg-red-500', textColor: 'text-red-600' }
+};
+
+const stepIcons: { [key: string]: React.ElementType } = {
+  ai_agent: Sparkles,
+  human_input: Users,
+  api_call: Zap,
+  notification: Bell,
+  conditional_branch: Target,
+  assign_task: UserPlus,
 };
 
 export default function AccordionWizardWorkflowBuilder({ initialData, onSave, onCancel }: { initialData?: any, onSave?: any, onCancel?: any }) {
@@ -28,6 +37,8 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
   const [templates, setTemplates] = useState<IndustryTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isGeneratingActions, setIsGeneratingActions] = useState(false);
+  const [isAddingAction, setIsAddingAction] = useState(false);
+  const [addActionTarget, setAddActionTarget] = useState<{ branchIndex: number | null }>({ branchIndex: null });
 
   const industries = {
     property_management: { label: 'Property Management', icon: Home, color: 'from-green-500 to-emerald-500' },
@@ -75,6 +86,28 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
   const handleContinueToActions = () => {
     setCurrentStep(3);
     handleGenerateActions();
+  };
+
+  const handleAddAction = (type: string, name: string, description: string) => {
+    const newAction: StepSchema = {
+      type,
+      name,
+      description,
+      id: Date.now().toString(),
+    };
+    if (addActionTarget.branchIndex !== null) {
+      setActions(prev => {
+        const newActions = [...prev];
+        const conditionalAction = newActions.find(a => a.type === 'conditional_branch');
+        if (conditionalAction && conditionalAction.branches) {
+          conditionalAction.branches[addActionTarget.branchIndex].steps.push(newAction);
+        }
+        return newActions;
+      });
+    } else {
+      setActions(prev => [...prev, newAction]);
+    }
+    setIsAddingAction(false);
   };
   
   // Filter templates
@@ -149,22 +182,23 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
 
   const WorkflowAction = ({ action, index, onDelete, onEdit }: { action: any, index: number, onDelete: () => void, onEdit: () => void }) => {
     const channels = action.config?.channels || [];
+    const ActionIcon = stepIcons[action.type] || Zap;
     
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 group hover:border-gray-300 transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-gray-300 rounded-full cursor-grab">
-              <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="text-gray-400 cursor-grab">
+              <GripVertical className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className={`w-10 h-10 rounded-lg bg-gradient-to-r from-gray-400 to-gray-500 flex items-center justify-center`}>
-              <Zap className="w-5 h-5 text-white" />
+              <ActionIcon className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-medium text-gray-900">{action.name}</h3>
-                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded uppercase">
-                  {action.type?.replace('_', ' ')}
+                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded uppercase font-medium">
+                  {action.type?.replace(/_/g, ' ')}
                 </span>
                 {channels.length > 0 && (
                   <div className="flex gap-1">
@@ -227,6 +261,38 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
           Add Action to Branch
         </button>
       </div>
+    </div>
+  );
+
+  const AddActionModal = () => (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="p-4 border-b flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Select an Action</h3>
+                <button onClick={() => setIsAddingAction(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                {Object.entries({
+                    assign_task: { name: 'Assign Task', description: 'Assign a task to a team member.', icon: UserPlus },
+                    send_notification: { name: 'Send Notification', description: 'Send an in-app or push notification.', icon: Bell },
+                    ai_agent: { name: 'AI Agent', description: 'Perform an AI-powered task.', icon: Bot },
+                    api_call: { name: 'API Call', description: 'Connect to an external service.', icon: Zap },
+                    human_input: { name: 'Human Input', description: 'Request input from a person.', icon: Users },
+                }).map(([key, { name, description, icon: Icon }]) => (
+                    <button key={key} onClick={() => handleAddAction(key, name, description)} className="p-4 border rounded-lg text-left hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gray-100 rounded-lg">
+                                <Icon className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div>
+                                <p className="font-semibold">{name}</p>
+                                <p className="text-sm text-muted-foreground">{description}</p>
+                            </div>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        </div>
     </div>
   );
 
@@ -447,7 +513,13 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
                 </div>
                 <span className="text-sm font-medium text-gray-700">Workflow Actions</span>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+              <button 
+                onClick={() => {
+                    setAddActionTarget({ branchIndex: null });
+                    setIsAddingAction(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+              >
                 <Plus className="w-4 h-4" />
                 Add Action
               </button>
@@ -477,7 +549,10 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
                           key={branchIndex}
                           condition={branch.condition}
                           actions={branch.steps}
-                          onAddAction={() => {/* handle add action to branch */}}
+                          onAddAction={() => {
+                            setAddActionTarget({ branchIndex });
+                            setIsAddingAction(true);
+                          }}
                         />
                       ))}
                     </div>
@@ -538,6 +613,7 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
           </div>
         </AccordionStep>
       </div>
+      {isAddingAction && <AddActionModal />}
     </div>
   );
 }
