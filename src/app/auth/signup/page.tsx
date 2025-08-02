@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -9,9 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createTenant } from '@/ai/flows/create-tenant-flow';
-import { createUserInTenant } from '@/ai/flows/user-management-flow';
-import { db } from '@/lib/firebase';
-import { doc, setDoc } from "firebase/firestore"; 
 
 export default function SignupPage() {
     const [name, setName] = useState('');
@@ -26,58 +24,16 @@ export default function SignupPage() {
         setIsLoading(true);
 
         try {
-            // 1. Create a new Firebase Auth tenant for the new partner
-            const tenantResult = await createTenant({ partnerName: name });
+            // 1. Create a new Firebase Auth tenant and Partner document for the new partner
+            const tenantResult = await createTenant({ 
+                partnerName: name, 
+                email: email 
+            });
+
             if (!tenantResult.success || !tenantResult.tenantId) {
                 throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
             }
-            console.log("New tenant created:", tenantResult.tenantId);
-
-            // 2. Create the Partner document in Firestore with the tenantId
-            await setDoc(doc(db, "partners", tenantResult.tenantId), {
-                name: name,
-                businessName: name,
-                contactPerson: name,
-                email: email,
-                tenantId: tenantResult.tenantId,
-                status: 'pending',
-                plan: 'Starter',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                joinedDate: new Date().toISOString(),
-                industry: null,
-                businessSize: 'small',
-                employeeCount: 1,
-                monthlyRevenue: '0',
-                location: { city: '', state: '' },
-                aiProfileCompleteness: 0,
-                stats: {
-                    activeWorkflows: 0,
-                    totalExecutions: 0,
-                    successRate: 0,
-                    avgROI: 0,
-                    timeSaved: '0 hours/month',
-                },
-                businessProfile: null,
-                aiMemory: null,
-            });
-            console.log(`Partner ${name} saved to Firestore with tenantId ${tenantResult.tenantId}`);
-
-            // 3. Create the user account within the tenant as partner_admin
-            const userResult = await createUserInTenant({
-                email: email,
-                password: password,
-                tenantId: tenantResult.tenantId,
-                displayName: name,
-                partnerId: tenantResult.tenantId,
-                role: 'partner_admin',
-            });
-
-            if (!userResult.success) {
-                throw new Error(userResult.message || "Failed to create user account.");
-            }
-
-            console.log(`User ${email} created in tenant ${tenantResult.tenantId} with UID: ${userResult.userId}`);
+            console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
             
             toast({
                 title: "Account Created!",
@@ -154,10 +110,6 @@ export default function SignupPage() {
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading ? 'Creating Account...' : 'Create Organization'}
                         </Button>
-                        <div className="text-center text-sm text-muted-foreground">
-                            Want to join an existing organization?{" "}
-                            <Link href="/partner/join" className="underline">Join here</Link>
-                        </div>
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{" "}
                             <Link href="/partner/login" className="underline">Sign in</Link>

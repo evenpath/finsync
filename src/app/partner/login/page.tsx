@@ -127,8 +127,12 @@ export default function PartnerLoginPage() {
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
+              Need to create an organization?{" "}
               <Link href="/auth/signup" className="underline">Sign up</Link>
+            </div>
+             <div className="text-center text-sm text-muted-foreground">
+              Joining a team?{" "}
+              <Link href="/partner/join" className="underline">Join here</Link>
             </div>
           </CardFooter>
         </form>
@@ -136,3 +140,4 @@ export default function PartnerLoginPage() {
     </div>
   );
 }
+
