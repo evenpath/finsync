@@ -16,7 +16,8 @@ function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
       return false;
     }
     const role = user.customClaims.role;
-    return role === 'partner_admin' || role === 'employee';
+    // A Super Admin should be able to see the partner portal for troubleshooting.
+    return role === 'Super Admin' || role === 'partner_admin' || role === 'employee';
   }, [user, loading, isAuthenticated]);
 
   React.useEffect(() => {
