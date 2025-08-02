@@ -11,6 +11,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import type { Partner } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,9 +40,10 @@ interface EditPartnerModalProps {
   onClose: () => void;
   partner: Partner;
   onSave: (partnerData: Partner) => void;
+  onDelete: (partnerId: string, tenantId: string) => void;
 }
 
-export default function EditPartnerModal({ isOpen, onClose, partner, onSave }: EditPartnerModalProps) {
+export default function EditPartnerModal({ isOpen, onClose, partner, onSave, onDelete }: EditPartnerModalProps) {
   const [formData, setFormData] = useState<Partner>(partner);
   const { toast } = useToast();
   
@@ -65,6 +77,18 @@ export default function EditPartnerModal({ isOpen, onClose, partner, onSave }: E
         title: "Partner Details Saved",
         description: "The changes have been saved successfully.",
     });
+  };
+
+  const handleDelete = () => {
+    if (partner.id && partner.tenantId) {
+      onDelete(partner.id, partner.tenantId);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Deletion Failed",
+        description: "Partner ID or Tenant ID is missing. Cannot delete.",
+      });
+    }
   };
   
   const handleClose = () => {
@@ -177,12 +201,36 @@ export default function EditPartnerModal({ isOpen, onClose, partner, onSave }: E
                 <Input id="aiProfileCompleteness" name="aiProfileCompleteness" type="number" value={formData.aiProfileCompleteness} onChange={handleInputChange} />
               </div>
             </div>
-
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button type="submit">Save Changes</Button>
+          <DialogFooter className="justify-between">
+             <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Partner
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the
+                    <span className="font-bold"> {partner.name} </span>
+                     partner account and all associated data, including their authentication tenant.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

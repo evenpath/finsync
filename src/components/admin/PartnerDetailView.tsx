@@ -11,15 +11,20 @@ import PartnerAIMemory from './PartnerAIMemory';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import EditPartnerModal from './EditPartnerModal';
+import { deletePartner } from '@/ai/flows/delete-partner-flow';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface PartnerDetailViewProps {
   partner: Partner;
   onUpdatePartner: (updatedPartner: Partner) => void;
+  onDeletePartner: () => void;
 }
 
-export default function PartnerDetailView({ partner, onUpdatePartner }: PartnerDetailViewProps) {
+export default function PartnerDetailView({ partner, onUpdatePartner, onDeletePartner }: PartnerDetailViewProps) {
   const [view, setView] = useState('overview'); // overview, profile, ai-memory, workflows
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const industry = partner.industry || { name: 'N/A', icon: '🏢' };
   
@@ -27,6 +32,24 @@ export default function PartnerDetailView({ partner, onUpdatePartner }: PartnerD
     onUpdatePartner(updatedData);
     setIsEditModalOpen(false);
   }
+
+  const handleDelete = async (partnerId: string, tenantId: string) => {
+    const result = await deletePartner({ partnerId, tenantId });
+    if (result.success) {
+      toast({
+        title: "Partner Deleted",
+        description: result.message,
+      });
+      setIsEditModalOpen(false);
+      onDeletePartner(); // Callback to parent to deselect the partner
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Deletion Failed",
+        description: result.message,
+      });
+    }
+  };
 
   const renderContent = () => {
     switch (view) {
@@ -140,6 +163,7 @@ export default function PartnerDetailView({ partner, onUpdatePartner }: PartnerD
         onClose={() => setIsEditModalOpen(false)}
         partner={partner}
         onSave={handleUpdate}
+        onDelete={handleDelete}
       />
     </>
   );

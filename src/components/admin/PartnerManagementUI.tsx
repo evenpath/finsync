@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import { createTenant } from '@/ai/flows/create-tenant-flow';
 import { useToast } from "@/hooks/use-toast";
 import { updatePartner } from '@/ai/flows/update-partner-flow';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -37,11 +38,18 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
             setIsLoading(false);
             return;
         }
-        const q = query(collection(db, "partners"));
+        const q = query(collection(db, "partners"), orderBy("name"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const partnersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
-            // Sort partners client-side
-            partnersData.sort((a, b) => a.name.localeCompare(b.name));
+            const partnersData = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    // Convert timestamps to strings if they exist
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+                } as Partner;
+            });
             setPartners(partnersData);
 
             if (!selectedPartner && partnersData.length > 0) {
@@ -65,7 +73,13 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
 
         // Cleanup the listener on component unmount
         return () => unsubscribe();
-    }, [toast]); // Removed selectedPartner from dependency array to prevent re-subscribing on select
+    }, [toast]);
+
+    useEffect(() => {
+        if (!selectedPartner && partners.length > 0) {
+            setSelectedPartner(partners[0]);
+        }
+    }, [partners, selectedPartner]);
 
     // Filter partners based on search query and status
     const filteredPartners = partners.filter(partner => {
@@ -157,6 +171,10 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 description: errorMessage 
             });
         }
+    };
+    
+    const handleDeletePartner = () => {
+        setSelectedPartner(null);
     };
 
     const handleStatusFilterChange = (status: string) => {
@@ -257,6 +275,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                             <PartnerDetailView 
                                 partner={selectedPartner} 
                                 onUpdatePartner={handleUpdatePartner}
+                                onDeletePartner={handleDeletePartner}
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full">

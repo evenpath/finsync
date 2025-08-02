@@ -7,3 +7,4 @@ import '@/ai/flows/manage-admin-user-flow.ts';
 import '@/ai/flows/create-tenant-flow.ts';
 import '@/ai/flows/update-partner-flow.ts';
 import '@/ai/flows/user-management-flow.ts';
+import '@/ai/flows/delete-partner-flow.ts';
