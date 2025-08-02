@@ -1,19 +1,10 @@
-
-// src/ai/flows/user-management-flow.ts
 'use server';
-
-/**
- * @fileOverview A Genkit flow for managing user creation within tenants.
- *
- * - createUserInTenant - A function that creates a user within a specific tenant and sets up mapping.
- * - CreateUserInTenantInput - The input type for the createUserInTenant function.
- * - CreateUserInTenantOutput - The return type for the createUserInTenant function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { adminAuth } from '@/lib/firebase-admin';
 import { createUserMapping, validateTenantId } from '@/services/tenant-service';
+import { setUserClaims } from './set-user-claims-flow';
 
 const CreateUserInTenantInputSchema = z.object({
   email: z.string().email().describe('The email address of the new user.'),
@@ -21,6 +12,7 @@ const CreateUserInTenantInputSchema = z.object({
   tenantId: z.string().describe('The tenant ID where the user should be created.'),
   displayName: z.string().optional().describe('The display name for the new user.'),
   partnerId: z.string().optional().describe('The partner ID to associate with this user.'),
+  role: z.enum(['partner_admin', 'employee']).default('employee').describe('The role for the new user.'),
 });
 export type CreateUserInTenantInput = z.infer<typeof CreateUserInTenantInputSchema>;
 
@@ -69,6 +61,19 @@ const createUserInTenantFlow = ai.defineFlow(
 
       console.log(`Successfully created user ${input.email} in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
 
+      // Set custom claims for the user
+      const claimsResult = await setUserClaims({
+        userId: userRecord.uid,
+        tenantId: input.tenantId,
+        role: input.role,
+        partnerId: input.partnerId || input.tenantId,
+      });
+
+      if (!claimsResult.success) {
+        console.warn(`Failed to set claims for user ${input.email}:`, claimsResult.message);
+      }
+
+      // Create user mapping
       const mappingResult = await createUserMapping(input.email, input.tenantId, input.partnerId);
       if (!mappingResult.success) {
         console.warn(`Failed to create user mapping for ${input.email}:`, mappingResult.message);

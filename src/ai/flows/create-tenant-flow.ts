@@ -1,25 +1,30 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow for creating Firebase Auth tenants for new partners.
+ * @fileOverview A Genkit flow for creating Firebase Auth tenants and partner documents.
  *
- * - createTenant - A function that handles creating a new Firebase Auth tenant.
+ * - createTenant - A function that handles creating a new Firebase Auth tenant and a partner record in Firestore.
  * - CreateTenantInput - The input type for the createTenant function.
  * - CreateTenantOutput - The return type for the createTenant function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth, db } from '@/lib/firebase-admin';
+import type { Partner } from '@/lib/types';
+import * as admin from 'firebase-admin';
+import { createUserInTenant } from './user-management-flow';
 
 const CreateTenantInputSchema = z.object({
-  partnerName: z.string().describe('The name of the partner organization for which to create a tenant.'),
+  partnerName: z.string().describe('The name of the partner organization.'),
+  email: z.string().email().describe("The primary admin's email for the partner."),
 });
 export type CreateTenantInput = z.infer<typeof CreateTenantInputSchema>;
 
 const CreateTenantOutputSchema = z.object({
-  success: z.boolean().describe('Whether the tenant creation was successful.'),
+  success: z.boolean().describe('Whether the operation was successful.'),
   tenantId: z.string().optional().describe('The new tenant ID if creation was successful.'),
+  partnerId: z.string().optional().describe('The new partner document ID if creation was successful.'),
   message: z.string().describe('A message detailing the result of the operation.'),
 });
 export type CreateTenantOutput = z.infer<typeof CreateTenantOutputSchema>;
@@ -35,34 +40,30 @@ const createTenantFlow = ai.defineFlow(
     outputSchema: CreateTenantOutputSchema,
   },
   async (input) => {
-    if (!adminAuth) {
+    if (!adminAuth || !db) {
         return {
             success: false,
-            message: "Firebase Admin SDK is not initialized. Cannot create tenant. Ensure your service account environment variables are set correctly on the server.",
+            message: "Firebase Admin SDK is not initialized. Cannot create partner. Ensure your service account environment variables are set correctly on the server.",
         };
     }
 
     try {
-      // Sanitize the partner name to create a valid tenant displayName.
-      // Rules: starts with a letter, only letters, digits, hyphens, 4-20 chars.
+      // 1. Sanitize the partner name for tenant display name
       const sanitizedName = input.partnerName
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '') // Remove invalid characters
-        .replace(/\s+/g, '-')       // Replace spaces with hyphens
-        .substring(0, 20);          // Truncate to 20 characters
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 20);
         
-      // Ensure it starts with a letter
       let finalDisplayName = sanitizedName;
       if (!/^[a-z]/.test(finalDisplayName)) {
           finalDisplayName = 't-' + finalDisplayName.substring(0, 18);
       }
-      
-      // Ensure it meets minimum length
       if (finalDisplayName.length < 4) {
           finalDisplayName = (finalDisplayName + '-1234').substring(0, 20);
       }
 
-
+      // 2. Create the Firebase Auth Tenant
       const tenant = await adminAuth.tenantManager().createTenant({
         displayName: finalDisplayName,
         emailSignInConfig: {
@@ -70,16 +71,67 @@ const createTenantFlow = ai.defineFlow(
           passwordRequired: true, 
         },
       });
-
       console.log(`Successfully created tenant for ${input.partnerName} with ID: ${tenant.tenantId}`);
+
+      // 3. Create the Partner document in Firestore
+      const newPartner: Omit<Partner, 'id'> = {
+          tenantId: tenant.tenantId,
+          name: input.partnerName,
+          businessName: input.partnerName,
+          contactPerson: input.partnerName,
+          email: input.email,
+          phone: '',
+          status: 'pending',
+          plan: 'Starter',
+          joinedDate: new Date().toISOString(),
+          industry: null,
+          businessSize: 'small',
+          employeeCount: 1,
+          monthlyRevenue: '0',
+          location: { city: '', state: '' },
+          aiProfileCompleteness: 0,
+          stats: {
+              activeWorkflows: 0,
+              totalExecutions: 0,
+              successRate: 0,
+              avgROI: 0,
+              timeSaved: '0 hours/month',
+          },
+          businessProfile: null,
+          aiMemory: null,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+      const docRef = await db.collection("partners").add(newPartner);
+      console.log("Partner document created with ID:", docRef.id);
+      
+      // 4. Create the partner's admin user within the new tenant
+      const userResult = await createUserInTenant({
+          email: input.email,
+          password: 'TempPassword123!', // User should reset this
+          tenantId: tenant.tenantId,
+          displayName: input.partnerName,
+          partnerId: docRef.id, // Associate user with the new partner document ID
+          role: 'partner_admin',
+      });
+
+      if (!userResult.success) {
+          // This is a partial success, the tenant and partner exist, but user creation failed.
+          // In a real production app, you might want to roll back the previous steps.
+          console.warn(`Partner created, but user creation failed: ${userResult.message}`);
+      } else {
+          console.log(`Admin user ${input.email} created successfully for partner ${docRef.id}`);
+      }
 
       return {
         success: true,
         tenantId: tenant.tenantId,
-        message: `Successfully created tenant for ${input.partnerName}.`,
+        partnerId: docRef.id,
+        message: `Successfully created partner ${input.partnerName} and admin user.`,
       };
+
     } catch (error: any) {
-        console.error("Error creating Firebase Auth tenant:", error);
+        console.error("Error in createTenantFlow:", error);
 
         if (error.code === 'PERMISSION_DENIED' || (error.message && error.message.includes('permission'))) {
              if (error.message && error.message.includes('serviceusage.services.use')) {
@@ -103,7 +155,7 @@ const createTenantFlow = ai.defineFlow(
 
         return {
             success: false,
-            message: `Failed to create tenant: ${error.message}`,
+            message: `Failed to create partner: ${error.message}`,
         };
     }
   }

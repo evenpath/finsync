@@ -21,7 +21,6 @@ import {
 import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { mockAdminUsers } from "@/lib/mockData";
 import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -44,7 +43,7 @@ export default function UserManagement() {
         
         if (!selectedUser && adminUsers.length > 0) {
             const defaultUser = adminUsers.find(u => u.email !== currentUser?.email);
-            setSelectedUser(defaultUser || null);
+            setSelectedUser(defaultUser || adminUsers[0]);
         }
         setIsLoading(false);
     }, (error) => {
@@ -59,10 +58,13 @@ export default function UserManagement() {
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
+    // Super Admins can manage anyone except themselves. Admins cannot manage anyone.
+    if (currentUser?.customClaims?.role !== 'Super Admin') return [];
     return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser, users]);
 
   useEffect(() => {
+    // If the selected user is the current user (which shouldn't happen for Super Admins), select another one.
     if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
       setSelectedUser(manageableUsers[0] || null);
     }
@@ -116,7 +118,7 @@ export default function UserManagement() {
           <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline">All Admins ({manageableUsers.length})</CardTitle>
+                    <CardTitle className="font-headline">All Admins ({users.length})</CardTitle>
                     <div className="flex items-center gap-2">
                         <div className="relative w-full max-w-xs">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -130,7 +132,7 @@ export default function UserManagement() {
                 <div className="divide-y">
                     {isLoading ? (
                       <p className="p-6 text-muted-foreground">Loading admins...</p>
-                    ) : manageableUsers.map((user) => (
+                    ) : users.map((user) => (
                       <div
                         key={user.id}
                         className={`p-4 md:p-6 hover:bg-secondary cursor-pointer transition-colors ${
@@ -179,7 +181,7 @@ export default function UserManagement() {
                   </div>
                   <div className="space-y-2 pt-4">
                     <div><label className="text-sm font-medium text-muted-foreground">Status</label><p className="capitalize">{selectedUser.status}</p></div>
-                    <div><label className="text-sm font-medium text-muted-foreground">Joined</label><p>{selectedUser.joinedDate}</p></div>
+                    <div><label className="text-sm font-medium text-muted-foreground">Joined</label><p>{new Date(selectedUser.joinedDate).toLocaleDateString()}</p></div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">Permissions</label>
                         <div className="flex flex-wrap gap-1 mt-1">

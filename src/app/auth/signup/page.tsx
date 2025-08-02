@@ -1,5 +1,3 @@
-
-// src/app/auth/signup/page.tsx
 "use client";
 
 import { useState } from 'react';
@@ -65,13 +63,14 @@ export default function SignupPage() {
             });
             console.log(`Partner ${name} saved to Firestore with tenantId ${tenantResult.tenantId}`);
 
-            // 3. Create the user account within the tenant
+            // 3. Create the user account within the tenant as partner_admin
             const userResult = await createUserInTenant({
                 email: email,
                 password: password,
                 tenantId: tenantResult.tenantId,
                 displayName: name,
                 partnerId: tenantResult.tenantId,
+                role: 'partner_admin',
             });
 
             if (!userResult.success) {
@@ -85,14 +84,12 @@ export default function SignupPage() {
                 description: "Your organization workspace has been set up. You can now sign in.",
             });
 
-            // Redirect to login page instead of automatic sign-in
             router.push('/partner/login');
 
         } catch (error: any) {
             console.error("Signup Error:", error);
             
             let errorMessage = "Failed to create account. Please try again.";
-            
             if (error.message) {
                 errorMessage = error.message;
             }
@@ -155,8 +152,12 @@ export default function SignupPage() {
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Creating Account...' : 'Create Account'}
+                            {isLoading ? 'Creating Account...' : 'Create Organization'}
                         </Button>
+                        <div className="text-center text-sm text-muted-foreground">
+                            Want to join an existing organization?{" "}
+                            <Link href="/partner/join" className="underline">Join here</Link>
+                        </div>
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{" "}
                             <Link href="/partner/login" className="underline">Sign in</Link>
