@@ -7,7 +7,8 @@ import { getPartnerTenantId } from '@/services/tenant-service';
 import type { CreateUserInTenantOutput } from '@/ai/flows/user-management-flow';
 
 export async function inviteEmployeeAction(data: {
-  email: string;
+  email?: string;
+  phone?: string;
   name: string;
   partnerId: string;
   role?: 'employee' | 'partner_admin';
@@ -26,6 +27,7 @@ export async function inviteEmployeeAction(data: {
     // Create user in the partner's tenant
     const userResult = await createUserInTenant({
       email: data.email,
+      phone: data.phone,
       // Generate a random temporary password. The user will need to reset it.
       password: Math.random().toString(36).slice(-8), 
       tenantId: partnerTenant.tenantId,

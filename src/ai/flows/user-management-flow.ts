@@ -7,7 +7,8 @@ import { adminAuth } from '@/lib/firebase-admin';
 import { createUserMapping, validateTenantId } from '@/services/tenant-service';
 
 const CreateUserInTenantInputSchema = z.object({
-  email: z.string().email().describe('The email address of the new user.'),
+  email: z.string().email().optional().describe('The email address of the new user. Required if phone number is not provided.'),
+  phone: z.string().optional().describe('The phone number of the new user in E.164 format. Required if email is not provided.'),
   password: z.string().min(6).describe('The password for the new user.'),
   tenantId: z.string().describe('The tenant ID where the user should be created.'),
   displayName: z.string().optional().describe('The display name for the new user.'),
@@ -48,6 +49,13 @@ const createUserInTenantFlow = ai.defineFlow(
         };
     }
 
+    if (!input.email && !input.phone) {
+      return {
+        success: false,
+        message: "Either an email or a phone number must be provided to create a user."
+      };
+    }
+
     try {
       const isValidTenant = await validateTenantId(input.tenantId);
       if (!isValidTenant) {
@@ -59,13 +67,22 @@ const createUserInTenantFlow = ai.defineFlow(
 
       // Step 1: Create the user within the specified tenant
       const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
-      const userRecord = await tenantAuth.createUser({
-        email: input.email,
+      
+      const userToCreate: admin.auth.CreateRequest = {
         password: input.password,
         displayName: input.displayName,
-        emailVerified: false, // Set to false, user should verify their email
-      });
-      console.log(`Successfully created user ${input.email} in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
+      };
+
+      if (input.email) {
+        userToCreate.email = input.email;
+        userToCreate.emailVerified = false; // User should verify their email
+      }
+      if (input.phone) {
+        userToCreate.phoneNumber = input.phone;
+      }
+
+      const userRecord = await tenantAuth.createUser(userToCreate);
+      console.log(`Successfully created user in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
 
       // Step 2: Set custom claims for the newly created user
       const claims = {
@@ -77,8 +94,11 @@ const createUserInTenantFlow = ai.defineFlow(
       console.log(`Successfully set claims for user ${userRecord.uid}:`, claims);
 
       // Step 3: Create the user mapping for quick tenant lookup during login
+      // Mapping is always done by email for now, as phone lookups are not directly supported for tenant resolution.
+      const mappingIdentifier = input.email || `${input.phone}@suupe.com`;
+      
       const mappingResult = await createUserMapping(
-        input.email, 
+        mappingIdentifier, 
         input.tenantId, 
         input.partnerId
       );
@@ -86,18 +106,18 @@ const createUserInTenantFlow = ai.defineFlow(
       if (!mappingResult.success) {
           // If mapping fails, it's a critical issue for login.
           // Consider a rollback or cleanup strategy here in a real app.
-          console.warn(`CRITICAL: Failed to create user mapping for ${input.email}. User will not be able to log in.`, mappingResult.message);
+          console.warn(`CRITICAL: Failed to create user mapping for ${mappingIdentifier}. User will not be able to log in.`, mappingResult.message);
           return {
               success: false,
               message: `User created, but failed to set up login mapping. Please contact support. Error: ${mappingResult.message}`,
           }
       }
-      console.log(`Successfully created user mapping for ${input.email}`);
+      console.log(`Successfully created user mapping for ${mappingIdentifier}`);
 
       return {
         success: true,
         userId: userRecord.uid,
-        message: `Successfully created user ${input.email} in tenant ${input.tenantId}.`,
+        message: `Successfully created user ${input.email || input.phone} in tenant ${input.tenantId}.`,
       };
 
     } catch (error: any) {
@@ -107,8 +127,12 @@ const createUserInTenantFlow = ai.defineFlow(
       
       if (error.code === 'auth/email-already-exists') {
         errorMessage = "An account with this email already exists in your organization.";
+      } else if (error.code === 'auth/phone-number-already-exists') {
+        errorMessage = "An account with this phone number already exists in your organization.";
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = "Please provide a valid email address.";
+      } else if (error.code === 'auth/invalid-phone-number') {
+        errorMessage = "Please provide a valid phone number in E.164 format (e.g., +15551234567).";
       } else if (error.code === 'auth/weak-password') {
         errorMessage = "Password should be at least 6 characters long.";
       }

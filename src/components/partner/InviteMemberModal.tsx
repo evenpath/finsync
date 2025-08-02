@@ -1,4 +1,3 @@
-
 // src/components/partner/InviteMemberModal.tsx
 "use client";
 
@@ -22,25 +21,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Phone } from 'lucide-react';
 
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onInviteMember: (memberData: { name: string, email: string, role: 'partner_admin' | 'employee' }) => void;
+  onInviteMember: (memberData: { name: string, phone: string, role: 'partner_admin' | 'employee' }) => void;
 }
 
 export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: InviteMemberModalProps) {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'partner_admin' | 'employee'>('employee');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email) {
-      onInviteMember({ name, email, role });
+    if (name && phone) {
+      onInviteMember({ name, phone, role });
       setName('');
-      setEmail('');
+      setPhone('');
       setRole('employee');
     }
   };
@@ -55,7 +54,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: I
               Invite Team Member
             </DialogTitle>
             <DialogDescription>
-              Enter the details of the new team member to send an invitation.
+              Enter the details of the new team member to send an invitation. They will sign in using their phone number.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -73,16 +72,17 @@ export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: I
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
+              <Label htmlFor="phone" className="text-right flex items-center">
+                <Phone className="w-4 h-4 mr-1" />
+                Phone
               </Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="col-span-3"
-                placeholder="jane.doe@example.com"
+                placeholder="+15551234567"
                 required
               />
             </div>

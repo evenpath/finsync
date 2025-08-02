@@ -34,7 +34,7 @@ export default function TeamManagement() {
   const { user } = useAuth();
 
 
-  const handleInviteMember = async (newMemberData: { name: string; email: string; role: 'partner_admin' | 'employee' }) => {
+  const handleInviteMember = async (newMemberData: { name: string; phone: string; role: 'partner_admin' | 'employee' }) => {
     if (!user?.customClaims?.partnerId) {
         toast({
             variant: "destructive",
@@ -47,6 +47,7 @@ export default function TeamManagement() {
     try {
         const result = await inviteEmployeeAction({
             ...newMemberData,
+            email: `${newMemberData.phone}@suupe.com`, // Create a dummy email for phone auth users
             partnerId: user.customClaims.partnerId,
         });
 
@@ -60,7 +61,7 @@ export default function TeamManagement() {
             const newMember: TeamMember = {
               id: teamMembers.length + 1,
               name: newMemberData.name,
-              email: newMemberData.email,
+              email: newMemberData.phone, // Display phone number here
               role: newMemberData.role,
               status: 'invited',
               lastActive: 'Never',
@@ -162,7 +163,7 @@ export default function TeamManagement() {
                     <Badge variant={selectedMember.status === 'active' ? 'success' : 'warning'} className="mt-2">{selectedMember.status}</Badge>
                   </div>
                   <div className="space-y-2 pt-4">
-                    <div><label className="text-sm font-medium text-muted-foreground">Email</label><p>{selectedMember.email}</p></div>
+                    <div><label className="text-sm font-medium text-muted-foreground">Contact</label><p>{selectedMember.email}</p></div>
                     <div><label className="text-sm font-medium text-muted-foreground">Joined</label><p>{selectedMember.joinedDate}</p></div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">Skills</label>
