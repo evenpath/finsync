@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         photoURL: firebaseUser.photoURL,
                         phoneNumber: firebaseUser.phoneNumber,
                         emailVerified: firebaseUser.emailVerified,
-                        // The claims are directly on the token result, not nested.
+                        // Correctly access the claims directly from the token result
                         customClaims: idTokenResult.claims,
                         creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),

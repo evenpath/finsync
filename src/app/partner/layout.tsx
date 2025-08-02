@@ -16,7 +16,7 @@ function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
       return false;
     }
     const role = user.customClaims.role;
-    // A Super Admin should be able to see the partner portal for troubleshooting.
+    // A Super Admin, partner_admin, or employee can see the partner portal.
     return role === 'Super Admin' || role === 'partner_admin' || role === 'employee';
   }, [user, loading, isAuthenticated]);
 
@@ -26,8 +26,6 @@ function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
         router.push('/partner/login');
       } else if (!isAuthorized) {
         // If not authorized for this section, redirect to a safe default page.
-        // For example, an employee trying to access a partner-admin only page might get sent to their dashboard.
-        // For simplicity here, we'll redirect to the main page.
         router.push('/');
       }
     }
