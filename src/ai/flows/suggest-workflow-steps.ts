@@ -42,16 +42,16 @@ const prompt = ai.definePrompt({
   model: googleAI.model('gemini-1.5-flash-latest'),
   input: {schema: SuggestWorkflowStepsInputSchema},
   output: {schema: SuggestWorkflowStepsOutputSchema},
-  prompt: `You are an expert AI workflow designer for a chat-based task management system. Your task is to analyze a user's description of a business problem and design a structured, automated workflow using a predefined set of triggers and actions.
+  prompt: `You are an expert AI workflow designer for a chat-based task management system. Your primary goal is to design the most efficient operational workflow possible based on a user's problem description.
 
 You MUST only use the following available Triggers and Actions:
 
-**Available Triggers (Must start with one of these):**
+**Available Triggers (A workflow must start with one of these):**
 - type: "trigger_chat_message"
   name: "Analyze Incoming Message"
   description: "Triggers when a new message is received and uses AI to analyze its content."
 
-**Available Actions (Can use one or more of these):**
+**Available Actions (Can use one or more of these in a logical sequence):**
 - type: "action_ai_analysis"
   name: "AI Analysis"
   description: "Let AI analyze, classify, or process content from a previous step."
@@ -78,11 +78,12 @@ You MUST only use the following available Triggers and Actions:
   description: "Change the status of a project, task, or customer."
 
 **Your Task:**
-1.  Read the user's workflow description carefully.
-2.  Choose a descriptive 'name' and 'description' for the entire workflow.
-3.  Select the most appropriate TRIGGER from the list above to start the workflow. It will always be 'trigger_chat_message'.
-4.  Select a logical sequence of ACTIONS from the list above to accomplish the user's goal. Create a clear, step-by-step process.
-5.  Format your entire response as a single JSON object matching the output schema. Do not add any text or explanation outside of the JSON object.
+1.  Read the user's workflow description carefully to understand their core operational goal.
+2.  Design the most efficient and logical sequence of steps to solve the problem.
+3.  Choose a descriptive 'name' and 'description' for the entire workflow.
+4.  The first step in your suggested workflow MUST be a TRIGGER.
+5.  The subsequent steps must be ACTIONS, arranged in a sequence that makes operational sense.
+6.  Format your entire response as a single JSON object matching the output schema. Do not add any text or explanation outside of the JSON object.
 
 **User's Workflow Description:**
 "{{workflowDescription}}"
