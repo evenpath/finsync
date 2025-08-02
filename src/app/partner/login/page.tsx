@@ -1,4 +1,3 @@
-
 // src/app/partner/login/page.tsx
 "use client";
 
@@ -88,7 +87,6 @@ export default function PartnerLoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary/50">
       <Card className="w-full max-w-sm">
         <form onSubmit={handleLogin}>
           <CardHeader>
@@ -135,6 +133,5 @@ export default function PartnerLoginPage() {
           </CardFooter>
         </form>
       </Card>
-    </div>
   );
 }

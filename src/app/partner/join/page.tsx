@@ -74,7 +74,6 @@ export default function JoinPartnerPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary/50">
       <Card className="w-full max-w-sm">
         <form onSubmit={handleJoin}>
           <CardHeader>
@@ -146,6 +145,5 @@ export default function JoinPartnerPage() {
           </CardFooter>
         </form>
       </Card>
-    </div>
   );
 }

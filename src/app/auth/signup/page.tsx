@@ -61,62 +61,60 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-secondary/50">
-            <Card className="w-full max-w-sm">
-                <form onSubmit={handleSignup}>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-2xl">Create Partner Account</CardTitle>
-                        <CardDescription>Set up your organization&apos;s workspace</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Organization Name</Label>
-                            <Input 
-                                id="name" 
-                                type="text" 
-                                placeholder="Your Company Name" 
-                                required 
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                disabled={isLoading}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Work Email</Label>
-                            <Input 
-                                id="email" 
-                                type="email" 
-                                placeholder="you@company.com" 
-                                required 
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={isLoading}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input 
-                                id="password" 
-                                type="password" 
-                                required 
-                                minLength={6}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={isLoading}
-                            />
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Creating Account...' : 'Create Organization'}
-                        </Button>
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{" "}
-                            <Link href="/partner/login" className="underline">Sign in</Link>
-                        </div>
-                    </CardFooter>
-                </form>
-            </Card>
-        </div>
+        <Card className="w-full max-w-sm">
+            <form onSubmit={handleSignup}>
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Create Partner Account</CardTitle>
+                    <CardDescription>Set up your organization&apos;s workspace</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="name">Organization Name</Label>
+                        <Input 
+                            id="name" 
+                            type="text" 
+                            placeholder="Your Company Name" 
+                            required 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="email">Work Email</Label>
+                        <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="you@company.com" 
+                            required 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input 
+                            id="password" 
+                            type="password" 
+                            required 
+                            minLength={6}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? 'Creating Account...' : 'Create Organization'}
+                    </Button>
+                    <div className="text-center text-sm text-muted-foreground">
+                        Already have an account?{" "}
+                        <Link href="/partner/login" className="underline">Sign in</Link>
+                    </div>
+                </CardFooter>
+            </form>
+        </Card>
     );
 }
