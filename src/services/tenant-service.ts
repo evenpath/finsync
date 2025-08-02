@@ -7,6 +7,7 @@ import { db, adminAuth } from '@/lib/firebase-admin';
 export interface TenantLookupResult {
   success: boolean;
   tenantId?: string;
+  partnerId?: string;
   message?: string;
 }
 
@@ -40,11 +41,13 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
         return {
           success: true,
           tenantId: data.tenantId,
+          partnerId: data.partnerId,
           message: "Tenant found via user mapping"
         };
       }
     }
     
+    // Fallback for migration: check partners collection if mapping doesn't exist
     const partnersRef = db.collection('partners');
     const partnerQuery = await partnersRef.where('email', '==', lowercasedEmail).limit(1).get();
     
@@ -53,6 +56,7 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
       const partnerData = partnerDoc.data();
       
       if (partnerData.tenantId) {
+        // Create the mapping for next time
         await userMappingRef.set({
           email: lowercasedEmail,
           tenantId: partnerData.tenantId,
@@ -63,7 +67,8 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
         return {
           success: true,
           tenantId: partnerData.tenantId,
-          message: "Tenant found via partner lookup"
+          partnerId: partnerDoc.id,
+          message: "Tenant found via partner lookup and mapping created"
         };
       }
     }
@@ -81,6 +86,7 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
     };
   }
 }
+
 
 /**
  * Creates a user mapping between an email and tenant ID.

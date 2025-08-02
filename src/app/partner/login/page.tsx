@@ -26,6 +26,7 @@ export default function PartnerLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    auth.tenantId = null; // Reset tenant ID before starting
 
     try {
       // 1. Find the tenant ID for the user's email using the server action
@@ -34,6 +35,8 @@ export default function PartnerLoginPage() {
       if (!tenantLookup.success || !tenantLookup.tenantId) {
         throw new Error(tenantLookup.message || "Your organization could not be found. Please contact support.");
       }
+      
+      console.log(`Found tenant ${tenantLookup.tenantId} for ${email}`);
 
       // 2. Validate the tenant exists in Firebase Auth before attempting sign-in
       const isValidTenant = await validateTenantAction(tenantLookup.tenantId);
@@ -44,10 +47,7 @@ export default function PartnerLoginPage() {
       // 3. Set the tenant ID on the auth instance
       auth.tenantId = tenantLookup.tenantId;
       
-      // 4. Add a small delay to ensure tenant ID is properly set
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // 5. Sign in the user within their designated tenant
+      // 4. Sign in the user within their designated tenant
       await signInWithEmailAndPassword(auth, email, password);
 
       toast({ 
@@ -65,12 +65,10 @@ export default function PartnerLoginPage() {
       
       if (error.code === 'auth/invalid-tenant-id') {
         errorMessage = "Your organization's authentication is not properly configured. Please contact support.";
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = "No account found with this email address for your organization.";
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = "Incorrect password. Please try again.";
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          errorMessage = "Invalid email or password for your organization.";
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Please enter a valid email address.";
+          errorMessage = "Please enter a valid email address.";
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many failed attempts. Please try again later.";
       } else if (error.message) {
