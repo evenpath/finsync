@@ -21,13 +21,9 @@ export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInput
 const SuggestWorkflowStepsOutputSchema = z.object({
   suggestedSteps: z.array(
     z.object({
-      type: z.enum(['ai_agent', 'manual_input']).describe('The type of workflow step.'),
+      type: z.string().describe('The type of workflow step, e.g., "ai_agent" or "manual_input".'),
       title: z.string().describe('A suggested title for the workflow step.'),
       description: z.string().describe('A suggested description for the workflow step.'),
-      configuration: z.object({
-        agentType: z.enum(['summarize', 'classify', 'extract', 'generate', 'analyze']).optional().describe('The AI agent type, if applicable.'),
-        inputType: z.enum(['text', 'file', 'image', 'form']).optional().describe('The manual input type, if applicable.'),
-      }).describe('Configuration details for the step.'),
     })
   ).describe('An array of suggested workflow steps.'),
 });
@@ -45,10 +41,10 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI assistant that suggests workflow steps based on a workflow description.
 
   Given the following workflow description, suggest a list of relevant workflow steps.
-  Each step should have a type (ai_agent or manual_input), a title, a description, and a configuration.
+  Each step should have a type (e.g., ai_agent or manual_input), a title, and a description.
 
   Workflow Description: {{{workflowDescription}}}
-  `, // Removed Handlebars call to non-existent helper.
+  `,
 });
 
 const suggestWorkflowStepsFlow = ai.defineFlow(
