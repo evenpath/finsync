@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { createUserInTenant } from '@/ai/flows/user-management-flow';
 
 export default function SignupPage() {
     const [name, setName] = useState('');
@@ -30,11 +31,26 @@ export default function SignupPage() {
                 email: email 
             });
 
-            if (!tenantResult.success || !tenantResult.tenantId) {
+            if (!tenantResult.success || !tenantResult.tenantId || !tenantResult.partnerId) {
                 throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
             }
             console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
             
+            // 2. Create the admin user within the new tenant using the password they provided
+            const userResult = await createUserInTenant({
+                email: email,
+                password: password,
+                tenantId: tenantResult.tenantId,
+                displayName: name,
+                partnerId: tenantResult.partnerId,
+                role: 'partner_admin',
+            });
+
+            if (!userResult.success) {
+                // In a real app, you might want to roll back the tenant creation here.
+                throw new Error(userResult.message || "Workspace created, but failed to create your admin account.");
+            }
+
             toast({
                 title: "Account Created!",
                 description: "Your organization workspace has been set up. You can now sign in.",
