@@ -93,7 +93,7 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
       type,
       name,
       description,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random()}`, // Use a more unique ID
     };
     if (addActionTarget.branchIndex !== null) {
       setActions(prev => {
