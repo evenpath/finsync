@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
+import Link from 'next/link';
 
 function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useAuth();
@@ -15,8 +18,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     if (loading || !isAuthenticated || !user?.customClaims) {
       return false;
     }
-    const role = user.customClaims.role;
-    return role === 'Admin' || role === 'Super Admin';
+    // Only 'Super Admin' can access the /admin section.
+    return user.customClaims.role === 'Super Admin';
   }, [user, loading, isAuthenticated]);
 
 
@@ -26,13 +29,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [loading, isAuthenticated, router]);
 
-  // Display a skeleton loader while authentication is in progress OR if the user is not authorized yet.
-  if (loading || !isAuthorized) {
-    if (!loading && !isAuthenticated) {
-      // If not authenticated and not loading, we are about to redirect, so don't render anything.
-      return null;
-    }
-     // If loading or authenticated but not yet authorized, show a skeleton.
+  // If loading, show a skeleton UI.
+  if (loading) {
     return (
        <div className="flex h-screen">
             <div className="w-64 p-4 border-r">
@@ -49,6 +47,33 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
   
+  // After loading, if user is not authorized, show access denied message.
+  if (!isAuthorized) {
+    return (
+        <div className="flex h-screen bg-secondary/30 text-foreground">
+          <AdminSidebar />
+          <div className="flex-1 flex flex-col overflow-hidden p-6">
+            <Card className="border-destructive">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                    <ShieldAlert />
+                    Access Restricted
+                </CardTitle>
+                </CardHeader>
+                <CardContent>
+                <p className="text-destructive mb-4">
+                    You do not have the required permissions to access this page. This area is for Super Admins only.
+                </p>
+                <Link href="/" className="text-primary hover:underline">
+                    Go to Homepage
+                </Link>
+                </CardContent>
+            </Card>
+          </div>
+        </div>
+    )
+  }
+  
   // If authenticated and authorized, render the children.
   return children;
 }
@@ -61,14 +86,14 @@ export default function AdminLayout({
 }) {
   return (
     <AuthProvider>
-      <AdminAuthWrapper>
         <div className="flex h-screen bg-secondary/30 text-foreground">
-          <AdminSidebar />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {children}
-          </div>
+            <AdminAuthWrapper>
+                <AdminSidebar />
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    {children}
+                </div>
+            </AdminAuthWrapper>
         </div>
-      </AdminAuthWrapper>
     </AuthProvider>
   );
 }
