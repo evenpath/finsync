@@ -70,7 +70,7 @@ service cloud.firestore {
     }
     
     match /userMappings/{email} {
-      allow read: if isAuthenticated();
+      allow read: if true; // Publicly readable to find tenant ID before login
       allow write: if false; 
     }
 

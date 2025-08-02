@@ -67,7 +67,7 @@ const createUserInTenantFlow = ai.defineFlow(
         userId: userRecord.uid,
         tenantId: input.tenantId,
         role: input.role,
-        partnerId: input.partnerId || input.tenantId,
+        partnerId: input.partnerId || '', // Pass partnerId to claims
       });
 
       if (!claimsResult.success) {
