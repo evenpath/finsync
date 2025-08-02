@@ -1,3 +1,4 @@
+
 // src/components/chat/SuupeChat.tsx
 "use client";
 
