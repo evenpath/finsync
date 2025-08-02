@@ -3,8 +3,8 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow to suggest relevant workflow steps (AI Agent and manual input) 
- * based on a given workflow description.
+ * @fileOverview This file defines a Genkit flow to suggest a structured workflow 
+ * based on a user's natural language description of a business problem.
  *
  * @interface SuggestWorkflowStepsInput - Input type for the suggestWorkflowSteps function.
  * @interface SuggestWorkflowStepsOutput - Output type for the suggestWorkflowSteps function.
@@ -20,10 +20,17 @@ const SuggestWorkflowStepsInputSchema = z.object({
 });
 export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInputSchema>;
 
-const SuggestWorkflowStepsOutputSchema = z.object({
-  suggestion: z.string().describe('A plain text suggestion for the workflow steps.'),
+const WorkflowStepSchema = z.object({
+  type: z.string().describe("The type of the step, e.g., 'trigger_chat_message', 'action_ai_analysis', 'action_assign_task'."),
+  name: z.string().describe("A human-readable name for the step, e.g., 'Analyze Incoming Chat Message'."),
+  description: z.string().describe("A brief explanation of what this step does."),
 });
 
+const SuggestWorkflowStepsOutputSchema = z.object({
+  name: z.string().describe("A concise name for the entire workflow."),
+  description: z.string().describe("A short description of what the workflow accomplishes."),
+  steps: z.array(WorkflowStepSchema).describe("An array of the structured steps for the workflow."),
+});
 export type SuggestWorkflowStepsOutput = z.infer<typeof SuggestWorkflowStepsOutputSchema>;
 
 export async function suggestWorkflowSteps(input: SuggestWorkflowStepsInput): Promise<SuggestWorkflowStepsOutput> {
@@ -35,21 +42,59 @@ const prompt = ai.definePrompt({
   model: googleAI.model('gemini-1.5-flash-latest'),
   input: {schema: SuggestWorkflowStepsInputSchema},
   output: {schema: SuggestWorkflowStepsOutputSchema},
-  prompt: `You are an expert AI workflow designer. Your task is to analyze a user's description of a business problem and break it down into a logical sequence of steps.
+  prompt: `You are an expert AI workflow designer for a chat-based task management system. Your task is to analyze a user's description of a business problem and design a structured, automated workflow using a predefined set of triggers and actions.
 
-Provide a simple, text-based suggestion for the workflow steps. Each step should be on a new line.
+You MUST only use the following available Triggers and Actions:
 
-For example, if the user says "A workflow to handle customer support requests", you could suggest:
-1. AI Agent: Categorize the incoming support request.
-2. Conditional Logic: If urgent, notify the support lead.
-3. Manual Step: Create a ticket in the helpdesk system.
-4. AI Agent: Send an automated confirmation email to the customer.
+**Available Triggers (Must start with one of these):**
+- type: "trigger_chat_message"
+  name: "Analyze Incoming Chat Message"
+  description: "Triggers when a new chat message is received and uses AI to analyze its content."
+- type: "trigger_keyword_mention"
+  name: "Keyword Mentioned in Chat"
+  description: "Triggers when a specific keyword or phrase is mentioned in a chat message."
+- type: "trigger_user_joins_chat"
+  name: "User Joins Chat"
+  description: "Triggers when a new user joins a specific chat workspace."
 
-Now, please analyze the following workflow description and provide your suggested steps.
+**Available Actions (Can use one or more of these):**
+- type: "action_ai_analysis"
+  name: "AI Analysis"
+  description: "Let AI analyze, classify, or process content from a previous step."
+- type: "action_assign_task"
+  name: "Assign Task"
+  description: "Create and assign a task to a team member."
+- type: "action_create_todo"
+  name: "Create To-Do Item"
+  description: "Add a to-do item to a personal or team list."
+- type: "action_request_approval"
+  name: "Request Approval"
+  description: "Ask a manager or admin to approve something before continuing."
+- type: "action_send_email"
+  name: "Send Email"
+  description: "Send an email notification to internal or external contacts."
+- type: "action_send_notification"
+  name: "Send In-App Notification"
+  description: "Send an in-app or push notification to users."
+- type: "action_log_information"
+  name: "Log Information"
+  description: "Record important information or notes to a system log."
+- type: "action_update_status"
+  name: "Update Status"
+  description: "Change the status of a project, task, or customer."
 
-Workflow Description: {{{workflowDescription}}}
+**Your Task:**
+1.  Read the user's workflow description.
+2.  Choose a descriptive 'name' and 'description' for the entire workflow.
+3.  Select the most appropriate TRIGGER from the list above to start the workflow. The most common trigger will be 'trigger_chat_message'.
+4.  Select a logical sequence of ACTIONS from the list above to accomplish the user's goal.
+5.  Format your entire response as a single JSON object matching the output schema. Do not add any text or explanation outside of the JSON object.
+
+**User's Workflow Description:**
+"{{workflowDescription}}"
   `,
 });
+
 
 const suggestWorkflowStepsFlow = ai.defineFlow(
   {
