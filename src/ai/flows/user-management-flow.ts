@@ -5,7 +5,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { adminAuth } from '@/lib/firebase-admin';
 import { createUserMapping, validateTenantId } from '@/services/tenant-service';
-import { setUserClaims } from './set-user-claims-flow';
 
 const CreateUserInTenantInputSchema = z.object({
   email: z.string().email().describe('The email address of the new user.'),
@@ -51,34 +50,42 @@ const createUserInTenantFlow = ai.defineFlow(
         };
       }
 
+      // Step 1: Create the user within the specified tenant
       const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
-
       const userRecord = await tenantAuth.createUser({
         email: input.email,
         password: input.password,
         displayName: input.displayName,
-        emailVerified: false,
+        emailVerified: false, // Set to false, user should verify their email
       });
-
       console.log(`Successfully created user ${input.email} in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
 
-      // Set custom claims for the user
-      const claimsResult = await setUserClaims({
-        userId: userRecord.uid,
-        tenantId: input.tenantId,
+      // Step 2: Set custom claims for the newly created user
+      const claims = {
         role: input.role,
-        partnerId: input.partnerId || '', // Pass partnerId to claims
-      });
+        partnerId: input.partnerId || null,
+        tenantId: input.tenantId,
+      };
+      await tenantAuth.setCustomUserClaims(userRecord.uid, claims);
+      console.log(`Successfully set claims for user ${userRecord.uid}:`, claims);
 
-      if (!claimsResult.success) {
-        console.warn(`Failed to set claims for user ${input.email}:`, claimsResult.message);
-      }
+      // Step 3: Create the user mapping for quick tenant lookup during login
+      const mappingResult = await createUserMapping(
+        input.email, 
+        input.tenantId, 
+        input.partnerId
+      );
 
-      // Create user mapping
-      const mappingResult = await createUserMapping(input.email, input.tenantId, input.partnerId);
       if (!mappingResult.success) {
-        console.warn(`Failed to create user mapping for ${input.email}:`, mappingResult.message);
+          // If mapping fails, it's a critical issue for login.
+          // Consider a rollback or cleanup strategy here in a real app.
+          console.warn(`CRITICAL: Failed to create user mapping for ${input.email}. User will not be able to log in.`, mappingResult.message);
+          return {
+              success: false,
+              message: `User created, but failed to set up login mapping. Please contact support. Error: ${mappingResult.message}`,
+          }
       }
+      console.log(`Successfully created user mapping for ${input.email}`);
 
       return {
         success: true,
