@@ -36,9 +36,9 @@ async function PartnerManagement() {
                             <AlertTriangle className="w-12 h-12 text-destructive flex-shrink-0" />
                             <div>
                                 <h3 className="text-lg font-bold text-destructive">Error Connecting to Database</h3>
-                                <p className="text-muted-foreground mt-2">Could not fetch partner data. This is likely due to missing or incorrect Firebase Admin credentials in your environment variables.</p>
+                                <p className="text-muted-foreground mt-2">Could not fetch partner data. This is likely due to missing or incorrect Firebase Admin credentials in your environment variables or insufficient IAM permissions for your service account.</p>
                                 <p className="text-xs text-muted-foreground mt-4 font-mono bg-destructive/20 p-2 rounded"><strong>Details:</strong> {errorMessage}</p>
-                                <p className="text-sm text-muted-foreground mt-3">Please ensure your <strong>.env</strong> file contains the correct `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`.</p>
+                                <p className="text-sm text-muted-foreground mt-3">Please check your <strong>.env</strong> file and ensure your service account has the 'Firebase Admin SDK Administrator' and 'Cloud Datastore User' roles in the Google Cloud IAM console.</p>
                             </div>
                         </div>
                     </CardContent>

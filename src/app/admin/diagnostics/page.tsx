@@ -190,22 +190,24 @@ export default function FirebaseDiagnosticsPage() {
           <div className="text-sm space-y-2">
             <p><strong>1. Enable Identity Platform:</strong></p>
             <p className="text-muted-foreground ml-4">
-              Go to Google Cloud Console → Identity Platform → Enable Multi-tenancy
+              Go to Google Cloud Console → Identity Platform → Settings → Enable Multi-tenancy
             </p>
             
             <p><strong>2. Service Account Permissions:</strong></p>
-            <div className="text-muted-foreground ml-4 space-y-1">
-              <p>• Firebase Admin SDK Administrator Service Agent</p>
-              <p>• Service Usage Consumer</p>
-              <p>• Identity Platform Admin</p>
-              <p>• Firebase Authentication Admin</p>
+            <p className="text-muted-foreground ml-4">
+              In Google Cloud IAM, grant these roles to your service account ({process.env.FIREBASE_CLIENT_EMAIL || 'your-service-account@...'}):
+            </p>
+            <div className="text-muted-foreground ml-8 space-y-1">
+              <p>• <strong>Firebase Admin SDK Administrator Service Agent</strong> (for general Firebase Admin actions)</p>
+              <p>• <strong>Service Usage Consumer</strong> (to check if APIs like Identity Platform are enabled)</p>
+              <p>• <strong>Identity Platform Admin</strong> (to manage tenants)</p>
+              <p>• <strong>Firebase Authentication Admin</strong> (to manage users within tenants)</p>
+              <p>• <strong>Cloud Datastore User</strong> (for Firestore database access)</p>
             </div>
             
             <p><strong>3. Environment Variables:</strong></p>
             <div className="text-muted-foreground ml-4 space-y-1">
-              <p>• FIREBASE_PRIVATE_KEY</p>
-              <p>• FIREBASE_CLIENT_EMAIL</p>
-              <p>• NEXT_PUBLIC_FIREBASE_PROJECT_ID</p>
+              <p>• Ensure your <strong>.env</strong> file contains `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.</p>
             </div>
           </div>
         </CardContent>

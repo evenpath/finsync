@@ -1,3 +1,4 @@
+
 // src/components/admin/UserManagement.tsx
 "use client";
 
@@ -34,21 +35,25 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
     const unsub = onSnapshot(collection(db, "admins"), (snapshot) => {
         const adminUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
         setUsers(adminUsers);
+        setError(null);
         
         if (!selectedUser && adminUsers.length > 0) {
             const defaultUser = adminUsers.find(u => u.email !== currentUser?.email);
             setSelectedUser(defaultUser || adminUsers[0]);
         }
         setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching admins:", error);
-        toast({ variant: "destructive", title: "Error fetching admins", description: error.message });
+    }, (err) => {
+        console.error("Error fetching admins:", err);
+        const errorMessage = `Failed to fetch admins: ${err.message}. Ensure the service account has Firestore read permissions.`;
+        setError(errorMessage);
+        toast({ variant: "destructive", title: "Error fetching admins", description: errorMessage });
         setIsLoading(false);
     });
 
@@ -129,6 +134,11 @@ export default function UserManagement() {
                 </div>
             </CardHeader>
             <CardContent className="p-0">
+                 {error ? (
+                    <div className="p-6 text-center text-destructive">
+                      <p>{error}</p>
+                    </div>
+                ) : (
                 <div className="divide-y">
                     {isLoading ? (
                       <p className="p-6 text-muted-foreground">Loading admins...</p>
@@ -161,6 +171,7 @@ export default function UserManagement() {
                       </div>
                     ))}
                 </div>
+                )}
             </CardContent>
           </Card>
         </div>
