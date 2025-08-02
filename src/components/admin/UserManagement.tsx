@@ -50,7 +50,8 @@ export default function UserManagement() {
     }
       
     setIsLoading(true);
-    const unsub = onSnapshot(collection(db, "admins"), (snapshot) => {
+    const q = collection(db, "admins");
+    const unsubscribe = onSnapshot(q, (snapshot) => {
         const adminUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
         setUsers(adminUsers);
         setError(null);
@@ -71,8 +72,15 @@ export default function UserManagement() {
         setIsLoading(false);
     });
 
-    return () => unsub();
-  }, [currentUser?.email, selectedUser, toast]);
+    return () => unsubscribe();
+  }, [currentUser?.email]);
+
+  useEffect(() => {
+    if (users.length > 0 && !selectedUser) {
+        const defaultUser = users.find(u => u.email !== currentUser?.email);
+        setSelectedUser(defaultUser || users[0]);
+    }
+  }, [users, selectedUser, currentUser?.email]);
 
 
   const manageableUsers = useMemo(() => {
