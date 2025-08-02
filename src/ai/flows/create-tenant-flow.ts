@@ -19,6 +19,7 @@ import { createUserInTenant } from './user-management-flow';
 const CreateTenantInputSchema = z.object({
   partnerName: z.string().describe('The name of the partner organization.'),
   email: z.string().email().describe("The primary admin's email for the partner."),
+  password: z.string().min(6).describe('The password for the new admin user.'),
 });
 export type CreateTenantInput = z.infer<typeof CreateTenantInputSchema>;
 
@@ -109,7 +110,7 @@ const createTenantFlow = ai.defineFlow(
       // 4. Create the partner's admin user within the new tenant
       const userResult = await createUserInTenant({
           email: input.email,
-          password: 'TempPassword123!', // User should reset this
+          password: input.password,
           tenantId: tenant.tenantId,
           displayName: input.partnerName,
           partnerId: docRef.id, // Associate user with the new partner document ID
@@ -120,6 +121,7 @@ const createTenantFlow = ai.defineFlow(
           // This is a partial success, the tenant and partner exist, but user creation failed.
           // In a real production app, you might want to roll back the previous steps.
           console.warn(`Partner created, but user creation failed: ${userResult.message}`);
+          throw new Error(userResult.message);
       } else {
           console.log(`Admin user ${input.email} created successfully for partner ${docRef.id}`);
       }

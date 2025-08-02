@@ -90,59 +90,57 @@ export default function PartnerLoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm">
-        <form onSubmit={handleLogin}>
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
-            <CardDescription>Enter your work email to access your workspace.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="you@company.com" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                autoComplete="email"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                autoComplete="current-password"
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-            <div className="text-center text-sm text-muted-foreground">
-              Need to create an organization?{" "}
-              <Link href="/auth/signup" className="underline hover:text-primary">
-                Sign up
-              </Link>
-            </div>
-            <div className="text-center text-sm text-muted-foreground">
-              Joining a team?{" "}
-              <Link href="/partner/join" className="underline hover:text-primary">
-                Join here
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+    <Card className="w-full max-w-sm">
+      <form onSubmit={handleLogin}>
+        <CardHeader>
+          <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
+          <CardDescription>Enter your work email to access your workspace.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="you@company.com" 
+              required 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              autoComplete="email"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input 
+              id="password" 
+              type="password" 
+              required 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              autoComplete="current-password"
+            />
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </Button>
+          <div className="text-center text-sm text-muted-foreground">
+            Need to create an organization?{" "}
+            <Link href="/partner/signup" className="underline hover:text-primary">
+              Sign up
+            </Link>
+          </div>
+          <div className="text-center text-sm text-muted-foreground">
+            Joining a team?{" "}
+            <Link href="/partner/join" className="underline hover:text-primary">
+              Join here
+            </Link>
+          </div>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }

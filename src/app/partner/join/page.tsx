@@ -136,7 +136,7 @@ export default function JoinPartnerPage() {
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               Need to create a new organization?{" "}
-              <Link href="/auth/signup" className="underline">Start here</Link>
+              <Link href="/partner/signup" className="underline">Start here</Link>
             </div>
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}

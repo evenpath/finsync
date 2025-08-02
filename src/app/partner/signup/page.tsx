@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createTenant } from '@/ai/flows/create-tenant-flow';
-import { createUserInTenant } from '@/ai/flows/user-management-flow';
 
-export default function SignupPage() {
+export default function PartnerSignupPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -26,31 +25,18 @@ export default function SignupPage() {
 
         try {
             // 1. Create a new Firebase Auth tenant and Partner document for the new partner
-            const tenantResult = await createTenant({ 
+            // This flow now also creates the user, so we pass the password.
+            const result = await createTenant({ 
                 partnerName: name, 
-                email: email 
-            });
-
-            if (!tenantResult.success || !tenantResult.tenantId || !tenantResult.partnerId) {
-                throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
-            }
-            console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
-            
-            // 2. Create the admin user within the new tenant using the password they provided
-            const userResult = await createUserInTenant({
                 email: email,
                 password: password,
-                tenantId: tenantResult.tenantId,
-                displayName: name,
-                partnerId: tenantResult.partnerId,
-                role: 'partner_admin',
             });
 
-            if (!userResult.success) {
-                // In a real app, you might want to roll back the tenant creation here.
-                throw new Error(userResult.message || "Workspace created, but failed to create your admin account.");
+            if (!result.success) {
+                throw new Error(result.message || "Failed to create a new partner workspace.");
             }
-
+            console.log(`New tenant created: ${result.tenantId} for partner ${result.partnerId}`);
+            
             toast({
                 title: "Account Created!",
                 description: "Your organization workspace has been set up. You can now sign in.",
