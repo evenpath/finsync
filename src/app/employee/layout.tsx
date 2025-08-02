@@ -17,7 +17,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
       return false;
     }
     const role = user.customClaims.role;
-    // A Super Admin should be able to see the employee portal.
+    // A Super Admin or Partner Admin should be able to see the employee portal.
     return role === 'Super Admin' || role === 'partner_admin' || role === 'employee';
   }, [user, loading, isAuthenticated]);
 

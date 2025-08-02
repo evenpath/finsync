@@ -25,6 +25,9 @@ function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
       if (!isAuthenticated) {
         router.push('/partner/login');
       } else if (!isAuthorized) {
+        // If not authorized for this section, redirect to a safe default page.
+        // For example, an employee trying to access a partner-admin only page might get sent to their dashboard.
+        // For simplicity here, we'll redirect to the main page.
         router.push('/');
       }
     }
