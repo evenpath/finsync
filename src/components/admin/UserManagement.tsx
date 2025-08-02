@@ -65,7 +65,7 @@ export default function UserManagement() {
         console.error("Error fetching admins:", err);
         let errorMessage = `Failed to fetch admins: ${err.message}.`;
         if (err.message.includes('permission-denied') || err.message.includes('insufficient permissions')) {
-            errorMessage += " Please ensure the service account has the 'Cloud Datastore User' role in IAM.";
+            errorMessage = "Failed to fetch admins due to missing permissions. Please visit the Diagnostics page to review your project's IAM role configuration.";
         }
         setError(errorMessage);
         toast({ variant: "destructive", title: "Permission Error", description: errorMessage, duration: 10000 });
@@ -170,6 +170,12 @@ export default function UserManagement() {
                 <div className="divide-y">
                     {isLoading ? (
                       <p className="p-6 text-muted-foreground">Loading admins...</p>
+                    ) : users.length === 0 ? (
+                       <div className="p-6 text-center text-muted-foreground">
+                        <Users className="w-8 h-8 mx-auto mb-2" />
+                        <h4 className="font-bold mb-1">No Admins Found</h4>
+                        <p className="text-xs mb-4">Invite the first admin to get started.</p>
+                      </div>
                     ) : users.map((user) => (
                       <div
                         key={user.id}
