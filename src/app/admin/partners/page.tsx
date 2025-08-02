@@ -9,10 +9,15 @@ import { AlertTriangle } from "lucide-react";
 
 // This is a Server Component that fetches data and passes it to the Client Component.
 async function PartnerManagement() {
-    // The server-side fetching is removed to rely solely on the client-side
-    // real-time listener in PartnerManagementUI, which avoids the permission error
-    // during the initial render. The client component will handle loading and display.
-    return <PartnerManagementUI initialPartners={[]} />;
+    try {
+        await seedInitialPartners(); // Ensure mock data exists if db is empty
+        const partners = await getPartners();
+        return <PartnerManagementUI initialPartners={partners} />;
+    } catch (error: any) {
+        console.error("Failed to fetch partners on server:", error.message);
+        // Pass the error to the client component to display
+        return <PartnerManagementUI initialPartners={[]} error={error.message} />;
+    }
 }
 
 
