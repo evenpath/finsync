@@ -114,7 +114,7 @@ export default function WorkflowTemplateGrid({ templates, onTemplateSelect, onCr
                 </CardHeader>
                 <CardContent className="flex-grow space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1"><Layers className="w-4 h-4" /><span>{template.steps} steps</span></div>
+                        <div className="flex items-center gap-1"><Layers className="w-4 h-4" /><span>{template.steps.length} steps</span></div>
                         <div className="flex items-center gap-1"><Bot className="w-4 h-4" /><span>{template.aiAgents} AI agents</span></div>
                         <div className="flex items-center gap-1"><Clock className="w-4 h-4" /><span>{template.estimatedTime}</span></div>
                         <div className="flex items-center gap-1"><Users className="w-4 h-4" /><span>{template.usageCount} uses</span></div>
@@ -155,4 +155,3 @@ export default function WorkflowTemplateGrid({ templates, onTemplateSelect, onCr
     </div>
   );
 }
-
