@@ -35,7 +35,6 @@ export async function GET() {
 }
 
 // src/app/api/diagnostics/admin-sdk/route.ts
-import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 
 export async function GET() {
@@ -66,9 +65,6 @@ export async function GET() {
 }
 
 // src/app/api/diagnostics/multi-tenancy/route.ts
-import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
-
 export async function GET() {
   try {
     if (!adminAuth) {
@@ -114,9 +110,6 @@ export async function GET() {
 }
 
 // src/app/api/diagnostics/create-test-tenant/route.ts
-import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
-
 export async function POST(request: Request) {
   try {
     const { partnerName } = await request.json();
