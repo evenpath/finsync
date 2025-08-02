@@ -434,6 +434,249 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
           </div>
         );
 
+      case 'create_todo':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Task Title</Label>
+              <Input
+                type="text"
+                value={config.title || ''}
+                onChange={(e) => updateStepConfig(stepId, { title: e.target.value })}
+                placeholder="e.g., Follow up on customer request"
+              />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Textarea
+                value={config.description || ''}
+                onChange={(e) => updateStepConfig(stepId, { description: e.target.value })}
+                placeholder="Add more details about the to-do item"
+                rows={3}
+              />
+            </div>
+             <div>
+                <Label>Priority</Label>
+                <select value={config.priority} onChange={(e) => updateStepConfig(stepId, { priority: e.target.value })} className="w-full px-3 py-2 border border-input rounded-lg">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+          </div>
+        );
+      
+      case 'request_approval':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Request From</Label>
+              <select
+                value={config.approver || ''}
+                onChange={(e) => updateStepConfig(stepId, { approver: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-lg"
+              >
+                <option value="">Select approver...</option>
+                {approverOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Approval Message</Label>
+              <Textarea
+                value={config.message || ''}
+                onChange={(e) => updateStepConfig(stepId, { message: e.target.value })}
+                placeholder="Please approve this..."
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+
+      case 'send_email':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Recipients</Label>
+              <select
+                value={config.recipients?.[0] || ''}
+                onChange={(e) => updateStepConfig(stepId, { recipients: [e.target.value] })}
+                className="w-full px-3 py-2 border border-input rounded-lg"
+              >
+                <option value="">Select recipient group...</option>
+                {recipientOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input
+                type="text"
+                value={config.subject || ''}
+                onChange={(e) => updateStepConfig(stepId, { subject: e.target.value })}
+                placeholder="Email subject"
+              />
+            </div>
+            <div>
+              <Label>Email Body</Label>
+              <Textarea
+                value={config.message || ''}
+                onChange={(e) => updateStepConfig(stepId, { message: e.target.value })}
+                placeholder="Write your email content here."
+                rows={5}
+              />
+            </div>
+          </div>
+        );
+      
+      case 'create_calendar_event':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Event Title</Label>
+              <Input
+                type="text"
+                value={config.title || ''}
+                onChange={(e) => updateStepConfig(stepId, { title: e.target.value })}
+                placeholder="e.g., Follow-up call"
+              />
+            </div>
+            <div>
+              <Label>Attendees</Label>
+              <select
+                value={config.attendees?.[0] || ''}
+                onChange={(e) => updateStepConfig(stepId, { attendees: [e.target.value] })}
+                className="w-full px-3 py-2 border border-input rounded-lg"
+              >
+                <option value="">Select attendees...</option>
+                {recipientOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Duration (minutes)</Label>
+              <Input
+                type="number"
+                value={config.duration || 30}
+                onChange={(e) => updateStepConfig(stepId, { duration: parseInt(e.target.value) })}
+                min="15"
+                step="15"
+              />
+            </div>
+          </div>
+        );
+
+      case 'update_status':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Target Entity</Label>
+              <select
+                value={config.target || 'task'}
+                onChange={(e) => updateStepConfig(stepId, { target: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-lg"
+              >
+                <option value="task">Task</option>
+                <option value="project">Project</option>
+                <option value="customer">Customer</option>
+              </select>
+            </div>
+            <div>
+              <Label>New Status</Label>
+              <Input
+                type="text"
+                value={config.newStatus || ''}
+                onChange={(e) => updateStepConfig(stepId, { newStatus: e.target.value })}
+                placeholder="e.g., 'Completed', 'Awaiting Feedback'"
+              />
+            </div>
+          </div>
+        );
+
+      case 'ai_analysis':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Analysis Type</Label>
+              <select
+                value={config.action || 'summarize'}
+                onChange={(e) => updateStepConfig(stepId, { action: e.target.value })}
+                className="w-full px-3 py-2 border border-input rounded-lg"
+              >
+                <option value="summarize">Summarize</option>
+                <option value="classify">Classify</option>
+                <option value="extract">Extract Info</option>
+                <option value="custom">Custom Prompt</option>
+              </select>
+            </div>
+            {config.action === 'custom' && (
+              <div>
+                <Label>Custom AI Prompt</Label>
+                <Textarea
+                  value={config.prompt || ''}
+                  onChange={(e) => updateStepConfig(stepId, { prompt: e.target.value })}
+                  placeholder="Your custom prompt for the AI..."
+                  rows={4}
+                />
+              </div>
+            )}
+          </div>
+        );
+
+      case 'log_information':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Log Message</Label>
+              <Textarea
+                value={config.message || ''}
+                onChange={(e) => updateStepConfig(stepId, { message: e.target.value })}
+                placeholder="Information to log..."
+                rows={4}
+              />
+            </div>
+            <div>
+              <Label>Category</Label>
+              <Input
+                type="text"
+                value={config.category || 'General'}
+                onChange={(e) => updateStepConfig(stepId, { category: e.target.value })}
+              />
+            </div>
+          </div>
+        );
+
+      case 'send_notification':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Send To</Label>
+              <select
+                value={config.recipients?.[0] || ''}
+                onChange={(e) => updateStepConfig(stepId, { recipients: [e.target.value] })}
+                className="w-full px-3 py-2 border border-input rounded-lg"
+              >
+                <option value="">Select recipient group...</option>
+                {recipientOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Notification Message</Label>
+              <Textarea
+                value={config.message || ''}
+                onChange={(e) => updateStepConfig(stepId, { message: e.target.value })}
+                placeholder="Your notification message..."
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+
       default:
         return <div className="text-muted-foreground">This step is fully configured and requires no extra input.</div>;
     }
