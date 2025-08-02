@@ -49,9 +49,6 @@ export async function getPartners(tenantId?: string): Promise<Partner[]> {
         partners.push(partnerData);
     });
     
-    // Sort partners client-side to avoid complex Firestore indexing
-    partners.sort((a, b) => a.name.localeCompare(b.name));
-
     return partners;
 }
 

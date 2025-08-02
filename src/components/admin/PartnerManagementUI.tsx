@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Partner } from '@/lib/types';
 import PartnerCard from "@/components/admin/PartnerCard";
 import PartnerDetailView from "@/components/admin/PartnerDetailView";
@@ -38,7 +38,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
             setIsLoading(false);
             return;
         }
-        const q = query(collection(db, "partners"), orderBy("name"));
+        const q = query(collection(db, "partners"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const partnersData = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -50,6 +50,10 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
                 } as Partner;
             });
+            
+            // Sort partners client-side
+            partnersData.sort((a, b) => a.name.localeCompare(b.name));
+            
             setPartners(partnersData);
 
             if (!selectedPartner && partnersData.length > 0) {
@@ -82,7 +86,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
     }, [partners, selectedPartner]);
 
     // Filter partners based on search query and status
-    const filteredPartners = partners.filter(partner => {
+    const filteredPartners = useMemo(() => partners.filter(partner => {
         const matchesSearch = partner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (partner.businessName && partner.businessName.toLowerCase().includes(searchQuery.toLowerCase())) ||
                             partner.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -90,7 +94,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
         const matchesStatus = filterStatus === 'all' || partner.status === filterStatus;
         
         return matchesSearch && matchesStatus;
-    });
+    }), [partners, searchQuery, filterStatus]);
 
     if (error) {
         return (
