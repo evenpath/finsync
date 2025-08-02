@@ -40,6 +40,13 @@ const createUserInTenantFlow = ai.defineFlow(
         message: "Firebase Admin SDK is not initialized. Cannot create user. Ensure your service account environment variables are set correctly on the server.",
       };
     }
+    
+    if (!input.partnerId) {
+        return {
+            success: false,
+            message: "Internal Error: Partner ID was not provided to the user creation flow. Cannot create user mapping."
+        };
+    }
 
     try {
       const isValidTenant = await validateTenantId(input.tenantId);
