@@ -1,9 +1,8 @@
-
 // src/ai/flows/suggest-workflow-steps.ts
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow to suggest a structured workflow 
+ * @fileOverview This file defines a Genkit flow to suggest a structured, conditional workflow
  * based on a user's natural language description of a business problem.
  *
  * @interface SuggestWorkflowStepsInput - Input type for the suggestWorkflowSteps function.
@@ -20,20 +19,26 @@ const SuggestWorkflowStepsInputSchema = z.object({
 });
 export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInputSchema>;
 
-const WorkflowStepSchema = z.object({
-  type: z.string().describe("The type of the step, e.g., 'chat_message', 'create_todo', 'assign_task'."),
-  name: z.string().describe("A human-readable name for the step, e.g., 'Analyze Incoming Chat Message'."),
+
+const StepSchema: z.ZodType<any> = z.lazy(() => z.object({
+  type: z.string().describe("The type of the step, e.g., 'ai_agent', 'human_input', 'conditional_branch', 'api_call', 'notification'."),
+  name: z.string().describe("A human-readable name for the step, e.g., 'Classify Request Urgency'."),
   description: z.string().describe("A brief explanation of what this step does."),
-  // Note: 'color' and 'icon' are handled by the frontend based on type, so not needed in the AI output.
-});
+  // For conditional branches
+  branches: z.array(z.object({
+    condition: z.string().describe("The condition for this branch, e.g., 'IF urgency = CRITICAL'"),
+    steps: z.array(StepSchema).describe("The nested steps for this branch.")
+  })).optional(),
+}));
+
 
 const SuggestWorkflowStepsOutputSchema = z.object({
   name: z.string().describe("A concise name for the entire workflow."),
   description: z.string().describe("A short description of what the workflow accomplishes."),
-  trigger: WorkflowStepSchema.describe("The trigger step that starts the workflow."),
-  actions: z.array(WorkflowStepSchema).describe("An array of the structured action steps for the workflow."),
+  steps: z.array(StepSchema).describe("An array of the structured steps for the workflow, which can include nested conditional branches."),
 });
 export type SuggestWorkflowStepsOutput = z.infer<typeof SuggestWorkflowStepsOutputSchema>;
+
 
 export async function suggestWorkflowSteps(input: SuggestWorkflowStepsInput): Promise<SuggestWorkflowStepsOutput> {
   return suggestWorkflowStepsFlow(input);
@@ -44,34 +49,55 @@ const prompt = ai.definePrompt({
   model: googleAI.model('gemini-1.5-flash-latest'),
   input: {schema: SuggestWorkflowStepsInputSchema},
   output: {schema: SuggestWorkflowStepsOutputSchema},
-  prompt: `You are an expert AI workflow designer for a chat-based task management system. Your primary goal is to design the most efficient operational workflow possible based on a user's problem description.
+  prompt: `You are an expert AI workflow designer for an operational automation platform. Your primary goal is to design the most efficient and logical operational workflow possible based on a user's problem description.
 
-You MUST only use the following available Triggers and Actions:
+The key is to use conditional logic to handle different scenarios.
 
-**Available Triggers (A workflow must start with one of these):**
-- type: "chat_message", name: "AI Chat Analysis", description: "When AI detects specific intent, urgency, or patterns in chat messages"
-- type: "keyword_mention", name: "Keyword Mention", description: "When specific keywords are mentioned in chat"
-- type: "user_joins", name: "User Joins Chat", description: "When someone joins a workspace or chat"
-
-**Available Actions (Can use one or more of these in a logical sequence):**
-- type: "create_todo", name: "Create To-Do Item", description: "Add item to personal or team to-do list"
-- type: "assign_task", name: "Assign Task", description: "Create and assign a task to a team member"
-- type: "request_approval", name: "Request Approval", description: "Ask manager or admin to approve something"
-- type: "send_email", name: "Send Email", description: "Send email notification to internal or external contacts"
-- type: "create_calendar_event", name: "Schedule Meeting", description: "Create calendar event or schedule meeting"
-- type: "update_status", name: "Update Status", description: "Change project, task, or customer status"
-- type: "ai_analysis", name: "AI Analysis", description: "Let AI analyze, classify, or process content"
-- type: "log_information", name: "Log Information", description: "Record important information or notes"
-- type: "send_notification", name: "Send Notification", description: "Send in-app or push notification to users"
-
+**Available Step Types:**
+- 'ai_agent': An AI model performs a task (e.g., classify, analyze, generate).
+- 'human_input': The workflow pauses to get input or a decision from a person.
+- 'api_call': The workflow interacts with an external system (e.g., CRM, Calendar, SMS Gateway).
+- 'notification': The workflow sends an alert (e.g., email, push, chat).
+- 'conditional_branch': A step that contains multiple "branches". Each branch has a condition (like "IF urgency = CRITICAL") and a list of nested steps to execute if that condition is met.
 
 **Your Task:**
-1. Read the user's workflow description carefully to understand their core operational goal.
-2. Design the most efficient and logical sequence of steps to solve the problem.
-3. Choose a descriptive 'name' and 'description' for the entire workflow.
-4. Select ONE appropriate trigger from the list and place it in the 'trigger' field.
-5. Select a sequence of one or more ACTIONS and place them in the 'actions' array. The sequence must make operational sense.
-6. Format your entire response as a single JSON object matching the output schema. Do not add any text or explanation outside of the JSON object.
+1.  Read the user's workflow description to understand their operational goal.
+2.  Deconstruct the problem into logical steps.
+3.  **Crucially, identify where the process needs to change based on different conditions (e.g., urgency, customer type, cost). Use the 'conditional_branch' step for this.**
+4.  For each conditional branch, define the condition clearly (e.g., "IF urgency = HIGH") and list the specific action steps inside that branch.
+5.  Combine all steps into a logical sequence.
+6.  Provide a concise 'name' and 'description' for the entire workflow.
+7.  Format your entire response as a single JSON object matching the output schema.
+
+**Example of a Conditional Branch Structure:**
+
+{
+  "type": "conditional_branch",
+  "name": "Urgency Level Assessment",
+  "description": "Routes the workflow based on the classified urgency of the request.",
+  "branches": [
+    {
+      "condition": "IF urgency = CRITICAL",
+      "steps": [
+        { "type": "human_input", "name": "Manager Approval", "description": "A manager must approve the immediate dispatch within 5 minutes." },
+        { "type": "api_call", "name": "Dispatch On-Call Staff", "description": "Send an urgent SMS to the on-call technician." }
+      ]
+    },
+    {
+      "condition": "ELSE IF urgency = HIGH",
+      "steps": [
+        { "type": "human_input", "name": "Supervisor Review", "description": "A supervisor reviews the request within 30 minutes." }
+      ]
+    },
+    {
+      "condition": "ELSE (low priority)",
+      "steps": [
+        { "type": "ai_agent", "name": "Add to Weekly Queue", "description": "The request is added to the weekly planning and scheduling queue." }
+      ]
+    }
+  ]
+}
+
 
 **User's Workflow Description:**
 "{{workflowDescription}}"

@@ -1,4 +1,3 @@
-
 // src/app/admin/workflows/page.tsx
 "use client";
 
@@ -107,7 +106,7 @@ export default function AdminWorkflowsPage() {
               Create a New AI Workflow
             </DialogTitle>
             <DialogDescription>
-              Describe a business process, and our AI will design a workflow for you to customize.
+              Describe a business process, and our AI will design a workflow for you to customize. The more detail, the better the result.
             </DialogDescription>
           </DialogHeader>
 
@@ -119,7 +118,7 @@ export default function AdminWorkflowsPage() {
               onChange={(e) => setProblemDescription(e.target.value)}
               className="w-full mt-2"
               rows={8}
-              placeholder="e.g., A customer support request comes in via chat. If it mentions 'urgent' or 'complaint', create a high-priority ticket in our helpdesk and notify the support manager immediately."
+              placeholder="e.g., We handle emergency maintenance for rental properties. When a tenant reports an urgent issue like a water leak, we need to get manager approval within 5 minutes, immediately dispatch an on-call tech via SMS, and then notify all property supervisors. For less urgent issues, we need a different process..."
             />
           </div>
 

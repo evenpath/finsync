@@ -314,7 +314,7 @@ export interface WorkflowTemplate {
 
 export interface WorkflowStep {
   id: string;
-  type: 'ai_agent' | 'human_input' | 'approval' | 'notification' | 'api_call' | 'conditional' | 'data_processing' | 'file_handling' | 'delay' | 'webhook';
+  type: 'ai_agent' | 'human_input' | 'approval' | 'notification' | 'api_call' | 'conditional_branch' | 'data_processing' | 'file_handling' | 'delay' | 'webhook';
   title: string;
   description: string;
   configuration: StepConfiguration;
@@ -325,6 +325,12 @@ export interface WorkflowStep {
   timeout?: number;
   retryPolicy?: RetryPolicy;
   aiGenerated?: boolean;
+  branches?: WorkflowBranch[]; // For conditional steps
+}
+
+export interface WorkflowBranch {
+  condition: string;
+  steps: WorkflowStep[];
 }
 
 export interface StepConfiguration {
