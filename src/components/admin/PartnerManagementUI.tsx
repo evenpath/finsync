@@ -13,7 +13,7 @@ import { createTenant } from '@/ai/flows/create-tenant-flow';
 import { useToast } from "@/hooks/use-toast";
 import { updatePartner } from '@/ai/flows/update-partner-flow';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -32,9 +32,16 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
     // Set up a real-time listener for the partners collection
     useEffect(() => {
         setIsLoading(true);
-        const q = query(collection(db, "partners"), orderBy("name"));
+        if (!db) {
+            console.error("Firestore not initialized");
+            setIsLoading(false);
+            return;
+        }
+        const q = query(collection(db, "partners"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const partnersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
+            // Sort partners client-side
+            partnersData.sort((a, b) => a.name.localeCompare(b.name));
             setPartners(partnersData);
 
             if (!selectedPartner && partnersData.length > 0) {
@@ -58,7 +65,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
 
         // Cleanup the listener on component unmount
         return () => unsubscribe();
-    }, [selectedPartner, toast]);
+    }, [toast]); // Removed selectedPartner from dependency array to prevent re-subscribing on select
 
     // Filter partners based on search query and status
     const filteredPartners = partners.filter(partner => {

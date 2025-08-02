@@ -22,9 +22,6 @@ export async function getPartners(tenantId?: string): Promise<Partner[]> {
     // If a tenantId is provided, filter the query to only get that partner.
     if (tenantId) {
         query = partnersRef.where('tenantId', '==', tenantId).limit(1);
-    } else {
-        // If no tenantId, assume it's an admin call and fetch all partners, ordered by name.
-        query = partnersRef.orderBy('name');
     }
     
     const snapshot = await query.get();
@@ -44,6 +41,9 @@ export async function getPartners(tenantId?: string): Promise<Partner[]> {
         } as Partner;
         partners.push(partnerData);
     });
+
+    // Sort client-side to avoid complex Firestore indexing issues
+    partners.sort((a, b) => a.name.localeCompare(b.name));
 
     return partners;
 }
