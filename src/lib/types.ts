@@ -129,8 +129,8 @@ export interface Partner {
   };
   businessProfile: BusinessProfile | null;
   aiMemory: AIMemory | null;
-  createdAt?: any; // Allow for serverTimestamp
-  updatedAt?: any; // Allow for serverTimestamp
+  createdAt?: any | string; // Allow for serverTimestamp or string
+  updatedAt?: any | string; // Allow for serverTimestamp or string
   tasksCompleted?: number; // Added for mock data compatibility
 }
 

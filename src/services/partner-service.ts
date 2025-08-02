@@ -33,14 +33,24 @@ export async function getPartners(tenantId?: string): Promise<Partner[]> {
     const partners: Partner[] = [];
     snapshot.forEach(doc => {
         const data = doc.data();
+        
+        // Convert Firestore Timestamps to ISO strings
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
+        const updatedAt = data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt;
+
         const partnerData: Partner = {
             id: doc.id,
             ...data,
+            createdAt,
+            updatedAt,
             employeeCount: Number(data.employeeCount) || 0,
             aiProfileCompleteness: Number(data.aiProfileCompleteness) || 0,
         } as Partner;
         partners.push(partnerData);
     });
+    
+    // Sort partners client-side to avoid complex Firestore indexing
+    partners.sort((a, b) => a.name.localeCompare(b.name));
 
     return partners;
 }
@@ -59,7 +69,7 @@ export async function seedInitialPartners(): Promise<void> {
     const snapshot = await partnersRef.limit(1).get();
 
     if (!snapshot.empty) {
-        console.log('Partners collection is not empty. Skipping seed.');
+        // console.log('Partners collection is not empty. Skipping seed.');
         return;
     }
 
