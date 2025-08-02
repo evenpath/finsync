@@ -7,27 +7,12 @@
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
-
-export const SuggestIndustryTemplatesInputSchema = z.object({
-  industry: z.string().describe('The industry to generate workflow templates for (e.g., "Property Management").'),
-});
-export type SuggestIndustryTemplatesInput = z.infer<typeof SuggestIndustryTemplatesInputSchema>;
-
-export const IndustryTemplateSchema = z.object({
-  name: z.string().describe("A concise, descriptive name for the workflow template."),
-  description: z.string().describe("A one-sentence summary of what the workflow accomplishes."),
-  category: z.string().describe("A one-word category for the workflow (e.g., 'Emergency', 'Financial', 'Leasing')."),
-  popularity: z.enum(['Most Popular', 'Popular', 'New']).optional().describe("A popularity ranking."),
-  steps: z.number().int().describe("An estimated number of steps in the workflow."),
-  icon: z.string().length(1, { message: "Icon must be a single emoji character." }).describe("A single emoji character to represent the workflow."),
-});
-export type IndustryTemplate = z.infer<typeof IndustryTemplateSchema>;
-
-export const SuggestIndustryTemplatesOutputSchema = z.object({
-  templates: z.array(IndustryTemplateSchema),
-});
-export type SuggestIndustryTemplatesOutput = z.infer<typeof SuggestIndustryTemplatesOutputSchema>;
+import {
+  SuggestIndustryTemplatesInputSchema,
+  SuggestIndustryTemplatesOutputSchema,
+  type SuggestIndustryTemplatesInput,
+  type SuggestIndustryTemplatesOutput
+} from '@/lib/types';
 
 export async function suggestIndustryTemplates(input: SuggestIndustryTemplatesInput): Promise<SuggestIndustryTemplatesOutput> {
   return suggestIndustryTemplatesFlow(input);
