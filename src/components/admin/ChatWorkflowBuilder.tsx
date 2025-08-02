@@ -5,10 +5,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { SuggestWorkflowStepsOutput, WorkflowTemplate } from '@/lib/types';
-import { Plus, Zap, Save } from 'lucide-react';
+import { Plus, Zap, Save, ChevronDown, ChevronRight, X } from 'lucide-react';
 import Step from './Step';
+import { stepIcons } from './step-icons';
 
 interface ChatWorkflowBuilderProps {
   initialData?: SuggestWorkflowStepsOutput | null;
@@ -20,6 +22,7 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
   const [workflowName, setWorkflowName] = useState('');
   const [workflowDescription, setWorkflowDescription] = useState('');
   const [steps, setSteps] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
     if (initialData) {
@@ -29,27 +32,28 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
       const enrichedSteps = initialData.steps.map((step, index) => ({
         ...step,
         id: `step-${Date.now()}-${index}`,
-        // Recursively add IDs to nested steps
         branches: step.branches?.map((branch:any, branchIndex:number) => ({
           ...branch,
           steps: branch.steps.map((nestedStep:any, nestedIndex:number) => ({
             ...nestedStep,
             id: `step-${Date.now()}-${index}-${branchIndex}-${nestedIndex}`,
+            title: nestedStep.name,
+            description: nestedStep.description
           }))
         }))
       }));
       setSteps(enrichedSteps);
-
     }
   }, [initialData]);
 
   const handleSave = () => {
+    setIsSaving(true);
     const finalWorkflow: WorkflowTemplate = {
       id: `wf-${Date.now()}`,
       title: workflowName,
       description: workflowDescription,
       category: 'AI Generated',
-      complexity: 'medium', // This could be dynamically determined
+      complexity: 'medium',
       steps: steps.map((s, i) => ({
         id: s.id,
         type: s.type,
@@ -61,7 +65,7 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
         isRequired: true,
       })),
       aiAgents: steps.filter(s => s.type.includes('ai_')).length,
-      estimatedTime: 'N/A', // This could be dynamically determined
+      estimatedTime: 'N/A',
       usageCount: 0,
       lastModified: new Date().toLocaleDateString(),
       tags: ['AI Generated', workflowName.split(' ')[0]],
@@ -76,17 +80,26 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
       updatedAt: new Date(),
     };
     onSave(finalWorkflow);
+    setIsSaving(false);
   };
   
   const handleDeleteStep = (id: string) => {
     setSteps(prev => prev.filter(step => step.id !== id));
+  };
+  
+  const handleUpdateStep = (stepId: string, updatedData: any) => {
+    setSteps(prevSteps => prevSteps.map(step => {
+        if (step.id === stepId) {
+            return { ...step, ...updatedData };
+        }
+        return step;
+    }));
   };
 
   const isWorkflowValid = workflowName && steps.length > 0;
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      {/* Header */}
       <div className="bg-card border-b">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -102,11 +115,11 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
             <div className="flex gap-3">
               <Button variant="outline" onClick={onCancel}>Cancel</Button>
               <Button 
-                disabled={!isWorkflowValid}
+                disabled={!isWorkflowValid || isSaving}
                 onClick={handleSave}
               >
                 <Save className="w-4 h-4" />
-                Save Workflow
+                {isSaving ? 'Saving...' : 'Save Workflow'}
               </Button>
             </div>
           </div>
@@ -114,7 +127,6 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
       </div>
 
       <div className="container mx-auto max-w-4xl p-6">
-        {/* Workflow Info */}
         <div className="bg-card rounded-lg border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Workflow Template Details</h2>
           <div className="grid grid-cols-1 gap-4">
@@ -139,7 +151,6 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
           </div>
         </div>
 
-        {/* Workflow Steps */}
         <div className="space-y-4">
            {steps.map((step, index) => (
             <Step 
@@ -150,6 +161,7 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
               }} 
               index={index} 
               onDelete={() => handleDeleteStep(step.id)} 
+              onUpdate={(updatedData) => handleUpdateStep(step.id, updatedData)}
             />
           ))}
 

@@ -12,11 +12,12 @@ import {
   DialogDescription, 
   DialogFooter 
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { suggestWorkflowSteps, SuggestWorkflowStepsOutput } from '@/ai/flows/suggest-workflow-steps';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Zap } from 'lucide-react';
 import WorkflowTemplateGrid from '@/components/admin/WorkflowTemplateGrid';
 import type { WorkflowTemplate } from '@/lib/types';
 import ChatWorkflowBuilder from '@/components/admin/ChatWorkflowBuilder';

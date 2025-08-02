@@ -13,7 +13,8 @@ import {
   Bell,
   GitBranch,
   Phone,
-  Mail
+  Mail,
+  FormInput
 } from 'lucide-react';
 
 export const stepIcons: { [key: string]: React.ElementType } = {
@@ -21,6 +22,9 @@ export const stepIcons: { [key: string]: React.ElementType } = {
   trigger_chat_message: MessageSquare,
   trigger_keyword_mention: AlertCircle,
   trigger_user_joins: User,
+  trigger_incoming_email: Mail,
+  trigger_incoming_sms: Phone,
+  trigger_form_submission: FormInput,
   
   // Actions
   action_create_todo: CheckCircle,
