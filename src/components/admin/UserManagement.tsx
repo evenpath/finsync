@@ -2,7 +2,7 @@
 // src/components/admin/UserManagement.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import type { AdminUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ import {
   Settings,
   Shield,
   Trash2,
-  Users
+  Users,
+  AlertTriangle,
 } from "lucide-react";
 import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,6 +39,14 @@ export default function UserManagement() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!db) {
+        const dbError = "Firestore is not initialized. Check Firebase configuration.";
+        setError(dbError);
+        setIsLoading(false);
+        toast({ variant: "destructive", title: "Database Error", description: dbError });
+        return;
+    }
+      
     setIsLoading(true);
     const unsub = onSnapshot(collection(db, "admins"), (snapshot) => {
         const adminUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
@@ -51,25 +60,26 @@ export default function UserManagement() {
         setIsLoading(false);
     }, (err) => {
         console.error("Error fetching admins:", err);
-        const errorMessage = `Failed to fetch admins: ${err.message}. Ensure the service account has Firestore read permissions.`;
+        let errorMessage = `Failed to fetch admins: ${err.message}.`;
+        if (err.message.includes('permission-denied') || err.message.includes('insufficient permissions')) {
+            errorMessage += " Please ensure the service account has the 'Cloud Datastore User' role in IAM.";
+        }
         setError(errorMessage);
-        toast({ variant: "destructive", title: "Error fetching admins", description: errorMessage });
+        toast({ variant: "destructive", title: "Permission Error", description: errorMessage, duration: 10000 });
         setIsLoading(false);
     });
 
     return () => unsub();
-}, [currentUser?.email, selectedUser, toast]);
+  }, [currentUser?.email, selectedUser, toast]);
 
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
-    // Super Admins can manage anyone except themselves. Admins cannot manage anyone.
     if (currentUser?.customClaims?.role !== 'Super Admin') return [];
     return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser, users]);
 
   useEffect(() => {
-    // If the selected user is the current user (which shouldn't happen for Super Admins), select another one.
     if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
       setSelectedUser(manageableUsers[0] || null);
     }
@@ -135,8 +145,10 @@ export default function UserManagement() {
             </CardHeader>
             <CardContent className="p-0">
                  {error ? (
-                    <div className="p-6 text-center text-destructive">
-                      <p>{error}</p>
+                    <div className="p-6 text-center text-destructive bg-destructive/10">
+                      <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+                      <h4 className="font-bold mb-1">Failed to Load Admins</h4>
+                      <p className="text-xs">{error}</p>
                     </div>
                 ) : (
                 <div className="divide-y">

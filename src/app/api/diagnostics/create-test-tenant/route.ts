@@ -1,55 +1,52 @@
-
 // src/app/api/diagnostics/create-test-tenant/route.ts
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const { partnerName } = await request.json();
-
     if (!adminAuth) {
       return NextResponse.json({
         success: false,
         message: 'Firebase Admin SDK not initialized',
-        details: 'Cannot create tenant without Admin SDK'
-      });
+        details: 'Cannot create tenant without Admin SDK.',
+        fix: "This is a downstream effect of the Admin SDK failing to initialize. Check your environment variables."
+      }, { status: 500 });
     }
 
-    const testTenantId = `test-${Date.now()}`;
-    
-    // Create test tenant
+    // Create a test tenant with a unique display name for this test run.
     const tenant = await adminAuth.tenantManager().createTenant({
-      displayName: `test-diagnostic-tenant`,
+      displayName: `diagnostic-test-${Date.now()}`,
     });
 
-    // Immediately delete the test tenant
+    // Immediately delete the test tenant to clean up.
     await adminAuth.tenantManager().deleteTenant(tenant.tenantId);
 
     return NextResponse.json({
       success: true,
-      message: 'Tenant creation test successful',
-      details: `Created and deleted test tenant: ${tenant.tenantId}`
+      message: 'Successfully created and deleted a test tenant.',
+      details: `Test Tenant ID: ${tenant.tenantId}`
     });
+
   } catch (error: any) {
-    if (error.code === 'auth/insufficient-permission' || (error.message && error.message.includes('permission'))) {
-      if (error.message && error.message.includes('serviceusage.services.use')) {
-         return NextResponse.json({
-            success: false,
-            message: 'Missing "Service Usage Consumer" role',
-            details: `Your service account needs this role to verify if APIs like Identity Platform are enabled. Error: ${error.message}`
-        });
-      }
-      return NextResponse.json({
-        success: false,
-        message: 'Insufficient permissions to create tenants',
-        details: `Service account needs "Identity Platform Admin" or "Firebase Admin SDK Administrator" role. Error: ${error.message}`
-      });
-    } else {
-      return NextResponse.json({
-        success: false,
-        message: 'Tenant creation failed',
-        details: error.message
-      });
+    let message = "Tenant creation test failed with an unexpected error.";
+    let fix = "Review the error details and check your Google Cloud project's Identity Platform configuration.";
+
+    if (error.code === 'auth/insufficient-permission' || (error.message && (error.message.includes('permission') || error.message.includes('PermissionDenied')))) {
+      message = "The service account lacks permission to create tenants.";
+      fix = "Add the 'Identity Platform Admin' role to your service account in the Google Cloud IAM console.";
+    } else if (error.message && error.message.includes('serviceusage.services.use')) {
+      message = "The service account cannot check if the Identity Platform API is enabled.";
+      fix = "Add the 'Service Usage Consumer' role to your service account in the Google Cloud IAM console.";
+    } else if (error.message && error.message.includes('multi-tenancy must be enabled')) {
+      message = "Identity Platform (Multi-Tenancy) is not enabled for this project.";
+      fix = "Go to the Google Cloud Console, navigate to Identity Platform -> Settings, and enable Multi-tenancy.";
     }
+
+    return NextResponse.json({
+      success: false,
+      message: message,
+      details: error.message,
+      fix: fix
+    }, { status: 500 });
   }
 }
