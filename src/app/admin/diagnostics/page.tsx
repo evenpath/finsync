@@ -20,6 +20,7 @@ export default function FirebaseDiagnosticsPage() {
   const [results, setResults] = useState<DiagnosticResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [projectId, setProjectId] = useState('');
+  const [serviceAccountEmail, setServiceAccountEmail] = useState('');
 
   const runDiagnostics = async () => {
     setIsRunning(true);
@@ -40,6 +41,9 @@ export default function FirebaseDiagnosticsPage() {
       const envData = await envResponse.json();
       if(envData.projectId) {
         setProjectId(envData.projectId);
+      }
+      if(envData.clientEmail) {
+        setServiceAccountEmail(envData.clientEmail);
       }
       tests[0] = {
         name: 'Environment Variables',
@@ -139,7 +143,7 @@ export default function FirebaseDiagnosticsPage() {
           </p>
           <div className="p-3 bg-muted rounded-lg">
             <p className="font-semibold">Your Service Account Email:</p>
-            <p className="font-mono text-xs break-all">{process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || 'Not found - check .env file'}</p>
+            <p className="font-mono text-xs break-all">{serviceAccountEmail || 'Run diagnostics to find...'}</p>
           </div>
           
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">

@@ -12,6 +12,7 @@ export async function GET() {
   const presentVars = requiredVars.filter(varName => !!process.env[varName]);
   
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
   if (missingVars.length === 0) {
     return NextResponse.json({
@@ -19,6 +20,7 @@ export async function GET() {
       message: 'All required environment variables are present.',
       details: `Found: ${presentVars.join(', ')}`,
       projectId: projectId,
+      clientEmail: clientEmail,
     });
   } else {
     return NextResponse.json({
