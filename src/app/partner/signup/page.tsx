@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createTenant } from '@/ai/flows/create-tenant-flow';
 import { createUserInTenant } from '@/ai/flows/user-management-flow';
+import { getTenantForEmailAction } from '@/actions/auth-actions';
 
 export default function PartnerSignupPage() {
     const [name, setName] = useState('');
@@ -25,7 +26,13 @@ export default function PartnerSignupPage() {
         setIsLoading(true);
 
         try {
-            // Step 1: Create the tenant and partner document.
+            // Step 1: Check if a user with this email already exists
+            const existingUserCheck = await getTenantForEmailAction(email);
+            if (existingUserCheck.success) {
+                throw new Error("An account with this email already exists. Please log in.");
+            }
+
+            // Step 2: Create the tenant and partner document.
             // This flow is now simplified and does not create the user.
             const tenantResult = await createTenant({ 
                 partnerName: name, 
@@ -38,7 +45,7 @@ export default function PartnerSignupPage() {
             
             console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
             
-            // Step 2: Create the admin user for the new tenant.
+            // Step 3: Create the admin user for the new tenant.
             // This flow now reliably handles user creation, claims, and mapping.
             const userResult = await createUserInTenant({
                 email: email,
