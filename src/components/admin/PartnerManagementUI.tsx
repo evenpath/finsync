@@ -14,7 +14,7 @@ import { createTenant } from '@/ai/flows/create-tenant-flow';
 import { useToast } from "@/hooks/use-toast";
 import { updatePartner } from '@/ai/flows/update-partner-flow';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -29,12 +29,14 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
+    const [dbError, setDbError] = useState<string | null>(error);
 
     // Set up a real-time listener for the partners collection
     useEffect(() => {
         setIsLoading(true);
         if (!db) {
             console.error("Firestore not initialized");
+            setDbError("Firestore not initialized. Check Firebase configuration.");
             setIsLoading(false);
             return;
         }
@@ -55,6 +57,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
             partnersData.sort((a, b) => a.name.localeCompare(b.name));
             
             setPartners(partnersData);
+            setDbError(null);
 
             if (!selectedPartner && partnersData.length > 0) {
                 setSelectedPartner(partnersData[0]);
@@ -67,17 +70,19 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
             setIsLoading(false);
         }, (err) => {
             console.error("Error fetching partners:", err);
+            const errorMessage = "Failed to fetch partners. This could be due to missing Firestore permissions. Please check the diagnostics page.";
+            setDbError(errorMessage);
             toast({
                 variant: "destructive",
-                title: "Error fetching partners",
-                description: err.message,
+                title: "Error Fetching Partners",
+                description: errorMessage,
             });
             setIsLoading(false);
         });
 
         // Cleanup the listener on component unmount
         return () => unsubscribe();
-    }, [toast]);
+    }, [toast]); // Removed selectedPartner from dependency array to prevent re-subscribing
 
     useEffect(() => {
         if (!selectedPartner && partners.length > 0) {
@@ -96,7 +101,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
         return matchesSearch && matchesStatus;
     }), [partners, searchQuery, filterStatus]);
 
-    if (error) {
+    if (dbError) {
         return (
             <div className="flex items-center justify-center h-full p-6">
                 <Card className="w-full max-w-md border-destructive">
@@ -105,7 +110,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                             <AlertTriangle className="w-8 h-8 text-destructive" />
                             <div>
                                 <h3 className="text-lg font-bold text-destructive">Error Fetching Data</h3>
-                                <p className="text-muted-foreground">{error}</p>
+                                <p className="text-muted-foreground">{dbError}</p>
                             </div>
                         </div>
                     </CardContent>
