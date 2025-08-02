@@ -27,13 +27,13 @@ import { UserPlus } from 'lucide-react';
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onInviteMember: (memberData: { name: string, email: string, role: string }) => void;
+  onInviteMember: (memberData: { name: string, email: string, role: 'partner_admin' | 'employee' }) => void;
 }
 
 export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: InviteMemberModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('employee');
+  const [role, setRole] = useState<'partner_admin' | 'employee'>('employee');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +90,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: I
               <Label htmlFor="role" className="text-right">
                 Role
               </Label>
-              <Select value={role} onValueChange={setRole}>
+              <Select value={role} onValueChange={(value: 'partner_admin' | 'employee') => setRole(value)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>

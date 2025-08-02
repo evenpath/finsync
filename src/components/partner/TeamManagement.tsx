@@ -22,27 +22,70 @@ import {
 } from "lucide-react";
 import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { inviteEmployeeAction } from "@/actions/partner-actions";
 
 export default function TeamManagement() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(teamMembers[0] || null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleInviteMember = (newMemberData: Omit<TeamMember, 'id' | 'status' | 'lastActive' | 'joinedDate' | 'tasksCompleted' | 'avgCompletionTime' | 'skills' | 'avatar'>) => {
-    const newMember: TeamMember = {
-      ...newMemberData,
-      id: teamMembers.length + 1,
-      status: 'invited',
-      lastActive: 'Never',
-      joinedDate: new Date().toISOString().split('T')[0],
-      tasksCompleted: 0,
-      avgCompletionTime: '-',
-      skills: [],
-      avatar: `https://placehold.co/40x40.png?text=${newMemberData.name.charAt(0)}`
-    };
-    console.log("Inviting new member:", newMember);
-    setTeamMembers(prev => [...prev, newMember]);
-    setIsInviteModalOpen(false);
+
+  const handleInviteMember = async (newMemberData: { name: string; email: string; role: 'partner_admin' | 'employee' }) => {
+    if (!user?.customClaims?.partnerId) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not identify your organization. Please log in again.",
+        });
+        return;
+    }
+
+    try {
+        const result = await inviteEmployeeAction({
+            ...newMemberData,
+            partnerId: user.customClaims.partnerId,
+        });
+
+        if (result.success) {
+            toast({
+                title: "Invitation Sent",
+                description: `${newMemberData.name} has been invited to join your team.`,
+            });
+            // In a real app, you'd refetch the team members list here.
+            // For now, we'll optimistically add the user to the UI.
+            const newMember: TeamMember = {
+              id: teamMembers.length + 1,
+              name: newMemberData.name,
+              email: newMemberData.email,
+              role: newMemberData.role,
+              status: 'invited',
+              lastActive: 'Never',
+              joinedDate: new Date().toISOString().split('T')[0],
+              tasksCompleted: 0,
+              avgCompletionTime: '-',
+              skills: [],
+              avatar: `https://placehold.co/40x40.png?text=${newMemberData.name.charAt(0)}`
+            };
+            setTeamMembers(prev => [...prev, newMember]);
+            setIsInviteModalOpen(false);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Invitation Failed",
+                description: result.message,
+            });
+        }
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "An Unexpected Error Occurred",
+            description: "Please try again later.",
+        });
+    }
   };
 
   return (
