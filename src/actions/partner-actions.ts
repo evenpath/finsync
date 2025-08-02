@@ -1,7 +1,12 @@
+// File changes needed to fix Partner Multi-Tenant System
+
+// ============================================================================
+// 1. src/actions/partner-actions.ts (modified)
+// ============================================================================
 'use server';
 
 import { createUserInTenant } from '@/ai/flows/user-management-flow';
-import { getTenantIdForEmail } from '@/services/tenant-service';
+import { getTenantIdForEmail, getPartnerTenantId } from '@/services/tenant-service';
 
 export async function inviteEmployeeAction(data: {
   email: string;
@@ -14,11 +19,21 @@ export async function inviteEmployeeAction(data: {
     const tenantLookup = await getTenantIdForEmail(data.email);
     
     if (!tenantLookup.success) {
-      // If no mapping exists, create user in the partner's tenant
+      // Get the tenant ID associated with this partner
+      const partnerTenant = await getPartnerTenantId(data.partnerId);
+      
+      if (!partnerTenant.success || !partnerTenant.tenantId) {
+        return {
+          success: false,
+          message: "Partner tenant not found. Please contact support."
+        };
+      }
+
+      // Create user in the partner's tenant
       const userResult = await createUserInTenant({
         email: data.email,
         password: Math.random().toString(36).slice(-8), // Temporary password
-        tenantId: data.partnerId,
+        tenantId: partnerTenant.tenantId,
         displayName: data.name,
         partnerId: data.partnerId,
         role: data.role || 'employee',
@@ -36,6 +51,19 @@ export async function inviteEmployeeAction(data: {
     return {
       success: false,
       message: "Failed to invite employee."
+    };
+  }
+}
+
+export async function getPartnerDetailsAction(partnerId: string) {
+  try {
+    const partnerTenant = await getPartnerTenantId(partnerId);
+    return partnerTenant;
+  } catch (error: any) {
+    console.error("Error getting partner details:", error);
+    return {
+      success: false,
+      message: "Failed to get partner details."
     };
   }
 }

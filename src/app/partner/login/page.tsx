@@ -88,11 +88,11 @@ export default function PartnerLoginPage() {
 
   return (
       <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
+          <CardDescription>Enter your work email to access your workspace.</CardDescription>
+        </CardHeader>
         <form onSubmit={handleLogin}>
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
-            <CardDescription>Enter your work email to access your workspace.</CardDescription>
-          </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>

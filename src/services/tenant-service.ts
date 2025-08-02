@@ -1,76 +1,39 @@
-
-// src/services/tenant-service.ts
-'use server';
-
+// ============================================================================
+// 2. src/services/tenant-service.ts (modified)
+// ============================================================================
 import { db, adminAuth } from '@/lib/firebase-admin';
 
 export interface TenantLookupResult {
   success: boolean;
   tenantId?: string;
   partnerId?: string;
-  message?: string;
+  message: string;
 }
 
 /**
- * Looks up the tenant ID for a given user email by querying Firestore.
+ * Gets the tenant ID for a given email address.
  */
 export async function getTenantIdForEmail(email: string): Promise<TenantLookupResult> {
-  if (!email) {
-    return {
-      success: false,
-      message: "Email is required"
-    };
-  }
-
   if (!db) {
     return {
       success: false,
-      message: "Database not connected. Cannot perform lookup."
+      message: "Database not available"
     };
   }
 
   try {
     const lowercasedEmail = email.toLowerCase();
-    
     const userMappingRef = db.collection('userMappings').doc(lowercasedEmail);
-    const userMappingDoc = await userMappingRef.get();
+    const doc = await userMappingRef.get();
     
-    if (userMappingDoc.exists) {
-      const data = userMappingDoc.data();
-      if (data?.tenantId) {
-        return {
-          success: true,
-          tenantId: data.tenantId,
-          partnerId: data.partnerId,
-          message: "Tenant found via user mapping"
-        };
-      }
-    }
-    
-    // Fallback for migration: check partners collection if mapping doesn't exist
-    const partnersRef = db.collection('partners');
-    const partnerQuery = await partnersRef.where('email', '==', lowercasedEmail).limit(1).get();
-    
-    if (!partnerQuery.empty) {
-      const partnerDoc = partnerQuery.docs[0];
-      const partnerData = partnerDoc.data();
-      
-      if (partnerData.tenantId) {
-        // Create the mapping for next time
-        await userMappingRef.set({
-          email: lowercasedEmail,
-          tenantId: partnerData.tenantId,
-          partnerId: partnerDoc.id,
-          createdAt: new Date(),
-        });
-        
-        return {
-          success: true,
-          tenantId: partnerData.tenantId,
-          partnerId: partnerDoc.id,
-          message: "Tenant found via partner lookup and mapping created"
-        };
-      }
+    if (doc.exists) {
+      const data = doc.data();
+      return {
+        success: true,
+        tenantId: data?.tenantId,
+        partnerId: data?.partnerId,
+        message: "Tenant found"
+      };
     }
     
     return {
@@ -87,6 +50,44 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
   }
 }
 
+/**
+ * Gets the tenant ID for a given partner ID.
+ */
+export async function getPartnerTenantId(partnerId: string): Promise<TenantLookupResult> {
+  if (!db) {
+    return {
+      success: false,
+      message: "Database not available"
+    };
+  }
+
+  try {
+    const partnerRef = db.collection('partners').doc(partnerId);
+    const doc = await partnerRef.get();
+    
+    if (doc.exists) {
+      const data = doc.data();
+      return {
+        success: true,
+        tenantId: data?.tenantId,
+        partnerId: partnerId,
+        message: "Partner tenant found"
+      };
+    }
+    
+    return {
+      success: false,
+      message: "Partner not found"
+    };
+    
+  } catch (error: any) {
+    console.error("Error looking up tenant for partner:", partnerId, error);
+    return {
+      success: false,
+      message: "Failed to lookup partner tenant"
+    };
+  }
+}
 
 /**
  * Creates a user mapping between an email and tenant ID.
@@ -122,6 +123,7 @@ export async function createUserMapping(email: string, tenantId: string, partner
     return {
       success: true,
       tenantId,
+      partnerId,
       message: "User mapping created successfully"
     };
     
