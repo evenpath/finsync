@@ -48,14 +48,8 @@ You MUST only use the following available Triggers and Actions:
 
 **Available Triggers (Must start with one of these):**
 - type: "trigger_chat_message"
-  name: "Analyze Incoming Chat Message"
-  description: "Triggers when a new chat message is received and uses AI to analyze its content."
-- type: "trigger_keyword_mention"
-  name: "Keyword Mentioned in Chat"
-  description: "Triggers when a specific keyword or phrase is mentioned in a chat message."
-- type: "trigger_user_joins_chat"
-  name: "User Joins Chat"
-  description: "Triggers when a new user joins a specific chat workspace."
+  name: "Analyze Incoming Message"
+  description: "Triggers when a new message is received and uses AI to analyze its content."
 
 **Available Actions (Can use one or more of these):**
 - type: "action_ai_analysis"
@@ -84,10 +78,10 @@ You MUST only use the following available Triggers and Actions:
   description: "Change the status of a project, task, or customer."
 
 **Your Task:**
-1.  Read the user's workflow description.
+1.  Read the user's workflow description carefully.
 2.  Choose a descriptive 'name' and 'description' for the entire workflow.
-3.  Select the most appropriate TRIGGER from the list above to start the workflow. The most common trigger will be 'trigger_chat_message'.
-4.  Select a logical sequence of ACTIONS from the list above to accomplish the user's goal.
+3.  Select the most appropriate TRIGGER from the list above to start the workflow. It will always be 'trigger_chat_message'.
+4.  Select a logical sequence of ACTIONS from the list above to accomplish the user's goal. Create a clear, step-by-step process.
 5.  Format your entire response as a single JSON object matching the output schema. Do not add any text or explanation outside of the JSON object.
 
 **User's Workflow Description:**
