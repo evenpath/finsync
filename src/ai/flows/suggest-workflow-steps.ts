@@ -1,3 +1,4 @@
+
 // src/ai/flows/suggest-workflow-steps.ts
 'use server';
 
@@ -11,6 +12,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const SuggestWorkflowStepsInputSchema = z.object({
@@ -30,6 +32,7 @@ export async function suggestWorkflowSteps(input: SuggestWorkflowStepsInput): Pr
 
 const prompt = ai.definePrompt({
   name: 'suggestWorkflowStepsPrompt',
+  model: googleAI.model('gemini-1.5-flash-latest'),
   input: {schema: SuggestWorkflowStepsInputSchema},
   output: {schema: SuggestWorkflowStepsOutputSchema},
   prompt: `You are an expert AI workflow designer. Your task is to analyze a user's description of a business problem and break it down into a logical sequence of steps.
