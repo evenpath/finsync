@@ -139,16 +139,17 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
       setWorkflowDescription(initialData.description);
       
       const fullTrigger = {
+        id: 'trigger-' + Date.now(),
         ...initialData.trigger,
         ...(stepTypes.trigger[initialData.trigger.type] || {}),
         config: getDefaultConfig(initialData.trigger.type, 'trigger'),
         configured: false,
       };
       setTrigger(fullTrigger);
-      setExpandedStep(fullTrigger.type); // Expand the trigger by default
+      setExpandedStep(fullTrigger.id); // Expand the trigger by default
 
       const fullActions = initialData.actions.map((action, index) => ({
-        id: Date.now().toString() + index,
+        id: 'action-' + Date.now() + index,
         ...action,
         ...(stepTypes.action[action.type] || {}),
         config: getDefaultConfig(action.type, 'action'),
@@ -161,7 +162,7 @@ export default function ChatWorkflowBuilder({ initialData, onSave, onCancel }: C
   const handleStepSelect = (stepKey: string, stepType: 'trigger' | 'action') => {
     const stepDetails = stepTypes[stepType][stepKey];
     const newStep = {
-      id: Date.now().toString(),
+      id: stepType + '-' + Date.now(),
       type: stepKey,
       ...stepDetails,
       config: getDefaultConfig(stepKey, stepType),
