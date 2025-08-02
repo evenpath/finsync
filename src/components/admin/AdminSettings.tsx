@@ -27,7 +27,7 @@ export default function AdminSettings() {
           <CardContent className="space-y-6">
             <div>
               <Label htmlFor="systemName">System Name</Label>
-              <Input id="systemName" type="text" defaultValue="Flow Factory" />
+              <Input id="systemName" type="text" defaultValue="Suupe.com" />
             </div>
             <div>
               <Label>Default Partner Limits</Label>

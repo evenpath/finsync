@@ -1,4 +1,3 @@
-
 // src/components/admin/AdminSidebar.tsx
 "use client";
 
@@ -63,7 +62,7 @@ export default function AdminSidebar() {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold font-headline text-foreground">Flow Factory</h1>
+            <h1 className="text-xl font-bold font-headline text-foreground">Suupe.com</h1>
             <p className="text-sm text-muted-foreground">Admin Control</p>
           </div>
         </div>

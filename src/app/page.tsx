@@ -8,7 +8,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6 md:p-8">
       <header className="text-center mb-12">
         <h1 className="font-headline text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4">
-          Flow Factory
+          Suupe.com
         </h1>
         <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
           The all-in-one platform for creating, managing, and executing AI-powered agentic workflows.
@@ -69,7 +69,7 @@ export default function Home() {
       </main>
 
       <footer className="mt-16 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Flow Factory. Built by Suupe.</p>
+        <p>&copy; {new Date().getFullYear()} Suupe.com. Built by Suupe.</p>
       </footer>
     </div>
   );
