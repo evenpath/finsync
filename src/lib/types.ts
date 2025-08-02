@@ -1476,4 +1476,4 @@ export interface SecurityContext {
 export interface ResourceAccess {
   resource: string;
   action: 'read' | 'write' | 'delete' | 'admin';
-  
+}
