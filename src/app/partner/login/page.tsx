@@ -25,6 +25,7 @@ export default function PartnerLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    auth.tenantId = null; // Reset tenantId before each login attempt
 
     try {
       // 1. Find the tenant ID for the user's email
