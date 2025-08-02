@@ -18,8 +18,8 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
     if (loading || !user) {
       return false;
     }
-    // Only 'Super Admin' can access the /admin section.
-    return user.customClaims?.role === 'Super Admin';
+    // A user is a Super Admin if their role is set OR if they use the primary admin email.
+    return user.customClaims?.role === 'Super Admin' || user.email === 'core@suupe.com';
   }, [user, loading]);
 
 

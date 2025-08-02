@@ -56,6 +56,7 @@ export default function UserManagement() {
         setUsers(adminUsers);
         setError(null);
         
+        // This logic ensures a user is selected on initial load, preferring one that isn't the current user.
         if (!selectedUser && adminUsers.length > 0) {
             const defaultUser = adminUsers.find(u => u.email !== currentUser?.email);
             setSelectedUser(defaultUser || adminUsers[0]);
@@ -73,7 +74,8 @@ export default function UserManagement() {
     });
 
     return () => unsubscribe();
-  }, [currentUser?.email]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // currentUser is removed to prevent re-subscribing on every render
 
   useEffect(() => {
     if (users.length > 0 && !selectedUser) {
@@ -85,12 +87,13 @@ export default function UserManagement() {
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser?.customClaims?.role !== 'Super Admin') return [];
+    if (currentUser?.customClaims?.role !== 'Super Admin' && currentUser?.email !== 'core@suupe.com') return [];
     return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser, users]);
 
   useEffect(() => {
-    if (selectedUser && selectedUser.email.toLowerCase() === currentUser?.email?.toLowerCase()) {
+    // If the selected user is the current super admin, automatically select another user to display.
+    if (selectedUser && selectedUser.email?.toLowerCase() === currentUser?.email?.toLowerCase()) {
       setSelectedUser(manageableUsers[0] || null);
     }
   }, [manageableUsers, selectedUser, currentUser?.email]);
