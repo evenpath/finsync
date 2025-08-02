@@ -301,6 +301,33 @@ export const SuggestIndustryTemplatesOutputSchema = z.object({
 });
 export type SuggestIndustryTemplatesOutput = z.infer<typeof SuggestIndustryTemplatesOutputSchema>;
 
+
+export const SuggestWorkflowStepsInputSchema = z.object({
+  workflowDescription: z.string().describe('A description of the workflow for which to suggest steps.'),
+});
+export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInputSchema>;
+
+
+export const StepSchema: z.ZodType<any> = z.lazy(() => z.object({
+  type: z.string().describe("The type of the step, e.g., 'ai_agent', 'human_input', 'conditional_branch', 'api_call', 'notification'."),
+  name: z.string().describe("A human-readable name for the step, e.g., 'Classify Request Urgency'."),
+  description: z.string().describe("A brief explanation of what this step does."),
+  // For conditional branches
+  branches: z.array(z.object({
+    condition: z.string().describe("The condition for this branch, e.g., 'IF urgency = CRITICAL'"),
+    steps: z.array(StepSchema).describe("The nested steps for this branch.")
+  })).optional(),
+}));
+
+
+export const SuggestWorkflowStepsOutputSchema = z.object({
+  name: z.string().describe("A concise name for the entire workflow."),
+  description: z.string().describe("A short description of what the workflow accomplishes."),
+  steps: z.array(StepSchema).describe("An array of the structured steps for the workflow, which can include nested conditional branches."),
+});
+export type SuggestWorkflowStepsOutput = z.infer<typeof SuggestWorkflowStepsOutputSchema>;
+
+
 export interface WorkflowTemplate {
   id: string;
   title: string;
