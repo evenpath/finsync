@@ -15,23 +15,17 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Loader2, ArrowRight, Bot, User, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-type SuggestedStep = {
-    type: string;
-    title: string;
-    description: string;
-};
-
 export default function AdminWorkflowsPage() {
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [workflowDescription, setWorkflowDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [suggestedSteps, setSuggestedSteps] = useState<SuggestedStep[]>([]);
+  const [suggestion, setSuggestion] = useState('');
   const { toast } = useToast();
 
   const handleCreateNew = () => {
     setWorkflowDescription('');
-    setSuggestedSteps([]);
+    setSuggestion('');
     setIsCreateModalOpen(true);
   };
 
@@ -46,11 +40,11 @@ export default function AdminWorkflowsPage() {
     }
     
     setIsGenerating(true);
-    setSuggestedSteps([]);
+    setSuggestion('');
     try {
         const result = await suggestWorkflowSteps({ workflowDescription });
-        if (result.suggestedSteps && result.suggestedSteps.length > 0) {
-            setSuggestedSteps(result.suggestedSteps);
+        if (result.suggestion) {
+            setSuggestion(result.suggestion);
         } else {
             toast({
                 variant: "destructive",
@@ -76,12 +70,12 @@ export default function AdminWorkflowsPage() {
     const newTemplate: WorkflowTemplate = {
         id: `wf-${Date.now()}`,
         title: workflowDescription.substring(0, 50), // Use the start of the description as a title
-        description: workflowDescription,
+        description: suggestion || workflowDescription,
         category: 'AI-Generated',
         complexity: 'medium',
-        steps: suggestedSteps.map(s => ({ ...s, id: `step-${Math.random()}`, configuration: {}, order: 0, isRequired: true })),
-        aiAgents: suggestedSteps.filter(s => s.type === 'ai_agent').length,
-        estimatedTime: `${suggestedSteps.length * 5} min`,
+        steps: [],
+        aiAgents: 1,
+        estimatedTime: `5 min`,
         usageCount: 0,
         lastModified: new Date().toISOString().split('T')[0],
         tags: ['AI-Generated', 'New'],
@@ -105,27 +99,19 @@ export default function AdminWorkflowsPage() {
 
     setIsCreateModalOpen(false);
     setWorkflowDescription('');
-    setSuggestedSteps([]);
+    setSuggestion('');
   }
-
-  const getStepIcon = (type: string) => {
-    switch (type) {
-        case 'ai_agent': return <Bot className="w-5 h-5 text-purple-500" />;
-        case 'manual_input': return <User className="w-5 h-5 text-blue-500" />;
-        default: return <CheckCircle className="w-5 h-5 text-gray-500" />;
-    }
-  };
 
   return (
     <>
       <AdminHeader
         title="Workflow Templates"
-        subtitle="Create and manage global AI workflow templates."
+        subtitle="Create and manage AI-powered workflow templates."
       />
       <main className="flex-1 overflow-auto p-6">
         <WorkflowTemplateGrid
           templates={templates}
-          onTemplateSelect={(template) => console.log("Selected template:", template)} // Simplified for now
+          onTemplateSelect={(template) => console.log("Selected template:", template)}
           onCreateNew={handleCreateNew}
         />
       </main>
@@ -154,11 +140,11 @@ export default function AdminWorkflowsPage() {
                 className="w-full mt-2"
                 rows={12}
                 placeholder="e.g., 'A workflow to handle customer support requests. First, an AI should categorize the request. If it's urgent, notify the support lead. Otherwise, create a ticket in our system and send an automated confirmation to the customer.'"
-                disabled={isGenerating || suggestedSteps.length > 0}
+                disabled={isGenerating || !!suggestion}
               />
                <Button
                 onClick={handleGenerateWorkflow}
-                disabled={isGenerating || !workflowDescription.trim() || suggestedSteps.length > 0}
+                disabled={isGenerating || !workflowDescription.trim() || !!suggestion}
                 className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
               >
                 {isGenerating ? (
@@ -179,34 +165,21 @@ export default function AdminWorkflowsPage() {
                         <p>AI is generating steps...</p>
                     </div>
                 )}
-                {!isGenerating && suggestedSteps.length === 0 && (
+                {!isGenerating && !suggestion && (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                         <p>Suggested steps will appear here.</p>
                     </div>
                 )}
-                {suggestedSteps.length > 0 && (
+                {suggestion && (
                     <div className="space-y-4">
                         <h4 className="font-semibold">Suggested Workflow:</h4>
-                        <ul className="space-y-3">
-                           {suggestedSteps.map((step, index) => (
-                             <li key={index} className="flex items-start gap-3 p-3 bg-card rounded-md">
-                               <div className="mt-1">{getStepIcon(step.type)}</div>
-                               <div>
-                                 <div className="flex items-center gap-2">
-                                     <h5 className="font-medium">{step.title}</h5>
-                                     <Badge variant="outline" className="text-xs">{step.type.replace('_', ' ')}</Badge>
-                                 </div>
-                                 <p className="text-sm text-muted-foreground">{step.description}</p>
-                               </div>
-                             </li>
-                           ))}
-                        </ul>
+                        <p className="text-sm whitespace-pre-wrap">{suggestion}</p>
                     </div>
                 )}
               </div>
                <Button
                   onClick={handleDeployWorkflow}
-                  disabled={suggestedSteps.length === 0}
+                  disabled={!suggestion}
                   className="w-full mt-4"
                 >
                   Deploy Workflow

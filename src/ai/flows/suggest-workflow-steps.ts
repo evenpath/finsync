@@ -1,3 +1,4 @@
+
 // src/ai/flows/suggest-workflow-steps.ts
 'use server';
 
@@ -19,13 +20,7 @@ const SuggestWorkflowStepsInputSchema = z.object({
 export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInputSchema>;
 
 const SuggestWorkflowStepsOutputSchema = z.object({
-  suggestedSteps: z.array(
-    z.object({
-      type: z.string().describe('The type of workflow step, e.g., "ai_agent" or "manual_input".'),
-      title: z.string().describe('A suggested title for the workflow step.'),
-      description: z.string().describe('A suggested description for the workflow step.'),
-    })
-  ).describe('An array of suggested workflow steps.'),
+  suggestion: z.string().describe('A plain text suggestion for the workflow steps.'),
 });
 
 export type SuggestWorkflowStepsOutput = z.infer<typeof SuggestWorkflowStepsOutputSchema>;
@@ -40,9 +35,8 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestWorkflowStepsOutputSchema},
   prompt: `You are an AI assistant that suggests workflow steps based on a workflow description.
 
-  Given the following workflow description, suggest a list of relevant workflow steps.
-  Each step should have a type (e.g., ai_agent or manual_input), a title, and a description.
-
+  Given the following workflow description, provide a simple, text-based suggestion for the workflow steps.
+  
   Workflow Description: {{{workflowDescription}}}
   `,
 });
