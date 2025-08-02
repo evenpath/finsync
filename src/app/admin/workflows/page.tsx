@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2, Bot } from 'lucide-react';
+import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2, Bot, Bell, UserPlus } from 'lucide-react';
 import { suggestIndustryTemplates, type IndustryTemplate } from '@/ai/flows/suggest-industry-templates';
 import { suggestWorkflowSteps, type SuggestWorkflowStepsOutput, type StepSchema } from '@/ai/flows/suggest-workflow-steps';
 
@@ -182,7 +182,7 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
 
   const WorkflowAction = ({ action, index, onDelete, onEdit }: { action: any, index: number, onDelete: () => void, onEdit: () => void }) => {
     const channels = action.config?.channels || [];
-    const ActionIcon = stepIcons[action.type] || Zap;
+    const ActionIcon = stepIcons[action.type as keyof typeof stepIcons] || Zap;
     
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 group hover:border-gray-300 transition-colors">
