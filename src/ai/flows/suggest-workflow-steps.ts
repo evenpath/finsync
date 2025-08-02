@@ -1,4 +1,3 @@
-
 // src/ai/flows/suggest-workflow-steps.ts
 'use server';
 
@@ -33,11 +32,19 @@ const prompt = ai.definePrompt({
   name: 'suggestWorkflowStepsPrompt',
   input: {schema: SuggestWorkflowStepsInputSchema},
   output: {schema: SuggestWorkflowStepsOutputSchema},
-  prompt: `You are an AI assistant that suggests workflow steps based on a workflow description.
+  prompt: `You are an expert AI workflow designer. Your task is to analyze a user's description of a business problem and break it down into a logical sequence of steps.
 
-  Given the following workflow description, provide a simple, text-based suggestion for the workflow steps.
-  
-  Workflow Description: {{{workflowDescription}}}
+Provide a simple, text-based suggestion for the workflow steps. Each step should be on a new line.
+
+For example, if the user says "A workflow to handle customer support requests", you could suggest:
+1. AI Agent: Categorize the incoming support request.
+2. Conditional Logic: If urgent, notify the support lead.
+3. Manual Step: Create a ticket in the helpdesk system.
+4. AI Agent: Send an automated confirmation email to the customer.
+
+Now, please analyze the following workflow description and provide your suggested steps.
+
+Workflow Description: {{{workflowDescription}}}
   `,
 });
 
