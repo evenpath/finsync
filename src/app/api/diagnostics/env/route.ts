@@ -1,3 +1,4 @@
+
 // src/app/api/diagnostics/env/route.ts
 import { NextResponse } from 'next/server';
 
