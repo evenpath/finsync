@@ -1,8 +1,12 @@
+
+"use client";
+
 import PartnerHeader from "@/components/partner/PartnerHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings } from "lucide-react";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
-export default function PartnerSettingsPage() {
+function PartnerSettingsPage() {
   return (
     <>
       <PartnerHeader
@@ -24,4 +28,12 @@ export default function PartnerSettingsPage() {
       </main>
     </>
   );
+}
+
+export default function PartnerSettingsProtected() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerSettingsPage />
+    </PartnerAuthWrapper>
+  )
 }

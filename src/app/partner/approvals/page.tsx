@@ -1,7 +1,11 @@
+
+"use client";
+
 import PartnerHeader from "@/components/partner/PartnerHeader";
 import PendingApprovals from "@/components/partner/PendingApprovals";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
-export default function PartnerApprovalsPage() {
+function PartnerApprovalsPage() {
   return (
     <>
       <PartnerHeader
@@ -13,4 +17,12 @@ export default function PartnerApprovalsPage() {
       </main>
     </>
   );
+}
+
+export default function PartnerApprovalsProtected() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerApprovalsPage />
+    </PartnerAuthWrapper>
+  )
 }

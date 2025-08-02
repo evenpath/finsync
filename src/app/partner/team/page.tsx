@@ -1,7 +1,11 @@
+
+"use client";
+
 import PartnerHeader from "@/components/partner/PartnerHeader";
 import TeamManagement from "@/components/partner/TeamManagement";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
-export default function PartnerTeamPage() {
+function PartnerTeamPage() {
   return (
     <>
       <PartnerHeader
@@ -13,4 +17,12 @@ export default function PartnerTeamPage() {
       </main>
     </>
   );
+}
+
+export default function PartnerTeamProtected() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerTeamPage />
+    </PartnerAuthWrapper>
+  )
 }

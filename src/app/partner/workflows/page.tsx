@@ -1,7 +1,11 @@
+
+"use client";
+
 import PartnerHeader from "@/components/partner/PartnerHeader";
 import WorkflowManagement from "@/components/partner/WorkflowManagement";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
-export default function PartnerWorkflowsPage() {
+function PartnerWorkflowsPage() {
   return (
     <>
       <PartnerHeader
@@ -13,4 +17,12 @@ export default function PartnerWorkflowsPage() {
       </main>
     </>
   );
+}
+
+export default function PartnerWorkflowsProtected() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerWorkflowsPage />
+    </PartnerAuthWrapper>
+  )
 }

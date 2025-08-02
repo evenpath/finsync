@@ -1,7 +1,11 @@
+
+"use client";
+
 import PartnerHeader from "@/components/partner/PartnerHeader";
 import TaskBoard from "@/components/partner/TaskBoard";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
-export default function PartnerTasksPage() {
+function PartnerTasksPage() {
   return (
     <>
       <PartnerHeader
@@ -13,4 +17,12 @@ export default function PartnerTasksPage() {
       </main>
     </>
   );
+}
+
+export default function PartnerTasksProtected() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerTasksPage />
+    </PartnerAuthWrapper>
+  )
 }

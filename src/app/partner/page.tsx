@@ -6,6 +6,7 @@ import PartnerHeader from "@/components/partner/PartnerHeader";
 import { mockWorkflowTemplates, industries } from "@/lib/mockData";
 import type { BusinessProfile, WorkflowTemplate } from "@/lib/types";
 import HybridWorkflowDashboard from "@/components/partner/HybridWorkflowDashboard";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
 
 // Mocks for demonstration
@@ -21,7 +22,7 @@ const mockBusinessProfile: BusinessProfile = {
   locationState: "CA",
   locationCountry: "US",
   painPoints: ["Emergency maintenance calls at all hours", "Tenant rent collection issues"],
-  currentTools: {},
+  currentTools: [],
   goals: ["Improve tenant satisfaction", "Reduce manual admin work"],
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -34,7 +35,7 @@ const mockDeployedWorkflows: any[] = [
 
 const mockRecommendedTemplates: WorkflowTemplate[] = mockWorkflowTemplates.filter(t => t.templateType === 'ready');
 
-export default function PartnerDashboardPage() {
+function PartnerDashboardPage() {
   // In a real app, you would fetch this data
   const businessProfile = mockBusinessProfile;
   const deployedWorkflows = mockDeployedWorkflows;
@@ -61,4 +62,13 @@ export default function PartnerDashboardPage() {
       </main>
     </>
   );
+}
+
+
+export default function PartnerDashboard() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerDashboardPage />
+    </PartnerAuthWrapper>
+  )
 }
