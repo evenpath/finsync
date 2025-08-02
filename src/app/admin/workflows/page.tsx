@@ -1,10 +1,10 @@
+
 // src/app/admin/workflows/page.tsx
 "use client";
 
 import React, { useState } from 'react';
 import AdminHeader from "@/components/admin/AdminHeader";
 import WorkflowTemplateGrid from "@/components/admin/WorkflowTemplateGrid";
-import { mockWorkflowTemplates } from '@/lib/mockData';
 import type { WorkflowTemplate } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Loader2 } from 'lucide-react';
 
 export default function AdminWorkflowsPage() {
-  const [templates, setTemplates] = useState<WorkflowTemplate[]>(mockWorkflowTemplates);
+  const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [workflowDescription, setWorkflowDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
