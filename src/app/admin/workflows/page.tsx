@@ -69,7 +69,7 @@ export default function AdminWorkflowsPage() {
       description: suggestedWorkflow.description,
       category: 'AI Generated',
       complexity: 'medium',
-      steps: suggestedWorkflow.steps.map(s => ({...s, id: s.type, configuration: {}, order: 0, isRequired: true})),
+      steps: suggestedWorkflow.steps.map(s => ({...s, id: s.type, configuration: {}, order: 0, isRequired: true, title: s.name})),
       aiAgents: suggestedWorkflow.steps.filter(s => s.type.startsWith('action_ai_')).length,
       estimatedTime: 'N/A',
       usageCount: 0,
