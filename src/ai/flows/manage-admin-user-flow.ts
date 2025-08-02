@@ -73,8 +73,8 @@ const manageAdminUserFlow = ai.defineFlow(
         await adminAuth.setCustomUserClaims(userRecord.uid, { role: input.role });
         console.log(`Set custom claims for ${input.email}: { role: '${input.role}' }`);
         
-        // Save/Update user info in a separate 'admins' collection for easy querying in the UI
-        const adminDocRef = db.collection('admins').doc(userRecord.uid);
+        // Save/Update user info in a separate 'adminUsers' collection for easy querying in the UI
+        const adminDocRef = db.collection('adminUsers').doc(userRecord.uid);
         await adminDocRef.set({
             name: input.name,
             email: input.email,

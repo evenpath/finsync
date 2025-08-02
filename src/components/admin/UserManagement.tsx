@@ -50,7 +50,7 @@ export default function UserManagement() {
     }
       
     setIsLoading(true);
-    const q = collection(db, "admins");
+    const q = collection(db, "adminUsers");
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const adminUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
         setUsers(adminUsers);

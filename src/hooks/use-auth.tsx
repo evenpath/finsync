@@ -1,3 +1,4 @@
+
 // src/hooks/use-auth.tsx
 "use client";
 
@@ -26,15 +27,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 try {
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    let customClaims: { role?: 'Admin' | 'Super Admin' | 'partner' | 'employee', partnerId?: string | null } = {};
+                    const customClaims: { role?: 'Admin' | 'Super Admin' | 'partner' | 'employee', partnerId?: string | null } = {};
 
                     // The 'role' should ideally be set via a backend function when the user is created or updated.
-                    // For this environment, we'll rely on the token or hardcode a fallback for the super admin.
                     if (idTokenResult.claims.role) {
                         customClaims.role = idTokenResult.claims.role as any;
-                    } else if (firebaseUser.email === 'core@suupe.com') {
-                        // Hardcoded fallback for the primary super admin if not in token
-                        customClaims.role = 'Super Admin';
                     }
 
                     const authUser: FirebaseAuthUser = {
