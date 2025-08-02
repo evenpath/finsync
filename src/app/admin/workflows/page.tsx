@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2 } from 'lucide-react';
 import { suggestIndustryTemplates, type IndustryTemplate } from '@/ai/flows/suggest-industry-templates';
+import { suggestWorkflowSteps, type SuggestWorkflowStepsOutput, type StepSchema } from '@/ai/flows/suggest-workflow-steps';
 
 // Communication channels with better icons
 const communicationChannels = {
@@ -20,13 +21,13 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
   const [workflowName, setWorkflowName] = useState('');
   const [workflowDescription, setWorkflowDescription] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<IndustryTemplate | null>(null);
-  const [trigger, setTrigger] = useState(null);
-  const [actions, setActions] = useState<any[]>([]);
+  const [actions, setActions] = useState<StepSchema[]>([]);
   const [searchTemplate, setSearchTemplate] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   
   const [templates, setTemplates] = useState<IndustryTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isGeneratingActions, setIsGeneratingActions] = useState(false);
 
   const industries = {
     property_management: { label: 'Property Management', icon: Home, color: 'from-green-500 to-emerald-500' },
@@ -41,6 +42,7 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
       if (!selectedIndustry) return;
       setIsLoadingTemplates(true);
       setSelectedTemplate(null);
+      setActions([]);
       try {
         const industryLabel = industries[selectedIndustry as keyof typeof industries].label;
         const result = await suggestIndustryTemplates({ industry: industryLabel });
@@ -54,6 +56,26 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
     };
     generateTemplates();
   }, [selectedIndustry]);
+
+  const handleGenerateActions = async () => {
+      setIsGeneratingActions(true);
+      setActions([]);
+      const description = selectedTemplate ? `${selectedTemplate.name}: ${selectedTemplate.description}` : `${workflowName}: ${workflowDescription}`;
+      
+      try {
+        const result = await suggestWorkflowSteps({ workflowDescription: description });
+        setActions(result.steps);
+      } catch (error) {
+        console.error("Failed to generate workflow steps:", error);
+      } finally {
+        setIsGeneratingActions(false);
+      }
+  };
+
+  const handleContinueToActions = () => {
+    setCurrentStep(3);
+    handleGenerateActions();
+  };
   
   // Filter templates
   const categories = ['All', ...new Set(templates.map(t => t.category))];
@@ -135,8 +157,8 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
             <div className="w-2 h-2 bg-gray-300 rounded-full cursor-grab">
               <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-r ${action.color || 'from-gray-400 to-gray-500'} flex items-center justify-center`}>
-              {action.icon ? <action.icon className="w-5 h-5 text-white" /> : <Zap className="w-5 h-5 text-white" />}
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-r from-gray-400 to-gray-500 flex items-center justify-center`}>
+              <Zap className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -190,7 +212,7 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
       <div className="space-y-3">
         {actions.map((action, index) => (
           <WorkflowAction 
-            key={action.id} 
+            key={action.id || index} 
             action={action} 
             index={index}
             onDelete={() => {/* handle delete */}}
@@ -208,75 +230,10 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
     </div>
   );
 
-  const mockActions = [
-    {
-      id: '1',
-      name: 'Analyze Issue Type',
-      description: 'AI categorizes the issue (inventory, equipment, customer service)',
-      type: 'ai_analysis',
-      icon: Sparkles,
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      id: '2',
-      name: 'Route by Category',
-      description: 'Route to appropriate team member based on issue category',
-      type: 'conditional_branch',
-      icon: Target,
-      color: 'from-blue-500 to-cyan-500',
-      branches: [
-        {
-          condition: 'Inventory Issue',
-          actions: [
-            {
-              id: '2a',
-              name: 'Assign to Manager',
-              description: 'Create urgent inventory task for manager',
-              type: 'assign_task',
-              icon: Users,
-              color: 'from-green-500 to-emerald-500'
-            },
-            {
-              id: '2b',
-              name: 'Alert Manager',
-              description: 'Send immediate notification about inventory issue',
-              type: 'send_notification',
-              icon: Zap,
-              color: 'from-orange-500 to-red-500',
-              config: { channels: ['chat', 'sms'] }
-            }
-          ]
-        },
-        {
-          condition: 'Equipment Issue',
-          actions: [
-            {
-              id: '2c',
-              name: 'Assign to Maintenance',
-              description: 'Create equipment repair task',
-              type: 'assign_task',
-              icon: Users,
-              color: 'from-green-500 to-emerald-500'
-            },
-            {
-              id: '2d',
-              name: 'Alert Maintenance Team',
-              description: 'Notify maintenance team via multiple channels',
-              type: 'send_notification',
-              icon: Zap,
-              color: 'from-orange-500 to-red-500',
-              config: { channels: ['chat', 'whatsapp'] }
-            }
-          ]
-        }
-      ]
-    }
-  ];
-
   const isStepCompleted = (step: number) => {
     switch (step) {
       case 1: return selectedIndustry && workflowName;
-      case 2: return selectedTemplate || (trigger && workflowName);
+      case 2: return selectedTemplate !== undefined;
       case 3: return actions.length > 0;
       case 4: return true;
       default: return false;
@@ -461,10 +418,10 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
               </div>
             )}
 
-            {(selectedTemplate || selectedTemplate === null) && (
+            {(selectedTemplate !== undefined) && (
               <div className="flex justify-end">
                 <button
-                  onClick={() => setCurrentStep(3)}
+                  onClick={handleContinueToActions}
                   className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
                 >
                   Continue to Actions
@@ -496,9 +453,15 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
               </button>
             </div>
 
+            {isGeneratingActions ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                <p className="ml-4 text-gray-600">Generating workflow steps...</p>
+              </div>
+            ) : (
             <div className="space-y-4">
-              {mockActions.map((action, index) => (
-                <div key={action.id}>
+              {actions.map((action, index) => (
+                <div key={action.id || index}>
                   <WorkflowAction 
                     action={action} 
                     index={index}
@@ -513,14 +476,14 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
                         <ConditionalBranch
                           key={branchIndex}
                           condition={branch.condition}
-                          actions={branch.actions}
+                          actions={branch.steps}
                           onAddAction={() => {/* handle add action to branch */}}
                         />
                       ))}
                     </div>
                   )}
                   
-                  {index < mockActions.length - 1 && (
+                  {index < actions.length - 1 && (
                     <div className="flex justify-center my-3">
                       <ArrowDown className="w-5 h-5 text-gray-400" />
                     </div>
@@ -528,11 +491,13 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
                 </div>
               ))}
             </div>
+            )}
 
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setCurrentStep(4)}
                 className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                disabled={actions.length === 0}
               >
                 Review & Save
               </button>
@@ -566,7 +531,7 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Actions:</span>
-                  <span className="font-medium">{mockActions.length} steps</span>
+                  <span className="font-medium">{actions.length} steps</span>
                 </div>
               </div>
             </div>
@@ -576,4 +541,3 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
     </div>
   );
 }
-

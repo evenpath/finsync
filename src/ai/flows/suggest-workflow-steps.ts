@@ -1,3 +1,4 @@
+
 // src/ai/flows/suggest-workflow-steps.ts
 'use server';
 
@@ -14,13 +15,13 @@ import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
-const SuggestWorkflowStepsInputSchema = z.object({
+export const SuggestWorkflowStepsInputSchema = z.object({
   workflowDescription: z.string().describe('A description of the workflow for which to suggest steps.'),
 });
 export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInputSchema>;
 
 
-const StepSchema: z.ZodType<any> = z.lazy(() => z.object({
+export const StepSchema: z.ZodType<any> = z.lazy(() => z.object({
   type: z.string().describe("The type of the step, e.g., 'ai_agent', 'human_input', 'conditional_branch', 'api_call', 'notification'."),
   name: z.string().describe("A human-readable name for the step, e.g., 'Classify Request Urgency'."),
   description: z.string().describe("A brief explanation of what this step does."),
@@ -32,7 +33,7 @@ const StepSchema: z.ZodType<any> = z.lazy(() => z.object({
 }));
 
 
-const SuggestWorkflowStepsOutputSchema = z.object({
+export const SuggestWorkflowStepsOutputSchema = z.object({
   name: z.string().describe("A concise name for the entire workflow."),
   description: z.string().describe("A short description of what the workflow accomplishes."),
   steps: z.array(StepSchema).describe("An array of the structured steps for the workflow, which can include nested conditional branches."),

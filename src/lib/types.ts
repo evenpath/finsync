@@ -292,7 +292,7 @@ export const IndustryTemplateSchema = z.object({
   category: z.string().describe("A one-word category for the workflow (e.g., 'Emergency', 'Financial', 'Leasing')."),
   popularity: z.enum(['Most Popular', 'Popular', 'New']).optional().describe("A popularity ranking."),
   steps: z.number().int().describe("An estimated number of steps in the workflow."),
-  icon: z.string().min(1, { message: "Icon must be a single emoji character." }).describe("A single emoji character to represent the workflow."),
+  icon: z.string().min(1).describe("A single emoji character to represent the workflow."),
 });
 export type IndustryTemplate = z.infer<typeof IndustryTemplateSchema>;
 
@@ -1351,10 +1351,10 @@ export interface SystemEvent {
 // 16. UTILITY & HELPER TYPES
 // ============================================================================
 
-export type FirebaseTimestamp = {
+export interface FirebaseTimestamp {
   seconds: number;
   nanoseconds: number;
-};
+}
 
 export interface LogicalCondition {
   field: string;
