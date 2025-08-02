@@ -1,3 +1,4 @@
+
 // src/components/partner/InviteMemberModal.tsx
 "use client";
 
@@ -32,7 +33,7 @@ interface InviteMemberModalProps {
 export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: InviteMemberModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('Junior Analyst');
+  const [role, setRole] = useState('employee');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +41,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: I
       onInviteMember({ name, email, role });
       setName('');
       setEmail('');
-      setRole('Junior Analyst');
+      setRole('employee');
     }
   };
 
@@ -94,10 +95,8 @@ export default function InviteMemberModal({ isOpen, onClose, onInviteMember }: I
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Senior Analyst">Senior Analyst</SelectItem>
-                  <SelectItem value="Process Specialist">Process Specialist</SelectItem>
-                  <SelectItem value="Junior Analyst">Junior Analyst</SelectItem>
-                  <SelectItem value="Employee">Employee</SelectItem>
+                  <SelectItem value="partner_admin">Partner Admin</SelectItem>
+                  <SelectItem value="employee">Employee</SelectItem>
                 </SelectContent>
               </Select>
             </div>
