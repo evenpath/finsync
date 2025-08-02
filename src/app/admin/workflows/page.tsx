@@ -3,161 +3,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search } from 'lucide-react';
-
-// Expanded template library
-const templateLibrary = {
-  property_management: [
-    {
-      name: 'Emergency Maintenance Response',
-      description: 'Urgent maintenance requests get immediate attention and proper escalation',
-      category: 'Emergency',
-      popularity: 'Most Popular',
-      steps: 4,
-      icon: '🚨'
-    },
-    {
-      name: 'Rent Collection Automation', 
-      description: 'Automated rent reminders and follow-up for late payments',
-      category: 'Financial',
-      popularity: 'Popular',
-      steps: 6,
-      icon: '💰'
-    },
-    {
-      name: 'Lease Renewal Process',
-      description: 'Proactive lease renewal with automated communications',
-      category: 'Leasing',
-      popularity: 'New',
-      steps: 5,
-      icon: '📋'
-    },
-    {
-      name: 'Move-In Checklist',
-      description: 'Complete tenant onboarding and move-in coordination',
-      category: 'Leasing',
-      popularity: '',
-      steps: 7,
-      icon: '🏠'
-    },
-    {
-      name: 'Property Inspection Scheduling',
-      description: 'Regular property inspections and maintenance tracking',
-      category: 'Maintenance',
-      popularity: '',
-      steps: 4,
-      icon: '🔍'
-    },
-    {
-      name: 'Tenant Communication Hub',
-      description: 'Centralized tenant requests and announcements',
-      category: 'Communication',
-      popularity: '',
-      steps: 3,
-      icon: '💬'
-    }
-  ],
-  hvac_contractor: [
-    {
-      name: 'Emergency Service Dispatch',
-      description: 'Route emergency calls to available technicians with GPS optimization',
-      category: 'Emergency',
-      popularity: 'Most Popular',
-      steps: 5,
-      icon: '🚨'
-    },
-    {
-      name: 'Seasonal Maintenance Campaign',
-      description: 'Proactive maintenance reminders based on weather patterns',
-      category: 'Marketing',
-      popularity: 'Popular',
-      steps: 4,
-      icon: '🍂'
-    },
-    {
-      name: 'Quote Follow-up Automation',
-      description: 'Automated follow-up on quotes with conversion tracking',
-      category: 'Sales',
-      popularity: 'New',
-      steps: 6,
-      icon: '💼'
-    },
-    {
-      name: 'Parts Inventory Management',
-      description: 'Track parts usage and automate reordering',
-      category: 'Inventory',
-      popularity: '',
-      steps: 5,
-      icon: '📦'
-    },
-    {
-      name: 'Customer Satisfaction Survey',
-      description: 'Post-service feedback collection and response',
-      category: 'Quality',
-      popularity: '',
-      steps: 3,
-      icon: '⭐'
-    },
-    {
-      name: 'Technician Scheduling Optimizer',
-      description: 'Optimize technician routes and schedules',
-      category: 'Operations',
-      popularity: '',
-      steps: 4,
-      icon: '📅'
-    }
-  ],
-  independent_hotel: [
-    {
-      name: 'VIP Guest Experience',
-      description: 'Special treatment workflow for repeat or high-value guests',
-      category: 'Guest Experience',
-      popularity: 'Most Popular',
-      steps: 6,
-      icon: '👑'
-    },
-    {
-      name: 'Guest Issue Resolution',
-      description: 'Quick response to guest complaints with escalation paths',
-      category: 'Service Recovery',
-      popularity: 'Popular',
-      steps: 5,
-      icon: '🔧'
-    },
-    {
-      name: 'Upselling Automation',
-      description: 'Automated upselling based on guest preferences and stay history',
-      category: 'Revenue',
-      popularity: 'New',
-      steps: 4,
-      icon: '💎'
-    },
-    {
-      name: 'Housekeeping Coordination',
-      description: 'Room status updates and cleaning task management',
-      category: 'Operations',
-      popularity: '',
-      steps: 5,
-      icon: '🧹'
-    },
-    {
-      name: 'Check-in Process Optimization',
-      description: 'Streamlined check-in with room assignment and welcome',
-      category: 'Front Office',
-      popularity: '',
-      steps: 4,
-      icon: '🗝️'
-    },
-    {
-      name: 'Review Response Management',
-      description: 'Monitor and respond to online reviews automatically',
-      category: 'Reputation',
-      popularity: '',
-      steps: 3,
-      icon: '📝'
-    }
-  ]
-};
+import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2 } from 'lucide-react';
+import { suggestIndustryTemplates, type IndustryTemplate } from '@/ai/flows/suggest-industry-templates';
 
 // Communication channels with better icons
 const communicationChannels = {
@@ -172,20 +19,41 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
   const [selectedIndustry, setSelectedIndustry] = useState('property_management');
   const [workflowName, setWorkflowName] = useState('');
   const [workflowDescription, setWorkflowDescription] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<IndustryTemplate | null>(null);
   const [trigger, setTrigger] = useState(null);
   const [actions, setActions] = useState<any[]>([]);
   const [searchTemplate, setSearchTemplate] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  const [templates, setTemplates] = useState<IndustryTemplate[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
 
   const industries = {
     property_management: { label: 'Property Management', icon: Home, color: 'from-green-500 to-emerald-500' },
     hvac_contractor: { label: 'HVAC Contractor', icon: Wrench, color: 'from-blue-500 to-cyan-500' },
     independent_hotel: { label: 'Independent Hotel', icon: Building2, color: 'from-purple-500 to-pink-500' }
   };
-
+  
   const currentIndustry = industries[selectedIndustry as keyof typeof industries];
-  const templates = templateLibrary[selectedIndustry as keyof typeof templateLibrary] || [];
+
+  useEffect(() => {
+    const generateTemplates = async () => {
+      if (!selectedIndustry) return;
+      setIsLoadingTemplates(true);
+      setSelectedTemplate(null);
+      try {
+        const industryLabel = industries[selectedIndustry as keyof typeof industries].label;
+        const result = await suggestIndustryTemplates({ industry: industryLabel });
+        setTemplates(result.templates);
+      } catch (error) {
+        console.error("Failed to generate templates:", error);
+        setTemplates([]);
+      } finally {
+        setIsLoadingTemplates(false);
+      }
+    };
+    generateTemplates();
+  }, [selectedIndustry]);
   
   // Filter templates
   const categories = ['All', ...new Set(templates.map(t => t.category))];
@@ -558,33 +426,40 @@ export default function AccordionWizardWorkflowBuilder({ initialData, onSave, on
             </div>
 
             {/* Templates Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTemplates.map((template, index) => (
-                <TemplateCard
-                  key={index}
-                  template={template}
-                  isSelected={selectedTemplate?.name === template.name}
-                  onClick={() => setSelectedTemplate(template)}
-                />
-              ))}
-              
-              {/* Custom Option */}
-              <div 
-                className={`p-4 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-                  selectedTemplate === null 
-                    ? 'border-purple-300 bg-purple-50' 
-                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                }`}
-                onClick={() => setSelectedTemplate(null)}
-              >
-                <div className="text-center">
-                  <div className="text-4xl mb-3">🎯</div>
-                  <h3 className="font-medium text-gray-900 mb-2">Start from Scratch</h3>
-                  <p className="text-sm text-gray-600">Build a completely custom workflow</p>
-                  {selectedTemplate === null && <CheckCircle className="w-5 h-5 text-purple-600 mx-auto mt-2" />}
+            {isLoadingTemplates ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                <p className="ml-4 text-gray-600">Generating expert templates for your industry...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTemplates.map((template, index) => (
+                  <TemplateCard
+                    key={index}
+                    template={template}
+                    isSelected={selectedTemplate?.name === template.name}
+                    onClick={() => setSelectedTemplate(template)}
+                  />
+                ))}
+                
+                {/* Custom Option */}
+                <div 
+                  className={`p-4 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
+                    selectedTemplate === null 
+                      ? 'border-purple-300 bg-purple-50' 
+                      : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSelectedTemplate(null)}
+                >
+                  <div className="text-center">
+                    <div className="text-4xl mb-3">🎯</div>
+                    <h3 className="font-medium text-gray-900 mb-2">Start from Scratch</h3>
+                    <p className="text-sm text-gray-600">Build a completely custom workflow</p>
+                    {selectedTemplate === null && <CheckCircle className="w-5 h-5 text-purple-600 mx-auto mt-2" />}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {(selectedTemplate || selectedTemplate === null) && (
               <div className="flex justify-end">

@@ -9,3 +9,4 @@ import '@/ai/flows/update-partner-flow.ts';
 import '@/ai/flows/user-management-flow.ts';
 import '@/ai/flows/delete-partner-flow.ts';
 import '@/ai/flows/set-user-claims-flow.ts';
+import '@/ai/flows/suggest-industry-templates.ts';
