@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import AddPartnerModal from "@/components/admin/AddPartnerModal";
 import { Card, CardContent } from '@/components/ui/card';
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { createUserInTenant } from '@/ai/flows/user-management-flow';
 import { useToast } from "@/hooks/use-toast";
 import { updatePartner } from '@/ai/flows/update-partner-flow';
 import { db } from '@/lib/firebase';
@@ -122,38 +123,48 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
     const handleAddPartner = async (newPartnerData: { name: string; email: string; }) => {
         console.log("Adding new partner:", newPartnerData.name);
         try {
-            // Call the unified Genkit flow to handle tenant and partner creation
-            const result = await createTenant({ 
-                partnerName: newPartnerData.name, 
-                email: newPartnerData.email 
+            // Step 1: Create tenant and partner document
+            const tenantResult = await createTenant({
+                partnerName: newPartnerData.name,
+                email: newPartnerData.email
             });
 
-            if (result.success) {
-                toast({ 
-                    title: "Partner Added", 
-                    description: result.message
-                });
-                // The real-time listener will automatically update the UI with the new partner.
-                // We can optionally select the new partner here.
-                // The new partner data isn't returned directly, so we'll let the listener handle it.
-            } else {
-                console.error("Failed to create partner:", result.message);
-                toast({ 
-                    variant: "destructive", 
-                    title: "Partner Creation Failed", 
-                    description: result.message 
-                });
+            if (!tenantResult.success || !tenantResult.tenantId || !tenantResult.partnerId) {
+                throw new Error(tenantResult.message || 'Failed to create workspace.');
             }
+
+            // Step 2: Create the admin user for the new tenant
+            const userResult = await createUserInTenant({
+                email: newPartnerData.email,
+                password: Math.random().toString(36).slice(-8), // Generate a random temporary password
+                tenantId: tenantResult.tenantId,
+                displayName: newPartnerData.name,
+                partnerId: tenantResult.partnerId,
+                role: 'partner_admin',
+            });
+
+            if (!userResult.success) {
+                // In a real app, you might want to roll back tenant creation here.
+                throw new Error(userResult.message || 'Workspace created, but failed to create admin user.');
+            }
+
+            toast({
+                title: "Partner Created Successfully",
+                description: `${newPartnerData.name} is set up.`,
+            });
+             setIsAddModalOpen(false);
+             // The new partner will appear automatically via the onSnapshot listener.
+
         } catch (e) {
             console.error("Error creating partner:", e);
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-            toast({ 
-                variant: "destructive", 
-                title: "Error", 
-                description: `Could not create partner: ${errorMessage}` 
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: `Could not create partner: ${errorMessage}`,
             });
+            setIsAddModalOpen(false);
         }
-        setIsAddModalOpen(false);
     };
 
     const handleUpdatePartner = async (updatedPartner: Partner) => {

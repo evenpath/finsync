@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -33,9 +34,8 @@ export default function AddPartnerModal({ isOpen, onClose, onAdd }: AddPartnerMo
     setIsSubmitting(true);
     try {
       await onAdd({ name: partnerName.trim(), email: email.trim() });
-      // We don't close the modal immediately to allow the user to see the result
-      // The parent component will close it after showing a toast.
-      // But we will clear the form.
+      // The parent component now controls closing the modal on success/failure.
+      // We clear the form for the next use.
       setPartnerName('');
       setEmail('');
     } catch (error) {
