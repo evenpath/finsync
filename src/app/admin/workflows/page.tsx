@@ -15,9 +15,10 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { suggestWorkflowSteps, SuggestWorkflowStepsOutput } from '@/ai/flows/suggest-workflow-steps';
-import { Sparkles, Loader2, Plus, ArrowRight, ArrowDown, Bot, CheckCircle, MessageSquare, Trash2, Edit2, Play, Save } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ArrowRight, ArrowDown, Bot, CheckCircle, MessageSquare, Trash2, Edit2, Play, Save, Zap } from 'lucide-react';
 import WorkflowTemplateGrid from '@/components/admin/WorkflowTemplateGrid';
 import type { WorkflowTemplate, WorkflowStep } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
