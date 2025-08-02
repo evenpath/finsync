@@ -66,16 +66,16 @@ export default function PartnerLoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary/50">
-        <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm">
         <form onSubmit={handleLogin}>
-            <CardHeader>
+          <CardHeader>
             <CardTitle className="font-headline text-2xl">Partner Login</CardTitle>
             <CardDescription>Enter your work email to access your workspace.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
+          </CardHeader>
+          <CardContent className="grid gap-4">
             <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
+              <Label htmlFor="email">Email</Label>
+              <Input 
                 id="email" 
                 type="email" 
                 placeholder="you@yourcompany.com" 
@@ -83,33 +83,33 @@ export default function PartnerLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                />
+              />
             </div>
             <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
+              <Label htmlFor="password">Password</Label>
+              <Input 
                 id="password" 
                 type="password" 
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                />
+              />
             </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{" "}
-                <Link href="/partner/signup" className="underline">Create an organization</Link>
-                {" or "}
-                <Link href="/partner/join" className="underline">join one</Link>.
+              Don't have an account?{" "}
+              <Link href="/partner/signup" className="underline">Create an organization</Link>
+              {" or "}
+              <Link href="/partner/join" className="underline">join one</Link>.
             </div>
-            </CardFooter>
+          </CardFooter>
         </form>
-        </Card>
+      </Card>
     </div>
   );
 }
