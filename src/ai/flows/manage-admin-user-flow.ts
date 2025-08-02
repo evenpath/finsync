@@ -81,6 +81,7 @@ const manageAdminUserFlow = ai.defineFlow(
             role: input.role,
             status: isNewUser ? 'invited' : 'active',
             uid: userRecord.uid,
+            id: userRecord.uid,
             lastActive: 'Never',
             joinedDate: new Date().toISOString(),
             permissions: input.role === 'Super Admin' ? ['all'] : ['read', 'write'],

@@ -1,4 +1,3 @@
-
 // src/hooks/use-auth.tsx
 "use client";
 
@@ -25,15 +24,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
             if (firebaseUser) {
                 try {
+                    // Force refresh the token to get the latest custom claims.
                     const idTokenResult = await firebaseUser.getIdTokenResult(true);
                     
-                    const customClaims: { role?: 'Admin' | 'Super Admin' | 'partner' | 'employee', partnerId?: string | null } = {};
-
-                    // The 'role' should ideally be set via a backend function when the user is created or updated.
-                    if (idTokenResult.claims.role) {
-                        customClaims.role = idTokenResult.claims.role as any;
-                    }
-
                     const authUser: FirebaseAuthUser = {
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,
@@ -41,10 +34,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         photoURL: firebaseUser.photoURL,
                         phoneNumber: firebaseUser.phoneNumber,
                         emailVerified: firebaseUser.emailVerified,
-                        customClaims: {
-                            ...idTokenResult.claims,
-                            ...customClaims,
-                        },
+                        // The claims are directly on the token result, not nested.
+                        customClaims: idTokenResult.claims,
                         creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
                         providerData: firebaseUser.providerData

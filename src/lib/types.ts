@@ -1,14 +1,15 @@
-
 // ============================================================================
 // FIREBASE BACKEND VARIABLES
 // ============================================================================
 import { z } from 'zod';
+import type { UserInfo } from 'firebase/auth';
+
 
 // ============================================================================
 // 1. FIREBASE AUTHENTICATION VARIABLES
 // ============================================================================
 
-export interface FirebaseAuthUser {
+export interface FirebaseAuthUser extends Partial<UserInfo> {
   uid: string;
   email: string | null;
   displayName: string | null;
@@ -16,12 +17,13 @@ export interface FirebaseAuthUser {
   phoneNumber: string | null;
   emailVerified: boolean;
   customClaims?: {
-    role?: 'Super Admin' | 'Admin' | 'partner' | 'employee';
+    [key: string]: any; // Allow any custom claims
+    role?: 'Super Admin' | 'Admin' | 'partner_admin' | 'employee';
     partnerId?: string;
   };
-  creationTime: string;
-  lastSignInTime: string;
-  providerData: any[];
+  creationTime?: string;
+  lastSignInTime?: string;
+  providerData: UserInfo[];
 }
 
 export interface AuthState {
@@ -32,7 +34,8 @@ export interface AuthState {
 }
 
 export interface AdminUser {
-  id: string;
+  id: string; // This is the UID from Firebase Auth
+  uid?: string; // UID can be optional during creation
   name: string;
   email: string;
   role: 'Super Admin' | 'Admin';

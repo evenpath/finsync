@@ -25,15 +25,29 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // For admin login, we don't need tenant logic.
+      // Ensure the auth instance has no tenantId set.
+      auth.tenantId = null; 
+
       await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Login Successful", description: "Redirecting..." });
+      
+      toast({ title: "Login Successful", description: "Redirecting to the admin dashboard..." });
       router.push('/admin');
+
     } catch (error: any) {
-      console.error("Firebase Login Error:", error);
+      console.error("Firebase Admin Login Error:", error);
+      
+      let errorMessage = "An unknown error occurred.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.code === 'auth/invalid-email') {
+          errorMessage = "Please enter a valid email address.";
+      }
+
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        description: errorMessage,
       });
     } finally {
         setIsLoading(false);
