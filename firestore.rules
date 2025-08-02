@@ -1,38 +1,139 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Allow admins to read and write all data
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.role == 'Super Admin';
+    }
+
     function isAdmin() {
-      return request.auth.token.role == 'Admin' || request.auth.token.role == 'Super Admin';
-    }
-
-    // Default deny all reads and writes
-    match /{document=**} {
-      allow read, write: if request.auth != null; // For now, allow any authenticated user to get unblocked.
-    }
-
-    // Allow any user to read/write to their own user document
-    match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
-    }
-
-    // Admins can manage all partner data
-    match /partners/{partnerId} {
-      allow read, write: if isAdmin();
+      return request.auth != null && (request.auth.token.role == 'Admin' || request.auth.token.role == 'Super Admin');
     }
     
-    // Admins can manage all admin user records
-    match /admins/{adminId} {
-        allow read, write: if isAdmin();
+    function isPartnerAdmin() {
+      return request.auth != null && request.auth.token.role == 'partner_admin';
+    }
+    
+    function isEmployee() {
+      return request.auth != null && request.auth.token.role == 'employee';
+    }
+    
+    function isPartner() {
+        return request.auth != null && (isPartnerAdmin() || isEmployee());
     }
 
-    // User mappings are backend-managed
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function belongsToPartner(partnerId) {
+      return request.auth != null && request.auth.token.partnerId == partnerId;
+    }
+    
+    function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+    }
+
+    function canAccessPartner(partnerId) {
+      return isAdmin() || belongsToPartner(partnerId);
+    }
+
+    function canModifyPartner(partnerId) {
+      return isAdmin() || (isPartnerAdmin() && belongsToPartner(partnerId));
+    }
+    
+    function hasValidPartnerData() {
+      return request.resource.data.keys().hasAll(['name', 'email', 'tenantId']) &&
+             request.resource.data.name is string &&
+             request.resource.data.email is string &&
+             request.resource.data.tenantId is string;
+    }
+
+    // ============================================================================
+    // CORE COLLECTIONS
+    // ============================================================================
+    
+    match /partners/{partnerId} {
+      allow read: if isAdmin() || (isAuthenticated() && belongsToPartner(partnerId));
+      allow create: if isAdmin() && hasValidPartnerData();
+      allow update: if canModifyPartner(partnerId);
+      allow delete: if isSuperAdmin();
+    }
+    
+    match /adminUsers/{adminId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
     match /userMappings/{email} {
-      allow read, write: if false; // Should only be accessible by backend with admin credentials
+      allow read: if isAuthenticated();
+      allow write: if false; 
+    }
+
+    match /teamMembers/{memberId} {
+      allow read: if canAccessPartner(resource.data.partnerId);
+      allow write: if canModifyPartner(resource.data.partnerId);
+      allow create: if isPartnerAdmin() && request.resource.data.partnerId == request.auth.token.partnerId;
+    }
+
+    // ============================================================================
+    // WORKFLOW & TASK COLLECTIONS
+    // ============================================================================
+    
+    match /workflowTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    match /workflowInstances/{instanceId} {
+      allow read: if canAccessPartner(resource.data.partnerId);
+      allow write: if canModifyPartner(resource.data.partnerId);
+      allow create: if isPartner() && request.resource.data.partnerId == request.auth.token.partnerId;
+    }
+    
+    match /workflowExecutions/{executionId} {
+      allow read: if canAccessPartner(get(/databases/$(database)/documents/workflowInstances/$(resource.data.workflowInstanceId)).data.partnerId);
+      allow create: if isPartner() && request.resource.data.partnerId == request.auth.token.partnerId;
+      allow update, delete: if false;
+    }
+    
+    match /tasks/{taskId} {
+      allow read, write: if canAccessPartner(resource.data.partnerId);
+      allow create: if isPartner() && request.resource.data.partnerId == request.auth.token.partnerId;
+    }
+
+    // ============================================================================
+    // BUSINESS & AI DATA COLLECTIONS
+    // ============================================================================
+    
+    match /businessProfiles/{profileId} {
+      allow read: if canAccessPartner(resource.data.partnerId);
+      allow write: if canModifyPartner(resource.data.partnerId);
+      allow create: if isPartnerAdmin() && request.resource.data.partnerId == request.auth.token.partnerId;
+    }
+
+    match /aiMemory/{memoryId} {
+      allow read: if canAccessPartner(resource.data.partnerId);
+      allow write: if isAdmin() || (isPartnerAdmin() && belongsToPartner(resource.data.partnerId));
+      allow create: if isAdmin() || isPartnerAdmin();
+    }
+
+    // ============================================================================
+    // OTHER COLLECTIONS
+    // ============================================================================
+
+    // Allow any authenticated user to read from any other top-level collection
+    match /{collection}/{docId} {
+      allow read: if isAuthenticated();
+    }
+
+    // Fallback rule for nested collections if needed, can be more specific
+    match /{path=**}/{collection}/{docId} {
+      allow read: if isAuthenticated();
     }
   }
 }
