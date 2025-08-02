@@ -11,7 +11,7 @@ const CreateUserInTenantInputSchema = z.object({
   password: z.string().min(6).describe('The password for the new user.'),
   tenantId: z.string().describe('The tenant ID where the user should be created.'),
   displayName: z.string().optional().describe('The display name for the new user.'),
-  partnerId: z.string().optional().describe('The partner ID to associate with this user.'),
+  partnerId: z.string().describe('The partner ID to associate with this user.'),
   role: z.enum(['partner_admin', 'employee']).default('employee').describe('The role for the new user.'),
 });
 export type CreateUserInTenantInput = z.infer<typeof CreateUserInTenantInputSchema>;
@@ -63,7 +63,7 @@ const createUserInTenantFlow = ai.defineFlow(
       // Step 2: Set custom claims for the newly created user
       const claims = {
         role: input.role,
-        partnerId: input.partnerId || null,
+        partnerId: input.partnerId,
         tenantId: input.tenantId,
       };
       await tenantAuth.setCustomUserClaims(userRecord.uid, claims);

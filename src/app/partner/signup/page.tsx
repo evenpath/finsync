@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { createUserInTenant } from '@/ai/flows/user-management-flow';
 
 export default function PartnerSignupPage() {
     const [name, setName] = useState('');
@@ -24,18 +25,34 @@ export default function PartnerSignupPage() {
         setIsLoading(true);
 
         try {
-            // 1. Create a new Firebase Auth tenant and Partner document for the new partner
-            // This flow now also creates the user, so we pass the password.
-            const result = await createTenant({ 
+            // Step 1: Create the tenant and partner document.
+            // This flow is now simplified and does not create the user.
+            const tenantResult = await createTenant({ 
                 partnerName: name, 
                 email: email,
-                password: password,
             });
 
-            if (!result.success) {
-                throw new Error(result.message || "Failed to create a new partner workspace.");
+            if (!tenantResult.success || !tenantResult.tenantId || !tenantResult.partnerId) {
+                throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
             }
-            console.log(`New tenant created: ${result.tenantId} for partner ${result.partnerId}`);
+            
+            console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
+            
+            // Step 2: Create the admin user for the new tenant.
+            // This flow now reliably handles user creation, claims, and mapping.
+            const userResult = await createUserInTenant({
+                email: email,
+                password: password,
+                tenantId: tenantResult.tenantId,
+                displayName: name,
+                partnerId: tenantResult.partnerId,
+                role: 'partner_admin',
+            });
+
+            if (!userResult.success) {
+                // In a real app, you might want a rollback mechanism here for the created tenant.
+                throw new Error(userResult.message || "Workspace created, but failed to set up admin user.");
+            }
             
             toast({
                 title: "Account Created!",

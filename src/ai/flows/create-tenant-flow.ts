@@ -3,6 +3,7 @@
 
 /**
  * @fileOverview A Genkit flow for creating Firebase Auth tenants and partner documents.
+ * This flow only creates the tenant and partner document; user creation is handled separately.
  *
  * - createTenant - A function that handles creating a new Firebase Auth tenant and a partner record in Firestore.
  * - CreateTenantInput - The input type for the createTenant function.
@@ -14,12 +15,10 @@ import { z } from 'genkit';
 import { adminAuth, db } from '@/lib/firebase-admin';
 import type { Partner } from '@/lib/types';
 import * as admin from 'firebase-admin';
-import { createUserInTenant } from './user-management-flow';
 
 const CreateTenantInputSchema = z.object({
   partnerName: z.string().describe('The name of the partner organization.'),
   email: z.string().email().describe("The primary admin's email for the partner."),
-  password: z.string().min(6).describe('The password for the new admin user.'),
 });
 export type CreateTenantInput = z.infer<typeof CreateTenantInputSchema>;
 
@@ -107,30 +106,14 @@ const createTenantFlow = ai.defineFlow(
       const docRef = await db.collection("partners").add(newPartner);
       console.log("Partner document created with ID:", docRef.id);
       
-      // 4. Create the partner's admin user within the new tenant
-      const userResult = await createUserInTenant({
-          email: input.email,
-          password: input.password,
-          tenantId: tenant.tenantId,
-          displayName: input.partnerName,
-          partnerId: docRef.id, // Associate user with the new partner document ID
-          role: 'partner_admin',
-      });
-
-      if (!userResult.success) {
-          // This is a partial success, the tenant and partner exist, but user creation failed.
-          // In a real production app, you might want to roll back the previous steps.
-          console.warn(`Partner created, but user creation failed: ${userResult.message}`);
-          throw new Error(userResult.message);
-      } else {
-          console.log(`Admin user ${input.email} created successfully for partner ${docRef.id}`);
-      }
+      // NOTE: User creation is now handled in a separate step by the caller.
+      // This flow's responsibility is only to set up the tenant and partner document.
 
       return {
         success: true,
         tenantId: tenant.tenantId,
         partnerId: docRef.id,
-        message: `Successfully created partner ${input.partnerName} and admin user.`,
+        message: `Successfully created workspace for ${input.partnerName}.`,
       };
 
     } catch (error: any) {
