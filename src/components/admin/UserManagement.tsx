@@ -4,6 +4,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { AdminUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import {
   Trash2,
   Users,
   AlertTriangle,
+  Wrench,
 } from "lucide-react";
 import InviteAdminModal from "./InviteAdminModal";
 import { useAuth } from "@/hooks/use-auth";
@@ -148,7 +150,13 @@ export default function UserManagement() {
                     <div className="p-6 text-center text-destructive bg-destructive/10">
                       <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
                       <h4 className="font-bold mb-1">Failed to Load Admins</h4>
-                      <p className="text-xs">{error}</p>
+                      <p className="text-xs mb-4">{error}</p>
+                      <Button asChild variant="destructive" size="sm">
+                          <Link href="/admin/diagnostics">
+                            <Wrench className="w-4 h-4 mr-2"/>
+                            Go to Diagnostics
+                          </Link>
+                      </Button>
                     </div>
                 ) : (
                 <div className="divide-y">

@@ -15,6 +15,7 @@ import {
   LogOut,
   Users,
   Database,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,7 +28,7 @@ const menuItems = [
   { id: "users", label: "Admin Internal", icon: Users, href: "/admin/users", requiredRole: 'Super Admin' },
   { id: "analytics", label: "System Analytics", icon: TrendingUp, href: "/admin/analytics" },
   { id: "logs", label: "System Logs", icon: FileText, href: "/admin/logs" },
-  { id: "system", label: "System Management", icon: Database, href: "/admin/system" },
+  { id: "diagnostics", label: "Diagnostics & Setup", icon: Wrench, href: "/admin/diagnostics" },
   { id: "settings", label: "Admin Settings", icon: Settings, href: "/admin/settings" },
 ];
 
@@ -48,6 +49,12 @@ export default function AdminSidebar() {
     }
   };
   
+  // Reroute "system" to "diagnostics" for backward compatibility
+  const getHref = (itemHref: string) => {
+      if(itemHref === '/admin/system') return '/admin/diagnostics';
+      return itemHref;
+  }
+
   return (
     <div className="w-64 bg-card border-r flex flex-col">
       <div className="p-6 border-b">
@@ -68,14 +75,15 @@ export default function AdminSidebar() {
             if (item.requiredRole && userRole !== item.requiredRole) {
               return null;
             }
-
-            const isActive = (item.href === '/admin' && pathname === item.href) || 
-                             (item.href !== '/admin' && pathname.startsWith(item.href));
+            
+            const href = getHref(item.href);
+            const isActive = (href === '/admin' && pathname === href) || 
+                             (href !== '/admin' && pathname.startsWith(href));
 
             const Icon = item.icon;
             return (
               <li key={item.id}>
-                <Link href={item.href}>
+                <Link href={href}>
                   <div
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer ${
                       isActive
