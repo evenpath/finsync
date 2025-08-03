@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updatePartner } from '@/ai/flows/update-partner-flow';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from "firebase/firestore";
+import { getTenantForEmailAction } from '@/actions/auth-actions';
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];
@@ -123,7 +124,13 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
     const handleAddPartner = async (newPartnerData: { name: string; email: string; }) => {
         console.log("Adding new partner:", newPartnerData.name);
         try {
-            // Step 1: Create tenant and partner document
+            // Step 1: Check if a user with this email already exists
+            const existingUserCheck = await getTenantForEmailAction(newPartnerData.email);
+            if (existingUserCheck.success) {
+                throw new Error("An account with this email already exists. Please use a different email.");
+            }
+
+            // Step 2: Create tenant and partner document
             const tenantResult = await createTenant({
                 partnerName: newPartnerData.name,
                 email: newPartnerData.email
@@ -133,7 +140,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 throw new Error(tenantResult.message || 'Failed to create workspace.');
             }
 
-            // Step 2: Create the admin user for the new tenant
+            // Step 3: Create the admin user for the new tenant
             const userResult = await createUserInTenant({
                 email: newPartnerData.email,
                 password: Math.random().toString(36).slice(-8), // Generate a random temporary password
@@ -163,7 +170,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 title: "Error",
                 description: `Could not create partner: ${errorMessage}`,
             });
-            setIsAddModalOpen(false);
+            // Do not close the modal on failure so user can correct the data
         }
     };
 

@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Building, Mail, AlertCircle } from 'lucide-react';
+import { UserPlus, Building, Mail, AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddPartnerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (partnerData: { name: string; email: string; }) => void;
+  onAdd: (partnerData: { name: string; email: string; }) => Promise<void>;
 }
 
 export default function AddPartnerModal({ isOpen, onClose, onAdd }: AddPartnerModalProps) {
@@ -34,12 +34,13 @@ export default function AddPartnerModal({ isOpen, onClose, onAdd }: AddPartnerMo
     setIsSubmitting(true);
     try {
       await onAdd({ name: partnerName.trim(), email: email.trim() });
-      // The parent component now controls closing the modal on success/failure.
-      // We clear the form for the next use.
+      // The parent component now controls closing the modal on success.
+      // We clear the form for the next use if successful.
       setPartnerName('');
       setEmail('');
     } catch (error) {
       console.error("Error in modal submission:", error);
+      // Parent component will show a toast.
     } finally {
       setIsSubmitting(false);
     }
@@ -133,7 +134,7 @@ export default function AddPartnerModal({ isOpen, onClose, onAdd }: AddPartnerMo
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                   Creating...
                 </>
               ) : (
