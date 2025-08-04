@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -35,21 +36,28 @@ service cloud.firestore {
         return request.auth != null && request.auth.uid == userId;
     }
 
+    // Helper function to check if a user is a partner admin for a specific resource
+    // This handles both create (request.resource) and update (resource) operations.
+    function isPartnerAdminForResource() {
+      // For new documents, check incoming data. For existing, check stored data.
+      let partnerId = request.resource.data.partnerId;
+      if (resource != null) {
+        partnerId = resource.data.partnerId;
+      }
+      return isPartnerAdmin() && request.auth.token.partnerId == partnerId;
+    }
+
+
     // ============================================================================
     // CORE COLLECTIONS
     // ============================================================================
     
     match /partners/{partnerId} {
-      allow read: if isAdmin() || request.auth.token.partnerId == partnerId;
+      allow read: if isAdmin() || (isPartner() && request.auth.token.partnerId == partnerId);
       allow list: if isAdmin();
       allow create: if isAdmin();
       allow update: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
       allow delete: if isSuperAdmin();
-      
-      // Allow partners to read and write to their own employees subcollection
-      match /employees/{employeeId} {
-        allow read, list, write: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
-      }
     }
     
     match /adminUsers/{adminId} {
@@ -57,9 +65,9 @@ service cloud.firestore {
     }
     
     match /userMappings/{identifier} {
-      // Allow unauthenticated reads only for login lookup
-      allow read: if request.auth == null; 
-      // Allow system admins to read for debugging
+      // Allow unauthenticated reads for login lookup
+      allow read: if request.auth == null;
+      // Allow admins to read for debugging
       allow read: if isAdmin();
       // No client-side writes
       allow write: if false; 
@@ -68,7 +76,7 @@ service cloud.firestore {
     match /teamMembers/{memberId} {
       allow read: if isAuthenticated() && (isAdmin() || request.auth.token.partnerId == resource.data.partnerId);
       allow list: if isAuthenticated() && (isAdmin() || (isPartner() && request.query.partnerId == request.auth.token.partnerId));
-      allow write: if isAuthenticated() && (isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == resource.data.partnerId));
+      allow write: if isAuthenticated() && (isAdmin() || isPartnerAdminForResource());
     }
 
     // ============================================================================
