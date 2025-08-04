@@ -3,38 +3,26 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import WorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
+import EnhancedWorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
 import WorkspaceHeader from "@/components/worker/WorkspaceHeader";
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
   const router = useRouter();
 
-  const isAuthorized = React.useMemo(() => {
-    if (loading || !isAuthenticated || !user?.customClaims) {
-      return false;
-    }
-    const role = user.customClaims.role;
-    // A Super Admin or Partner Admin should be able to see the employee portal.
-    return role === 'Super Admin' || role === 'partner_admin' || role === 'employee';
-  }, [user, loading, isAuthenticated]);
-
   React.useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        router.push('/partner/login'); // Employees log in via partner portal
-      } else if (!isAuthorized) {
-        router.push('/');
-      }
+    if (!loading && !isAuthenticated) {
+      router.push('/partner/login');
     }
-  }, [loading, isAuthenticated, isAuthorized, router]);
+  }, [loading, isAuthenticated, router]);
 
-  if (loading || !isAuthorized) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="flex h-screen">
-        <div className="w-20 p-4 border-r">
+        <div className="w-20 p-4 border-r bg-gray-100">
             <Skeleton className="h-10 w-10 rounded-lg mb-4" />
             <Skeleton className="h-12 w-12 rounded-full mb-2" />
             <Skeleton className="h-12 w-12 rounded-full mb-2" />
@@ -64,7 +52,7 @@ export default function EmployeeLayout({
     <AuthProvider>
       <EmployeeAuthWrapper>
         <div className="flex h-screen bg-secondary/30">
-          <WorkspaceSwitcher />
+          <EnhancedWorkspaceSwitcher />
           <div className="flex flex-1 flex-col">
             <WorkspaceHeader />
             <main className="flex-1 overflow-auto p-6">

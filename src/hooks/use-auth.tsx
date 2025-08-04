@@ -1,8 +1,9 @@
+
 // src/hooks/use-auth.tsx
 "use client";
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, onIdTokenChanged, User } from 'firebase/auth';
 import type { FirebaseAuthUser, AuthState } from '@/lib/types';
 import { app } from '@/lib/firebase';
 
@@ -21,11 +22,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+        // Use onIdTokenChanged to listen for claim changes
+        const unsubscribe = onIdTokenChanged(auth, async (firebaseUser: User | null) => {
             if (firebaseUser) {
                 try {
-                    // Force refresh the token to get the latest custom claims.
-                    const idTokenResult = await firebaseUser.getIdTokenResult(true);
+                    const idTokenResult = await firebaseUser.getIdTokenResult(false); // false means don't force refresh
                     
                     const authUser: FirebaseAuthUser = {
                         uid: firebaseUser.uid,
@@ -34,7 +35,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         photoURL: firebaseUser.photoURL,
                         phoneNumber: firebaseUser.phoneNumber,
                         emailVerified: firebaseUser.emailVerified,
-                        // Correctly access the claims directly from the token result
                         customClaims: idTokenResult.claims,
                         creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),

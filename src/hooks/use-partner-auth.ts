@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getPartnerDetailsAction } from '@/actions/partner-actions';
 import type { Partner } from '@/lib/types';
+import { useMultiWorkspaceAuth } from './use-multi-workspace-auth';
 
 interface PartnerAuthState {
   partner: Partner | null,
@@ -16,7 +17,7 @@ interface PartnerAuthState {
 }
 
 export function usePartnerAuth() {
-  const { user, loading: authLoading } = useAuth();
+  const { currentWorkspace, loading: authLoading } = useMultiWorkspaceAuth();
   const [partnerState, setPartnerState] = useState<PartnerAuthState>({
     partner: null,
     partnerId: null,
@@ -28,7 +29,7 @@ export function usePartnerAuth() {
   useEffect(() => {
     if (authLoading) return;
 
-    const partnerId = user?.customClaims?.partnerId;
+    const partnerId = currentWorkspace?.partnerId;
 
     if (!partnerId) {
       setPartnerState({
@@ -36,11 +37,12 @@ export function usePartnerAuth() {
         partnerId: null,
         tenantId: null,
         loading: false,
-        error: 'No partner associated with user'
+        error: 'No active partner workspace selected'
       });
       return;
     }
 
+    setPartnerState(prev => ({ ...prev, loading: true }));
     const fetchPartnerDetails = async () => {
       try {
         const result = await getPartnerDetailsAction(partnerId);
@@ -74,7 +76,7 @@ export function usePartnerAuth() {
     };
 
     fetchPartnerDetails();
-  }, [user, authLoading]);
+  }, [currentWorkspace, authLoading]);
 
   return {
     ...partnerState,

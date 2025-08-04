@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { Briefcase, ChevronsUpDown, PlusCircle, Check, Building, Users, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Briefcase, ChevronsUpDown, PlusCircle, Check, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 

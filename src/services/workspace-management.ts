@@ -139,11 +139,9 @@ export async function acceptWorkspaceInvitation(invitationId: string, userId: st
       };
     }
 
-    if (invitation.expiresAt < new Date()) {
-      return {
-        success: false,
-        message: 'Invitation has expired'
-      };
+    if (new Date() > (invitation.expiresAt as any).toDate()) {
+        await updateDoc(doc(db, 'workspaceInvitations', invitationId), { status: 'expired' });
+        return { success: false, message: 'Invitation has expired' };
     }
 
     // Create or update workspace link
