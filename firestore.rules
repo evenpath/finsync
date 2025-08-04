@@ -115,44 +115,38 @@ service cloud.firestore {
     }
 
     // ============================================================================
-    // INVITATION CODE COLLECTION
+    // INVITATION CODES
     // ============================================================================
-    
     match /invitationCodes/{invitationId} {
-      // Partner Admins can manage codes for their own workspace
-      allow read, write: if isPartnerAdminFor(resource.data.partnerId);
+      // Allow creation by admins or partner admins for their own workspace
+      allow create: if isAdmin() || (isPartnerAdmin() && belongsToPartner(request.resource.data.partnerId));
       
-      // Allow creation of codes if the partner admin is creating for their own partner
-      allow create: if isPartnerAdmin() && request.resource.data.partnerId == request.auth.token.partnerId;
-
-      // Allow authenticated users to read/query invitations matching their phone number for validation purposes
-      allow list, get: if isAuthenticated() && request.auth.token.phone_number == resource.data.phoneNumber;
+      // Allow reading/listing for validation purposes or management
+      allow read: if isAdmin() || 
+                     (isPartnerAdmin() && belongsToPartner(resource.data.partnerId)) ||
+                     (isAuthenticated() && request.auth.token.phoneNumber == resource.data.phoneNumber);
+                     
+      allow list: if isPartnerAdmin() ||
+                     (isAuthenticated() && request.query.where.phoneNumber == request.auth.token.phoneNumber);
+                     
+      // Allow partner admins to update codes in their workspace (e.g., cancel)
+      allow update: if isPartnerAdmin() && belongsToPartner(resource.data.partnerId) ||
+                       // Allow a user to accept their own invitation
+                       (isAuthenticated() && resource.data.phoneNumber == request.auth.token.phoneNumber && request.resource.data.status == 'accepted' && request.resource.data.acceptedBy == request.auth.uid);
       
-      // Allow system/admins to manage all invitations
-      allow read, write: if isAdmin();
-      
-      // Allow a user to accept an invitation
-      allow update: if isAuthenticated() && 
-                       resource.data.phoneNumber == request.auth.token.phone_number &&
-                       request.resource.data.status == 'accepted' &&
-                       request.resource.data.acceptedBy == request.auth.uid;
+      allow delete: if false;
     }
 
     // ============================================================================
     // MULTI-WORKSPACE USER MANAGEMENT
     // ============================================================================
     
-    // UserWorkspaceLinks - stores multi-workspace memberships
     match /userWorkspaceLinks/{linkId} {
-      allow read: if isOwner(resource.data.userId) || isAdmin() || 
-                     isPartnerAdminFor(resource.data.partnerId);
-                     
-      allow write: if (isPartnerAdminFor(resource.data.partnerId) ||
-                       (isOwner(resource.data.userId) && resource.data.status == 'invited')) ||
-                       isAdmin() ||
-                       (isOwner(resource.data.userId) && 
-                        resource.data.status == 'invited' &&
-                        request.resource.data.status == 'active');
+        allow read: if isOwner(resource.data.userId) || isPartnerAdminFor(resource.data.partnerId) || isAdmin();
+        
+        allow write: if isPartnerAdminFor(request.resource.data.partnerId) || 
+                        (isOwner(request.resource.data.userId) && request.resource.data.status == 'invited') ||
+                        isAdmin();
     }
     
     // User profiles with workspace information
@@ -175,10 +169,7 @@ service cloud.firestore {
       // Allow list/query operations - CRITICAL FOR QUERIES
       allow list: if isAuthenticated() && 
                      (isAdmin() || 
-                      // Allow users to query their own partner's team members
-                      (request.auth.token.partnerId != null && 
-                       // Only allow queries that include partnerId filter
-                       request.query.limit <= 100));
+                      (isPartner() && request.query.where.partnerId == request.auth.token.partnerId));
       
       // Allow write operations
       allow write: if canModifyPartner(resource.data.partnerId);
@@ -314,15 +305,8 @@ service cloud.firestore {
     // SECURITY: EXPLICIT DENY FOR UNDEFINED COLLECTIONS
     // ============================================================================
     
-    // Explicitly deny access to any undefined collections
-    match /{collection}/{docId} {
-      allow read, write: if false;
-    }
-    
     match /{path=**} {
       allow read, write: if false;
     }
   }
 }
-
-    

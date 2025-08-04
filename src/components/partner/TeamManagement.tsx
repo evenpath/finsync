@@ -1,4 +1,4 @@
-// src/components/partner/TeamManagement.tsx
+// src/components/partner/team/TeamManagement.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -145,7 +145,7 @@ export default function TeamManagement() {
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading, toast, selectedMember]);
+  }, [partnerId, authLoading, toast]);
 
   const handleInviteMember = async (newMemberData: { 
     name: string; 
