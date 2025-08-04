@@ -1,4 +1,3 @@
-
 // src/app/(employee-auth)/login/page.tsx
 "use client";
 
@@ -107,23 +106,10 @@ export default function EmployeeLoginPage() {
         throw new Error("No confirmation result found. Please try sending the OTP again.");
       }
       
-      const result = await window.confirmationResult.confirm(otp);
-      const user = result.user;
-
-      // Handle post-authentication workspace access
-      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
-      const authResult = await handlePhoneAuthAction(formattedPhone, user.uid);
+      await window.confirmationResult.confirm(otp);
       
-      if (!authResult.success) {
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: authResult.message,
-        });
-        return;
-      }
-      
-      // Redirect to employee dashboard, layout will handle workspace selection
+      // If OTP is correct, login is successful. Redirect to the dashboard.
+      // The dashboard layout will handle workspace checks.
       toast({ 
         title: "Login Successful", 
         description: "Redirecting to your dashboard..." 
@@ -138,6 +124,8 @@ export default function EmployeeLoginPage() {
       if (error.code === 'auth/code-expired') {
         description = "The verification code has expired. Please send a new one.";
       } else if (error.code === 'auth/invalid-verification-code') {
+        description = "The verification code is incorrect. Please check the code and try again.";
+      } else if (error.code === 'auth/invalid-credential') {
         description = "The verification code is incorrect. Please check the code and try again.";
       }
       
