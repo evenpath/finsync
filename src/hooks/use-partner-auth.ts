@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import type { Partner, TeamMember } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { getPartnerDetailsAction } from '@/actions/partner-actions';
 
 interface PartnerAuthState {
@@ -72,9 +72,13 @@ export function usePartnerAuth(partnerId?: string | null) {
     
     fetchPartnerDetails();
 
-    // Listen for employee updates from the correct subcollection: partners/{partnerId}/employees
-    const employeesRef = collection(db, `partners/${partnerId}/employees`);
-    const q = query(employeesRef);
+    // Listen for employee updates from the root 'teamMembers' collection
+    const employeesRef = collection(db, 'teamMembers');
+    const q = query(
+        employeesRef, 
+        where("partnerId", "==", partnerId),
+        orderBy("createdAt", "desc")
+    );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const membersData = snapshot.docs.map(doc => ({

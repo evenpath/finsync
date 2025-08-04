@@ -884,13 +884,14 @@ export interface Task {
 }
 
 export interface TeamMember {
-  id: number;
+  id: string; // Should be the user's UID
   userId?: string;
   user?: UserProfile;
-  partnerId?: string;
+  partnerId: string;
   name: string;
   email: string;
-  role: string;
+  phone?: string;
+  role: 'partner_admin' | 'employee';
   status: 'active' | 'invited' | 'suspended' | 'left';
   permissions?: TeamPermission[];
   skills: string[];
@@ -906,6 +907,7 @@ export interface TeamMember {
   avatar: string;
   tasksCompleted: number;
   avgCompletionTime: string;
+  createdAt?: any;
 }
 
 export interface TeamPermission {

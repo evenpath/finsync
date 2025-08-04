@@ -6,6 +6,7 @@ import { getPartnerTenantId, getPartnerDetailsByPartnerId } from '@/services/ten
 import type { CreateUserInTenantOutput } from '@/ai/flows/user-management-flow';
 import type { Partner, TeamMember } from '@/lib/types';
 import { db } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 
 
 export async function inviteEmployeeAction(data: {
@@ -61,11 +62,13 @@ export async function inviteEmployeeAction(data: {
             tasksCompleted: 0,
             avgCompletionTime: '-',
             skills: [],
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         };
         
-        const employeeDocRef = db.collection('partners').doc(data.partnerId).collection('employees').doc(userResult.userId);
+        // Save to the root 'teamMembers' collection
+        const employeeDocRef = db.collection('teamMembers').doc(userResult.userId);
         await employeeDocRef.set(employeeData);
-        console.log(`Saved employee profile for ${data.name} under partner ${data.partnerId}`);
+        console.log(`Saved employee profile for ${data.name} in teamMembers collection`);
     }
 
 

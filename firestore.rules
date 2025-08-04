@@ -8,11 +8,11 @@ service cloud.firestore {
     // ============================================================================
 
     function isSuperAdmin() {
-      return request.auth != null && request.auth.token.role == 'Super Admin';
+      return request.auth != null && (request.auth.token.role == 'Super Admin' || request.auth.token.email == 'core@suupe.com');
     }
 
     function isAdmin() {
-      return request.auth != null && (request.auth.token.role == 'Admin' || request.auth.token.role == 'Super Admin');
+      return request.auth != null && (isSuperAdmin() || request.auth.token.role == 'Admin');
     }
     
     function isPartnerAdmin() {
@@ -30,28 +30,9 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-
-    function belongsToPartner(partnerId) {
-      return request.auth != null && request.auth.token.partnerId == partnerId;
-    }
     
     function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
-    }
-
-    function canAccessPartner(partnerId) {
-      return isAdmin() || belongsToPartner(partnerId);
-    }
-
-    function canModifyPartner(partnerId) {
-      return isAdmin() || (isPartnerAdmin() && belongsToPartner(partnerId));
-    }
-    
-    function hasValidPartnerData() {
-      return request.resource.data.keys().hasAll(['name', 'email', 'tenantId']) &&
-             request.resource.data.name is string &&
-             request.resource.data.email is string &&
-             request.resource.data.tenantId is string;
     }
 
     // ============================================================================
@@ -59,81 +40,44 @@ service cloud.firestore {
     // ============================================================================
     
     match /partners/{partnerId} {
-      allow read: if isAdmin() || (isAuthenticated() && belongsToPartner(partnerId));
-      allow create: if isAdmin() && hasValidPartnerData();
-      allow update: if canModifyPartner(partnerId);
+      allow read: if isAdmin() || request.auth.token.partnerId == partnerId;
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
       allow delete: if isSuperAdmin();
+      
+      // Allow partners to read and write to their own employees subcollection
+      match /employees/{employeeId} {
+        allow read, list, write: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
+      }
     }
     
     match /adminUsers/{adminId} {
       allow read, write: if isSuperAdmin();
     }
     
-    match /userMappings/{email} {
-      allow read: if true; // Publicly readable to find tenant ID before login
+    match /userMappings/{identifier} {
+      // Allow unauthenticated reads only for login lookup
+      allow read: if request.auth == null; 
+      // Allow system admins to read for debugging
+      allow read: if isAdmin();
+      // No client-side writes
       allow write: if false; 
     }
 
     match /teamMembers/{memberId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if canModifyPartner(resource.data.partnerId);
-      allow create: if isPartnerAdmin() && request.resource.data.partnerId == request.auth.token.partnerId;
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.token.partnerId == resource.data.partnerId);
+      allow list: if isAuthenticated() && (isAdmin() || (isPartner() && request.query.partnerId == request.auth.token.partnerId));
+      allow write: if isAuthenticated() && (isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == resource.data.partnerId));
     }
 
     // ============================================================================
-    // WORKFLOW & TASK COLLECTIONS
+    // OTHER COLLECTIONS (EXAMPLE)
     // ============================================================================
-    
+
     match /workflowTemplates/{templateId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
-    }
-    
-    match /workflowInstances/{instanceId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if canModifyPartner(resource.data.partnerId);
-      allow create: if isPartner() && request.resource.data.partnerId == request.auth.token.partnerId;
-    }
-    
-    match /workflowExecutions/{executionId} {
-      allow read: if canAccessPartner(get(/databases/$(database)/documents/workflowInstances/$(resource.data.workflowInstanceId)).data.partnerId);
-      allow create: if isPartner() && request.resource.data.partnerId == request.auth.token.partnerId;
-      allow update, delete: if false;
-    }
-    
-    match /tasks/{taskId} {
-      allow read, write: if canAccessPartner(resource.data.partnerId);
-      allow create: if isPartner() && request.resource.data.partnerId == request.auth.token.partnerId;
-    }
-
-    // ============================================================================
-    // BUSINESS & AI DATA COLLECTIONS
-    // ============================================================================
-    
-    match /businessProfiles/{profileId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if canModifyPartner(resource.data.partnerId);
-      allow create: if isPartnerAdmin() && request.resource.data.partnerId == request.auth.token.partnerId;
-    }
-
-    match /aiMemory/{memoryId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if isAdmin() || (isPartnerAdmin() && belongsToPartner(resource.data.partnerId));
-      allow create: if isAdmin() || isPartnerAdmin();
-    }
-
-    // ============================================================================
-    // OTHER COLLECTIONS
-    // ============================================================================
-
-    // Allow any authenticated user to read from any other top-level collection
-    match /{collection}/{docId} {
-      allow read: if isAuthenticated();
-    }
-
-    // Fallback rule for nested collections if needed, can be more specific
-    match /{path=**}/{collection}/{docId} {
-      allow read: if isAuthenticated();
     }
   }
 }
