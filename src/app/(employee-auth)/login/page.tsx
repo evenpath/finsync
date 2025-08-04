@@ -70,10 +70,27 @@ export default function EmployeeLoginPage() {
       });
     } catch (error: any) {
       console.error("Error sending OTP:", error);
+      
+      let title = "Failed to Send OTP";
+      let description = error.message || "Please check your phone number and try again.";
+      
+      // Provide more specific feedback for common configuration errors
+      if (error.code === 'auth/missing-phone-number') {
+        description = "Please enter a valid phone number.";
+      } else if (error.code === 'auth/invalid-phone-number') {
+        description = "The phone number is not valid. Please include the country code (e.g., +1).";
+      } else if (error.code === 'auth/too-many-requests') {
+        description = "You've tried to send too many OTPs. Please try again later.";
+      } else if (error.code === 'auth/internal-error' || error.message.includes('missing-phone-number')) {
+        title = "Firebase Configuration Error";
+        description = "Phone authentication is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method, and enable the 'Phone' provider.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Failed to Send OTP",
-        description: error.message || "Please check your phone number and try again.",
+        title: title,
+        description: description,
+        duration: 9000
       });
     } finally {
       setIsLoading(false);
