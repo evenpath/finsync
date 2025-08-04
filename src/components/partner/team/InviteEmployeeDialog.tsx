@@ -1,7 +1,7 @@
 // src/components/partner/team/InviteEmployeeDialog.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -17,9 +17,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, UserPlus, Phone, Mail, Loader2, Check } from 'lucide-react';
+import { Plus, UserPlus, Phone, Mail, Loader2, Check, AlertCircle } from 'lucide-react';
 import { inviteEmployeeAction } from '@/actions/partner-actions';
 import { useAuth } from '@/hooks/use-auth';
+import { formatPhoneNumber, isValidPhoneNumber } from '@/utils/phone-utils';
 
 interface InviteEmployeeDialogProps {
   isOpen: boolean;
@@ -43,10 +44,19 @@ export default function InviteEmployeeDialog({
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'employee' | 'partner_admin'>('employee');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
   
   const partnerId = user?.customClaims?.partnerId;
+
+  useEffect(() => {
+    if (phone) {
+      setIsPhoneValid(isValidPhoneNumber(phone));
+    } else {
+      setIsPhoneValid(true);
+    }
+  }, [phone]);
 
   const resetForm = () => {
     setName('');
@@ -54,10 +64,20 @@ export default function InviteEmployeeDialog({
     setEmail('');
     setRole('employee');
     setInviteMethod('phone');
+    setIsPhoneValid(true);
   };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (inviteMethod === 'phone' && !isPhoneValid) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid Phone Number',
+            description: 'Please enter a valid phone number in E.164 international format (e.g., +15551234567).'
+        });
+        return;
+    }
     
     if (!partnerId) {
       toast({
@@ -72,18 +92,23 @@ export default function InviteEmployeeDialog({
     try {
       await onInviteMember({
         name,
-        phone: inviteMethod === 'phone' ? phone : undefined,
+        phone: inviteMethod === 'phone' ? formatPhoneNumber(phone) : undefined,
         email: inviteMethod === 'email' ? email : undefined,
         role
       });
       resetForm();
       onClose();
     } catch (error) {
-      // Parent handles toast
+      // Parent handles toast for API errors
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const isSubmitDisabled = isLoading || !name.trim() || 
+                           (inviteMethod === 'phone' && (!phone.trim() || !isPhoneValid)) ||
+                           (inviteMethod === 'email' && !email.trim());
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(newOpen) => {
@@ -122,15 +147,15 @@ export default function InviteEmployeeDialog({
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="phone" className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  Phone
+                  Invite by Phone
                 </TabsTrigger>
                 <TabsTrigger value="email" className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  Email
+                  Invite by Email
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="phone" className="space-y-4">
+              <TabsContent value="phone" className="space-y-2 pt-2">
                 <div className="grid gap-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
@@ -141,14 +166,22 @@ export default function InviteEmployeeDialog({
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={isLoading}
                     required={inviteMethod === 'phone'}
+                    className={!isPhoneValid && phone ? 'border-destructive' : ''}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    International format required (e.g., +1234567890)
-                  </p>
+                  {!isPhoneValid && phone ? (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Please enter a valid E.164 phone number (e.g. +1234567890).
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                        International format required (e.g., +1234567890)
+                    </p>
+                  )}
                 </div>
               </TabsContent>
               
-              <TabsContent value="email" className="space-y-4">
+              <TabsContent value="email" className="space-y-2 pt-2">
                 <div className="grid gap-2">
                   <Label htmlFor="email-required">Email Address</Label>
                   <Input
@@ -193,7 +226,7 @@ export default function InviteEmployeeDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || !name.trim()}>
+            <Button type="submit" disabled={isSubmitDisabled}>
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
