@@ -1,4 +1,3 @@
-
 // src/app/employee/login/page.tsx
 "use client";
 
@@ -11,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { Phone, KeyRound } from 'lucide-react';
+import { Phone, KeyRound, Building2, Users } from 'lucide-react';
+import { handlePhoneAuthUser } from '@/services/phone-auth-service';
 
 declare global {
   interface Window {
@@ -25,12 +25,13 @@ export default function EmployeeLoginPage() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [showWorkspaceSelection, setShowWorkspaceSelection] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const auth = getAuth(app);
 
   useEffect(() => {
-    // This will run once when the component mounts
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
@@ -79,10 +80,36 @@ export default function EmployeeLoginPage() {
         throw new Error("No confirmation result found. Please try sending the OTP again.");
       }
       
-      await window.confirmationResult.confirm(otp);
+      const result = await window.confirmationResult.confirm(otp);
+      const user = result.user;
 
-      toast({ title: "Login Successful", description: "Redirecting to your dashboard..." });
-      router.push('/employee');
+      // Handle post-authentication workspace access
+      const authResult = await handlePhoneAuthUser(phoneNumber, user.uid);
+      
+      if (!authResult.success) {
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: authResult.message,
+        });
+        return;
+      }
+
+      if (authResult.hasMultipleWorkspaces && authResult.workspaces) {
+        setWorkspaces(authResult.workspaces);
+        setShowWorkspaceSelection(true);
+        toast({ 
+          title: "Login Successful", 
+          description: "Please select your workspace to continue." 
+        });
+      } else {
+        toast({ 
+          title: "Login Successful", 
+          description: "Redirecting to your dashboard..." 
+        });
+        router.push('/employee');
+      }
+
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
       toast({
@@ -94,6 +121,55 @@ export default function EmployeeLoginPage() {
       setIsLoading(false);
     }
   };
+
+  const handleWorkspaceSelection = (workspace: any) => {
+    toast({ 
+      title: "Workspace Selected", 
+      description: `Redirecting to ${workspace.partnerName}...` 
+    });
+    router.push('/employee');
+  };
+
+  if (showWorkspaceSelection) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-secondary/50">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="font-headline text-2xl flex items-center gap-2">
+              <Building2 className="w-6 h-6" />
+              Select Workspace
+            </CardTitle>
+            <CardDescription>
+              You have access to multiple workspaces. Choose one to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {workspaces.map((workspace) => (
+              <Button
+                key={workspace.partnerId}
+                variant="outline"
+                className="w-full justify-start h-auto p-4"
+                onClick={() => handleWorkspaceSelection(workspace)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold">
+                    {workspace.partnerName?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <div className="text-left">
+                    <div className="font-medium">{workspace.partnerName}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {workspace.role === 'partner_admin' ? 'Admin' : 'Employee'}
+                    </div>
+                  </div>
+                </div>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary/50">

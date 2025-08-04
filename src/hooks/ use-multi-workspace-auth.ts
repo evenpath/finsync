@@ -9,8 +9,13 @@ import type {
   MultiWorkspaceAuthState, 
   WorkspaceAccess, 
   UserWorkspaceLink, 
-  UserWorkspaceContext 
-} from '@/lib/types/multi-workspace';
+  FirebaseAuthUser,
+  MultiWorkspaceCustomClaims
+} from '@/lib/types';
+
+interface MultiWorkspaceFirebaseAuthUser extends FirebaseAuthUser {
+  customClaims?: MultiWorkspaceCustomClaims;
+}
 
 export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
   const { user: baseUser, loading, error, isAuthenticated } = useAuth();
@@ -18,70 +23,85 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
   const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceAccess | null>(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
 
-  // Convert base user to multi-workspace user
-  const user = useMemo(() => {
-    if (!baseUser) return null;
-    return {
-      ...baseUser,
-      customClaims: baseUser.customClaims as MultiWorkspaceCustomClaims
-    };
-  }, [baseUser]);
+  const user = useMemo(() => baseUser as MultiWorkspaceFirebaseAuthUser | null, [baseUser]);
 
-  // Fetch user's workspace memberships
   const refreshWorkspaces = useCallback(async () => {
     if (!user?.uid || !db) {
       setAvailableWorkspaces([]);
       setCurrentWorkspace(null);
       setWorkspaceLoading(false);
-      return;
+      return () => {}; // Return a no-op unsubscribe function
     }
 
     try {
       setWorkspaceLoading(true);
-      
-      const userWorkspaceLinksRef = collection(db, 'userWorkspaceLinks');
-      const q = query(
-        userWorkspaceLinksRef,
+
+      // Query for user's workspace links
+      const workspacesQuery = query(
+        collection(db, 'userWorkspaceLinks'),
         where('userId', '==', user.uid),
-        where('status', '==', 'active')
+        where('status', 'in', ['active', 'invited'])
       );
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const workspaces: WorkspaceAccess[] = [];
-        
-        snapshot.forEach((doc) => {
-          const data = doc.data() as UserWorkspaceLink;
-          workspaces.push({
-            partnerId: data.partnerId,
-            tenantId: data.tenantId,
-            role: data.role,
-            permissions: data.permissions || [],
-            status: data.status
-          });
-        });
+      const unsubscribe = onSnapshot(workspacesQuery, (snapshot) => {
+        const workspaceLinks = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as UserWorkspaceLink[];
+
+        // Convert workspace links to WorkspaceAccess format
+        const workspaces: WorkspaceAccess[] = workspaceLinks.map(link => ({
+          partnerId: link.partnerId,
+          tenantId: link.tenantId,
+          role: link.role,
+          permissions: link.permissions,
+          status: link.status,
+          partnerName: link.partnerName,
+          partnerAvatar: link.partnerAvatar
+        }));
 
         setAvailableWorkspaces(workspaces);
 
-        // Set current workspace if not set
-        if (!currentWorkspace && workspaces.length > 0) {
-          // Try to use the active workspace from custom claims
-          const activePartnerId = user.customClaims?.activePartnerId;
-          const activeWorkspace = activePartnerId 
-            ? workspaces.find(w => w.partnerId === activePartnerId)
-            : workspaces[0];
-          
-          setCurrentWorkspace(activeWorkspace || workspaces[0]);
-        }
-
+        // Set current workspace based on custom claims or first available
+        const activePartnerId = user.customClaims?.activePartnerId || user.customClaims?.partnerId;
+        const activeWorkspace = activePartnerId 
+          ? workspaces.find(w => w.partnerId === activePartnerId)
+          : workspaces[0];
+        
+        setCurrentWorkspace(activeWorkspace || workspaces[0]);
         setWorkspaceLoading(false);
       });
 
       return unsubscribe;
+
     } catch (error) {
       console.error('Error fetching workspaces:', error);
+      
+      // Fallback to custom claims if database query fails
+      const { partnerId, tenantId, role, partnerName } = user.customClaims || {};
+      
+      if (partnerId && tenantId && (role === 'partner_admin' || role === 'employee')) {
+        const fallbackWorkspace: WorkspaceAccess = {
+          partnerId,
+          tenantId,
+          role,
+          permissions: [],
+          status: 'active',
+          partnerName: partnerName || user.displayName || `Partner ${partnerId}`,
+          partnerAvatar: undefined
+        };
+        
+        setAvailableWorkspaces([fallbackWorkspace]);
+        setCurrentWorkspace(fallbackWorkspace);
+      } else {
+        setAvailableWorkspaces([]);
+        setCurrentWorkspace(null);
+      }
+      
       setWorkspaceLoading(false);
+      return () => {}; // Return a no-op unsubscribe function
     }
-  }, [user?.uid, user?.customClaims?.activePartnerId, currentWorkspace]);
+  }, [user?.uid, user?.customClaims, user?.displayName]);
 
   // Switch to a different workspace
   const switchWorkspace = useCallback(async (partnerId: string): Promise<boolean> => {
@@ -94,7 +114,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
         return false;
       }
 
-      // Update user's workspace context
+      // Update user's workspace context in Firestore
       const contextRef = doc(db, 'userWorkspaceContext', user.uid);
       await updateDoc(contextRef, {
         activePartnerId: partnerId,
@@ -103,21 +123,19 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
         availableWorkspaces: availableWorkspaces.map(w => w.partnerId)
       });
 
-      // Update custom claims through cloud function or admin SDK
-      // This would trigger a token refresh
-      await updateUserCustomClaims(user.uid, {
-        ...user.customClaims,
-        activePartnerId: partnerId,
-        activeTenantId: targetWorkspace.tenantId
-      });
-
+      // In a production app, you would call a cloud function to update custom claims
+      // For now, we'll just update local state and force a page refresh
       setCurrentWorkspace(targetWorkspace);
+      
+      // Force token refresh to get updated claims (in production)
+      // await user.getIdToken(true);
+      
       return true;
     } catch (error) {
       console.error('Error switching workspace:', error);
       return false;
     }
-  }, [user?.uid, availableWorkspaces, user?.customClaims]);
+  }, [user?.uid, availableWorkspaces]);
 
   // Permission checking functions
   const hasAccessToPartner = useCallback((partnerId: string): boolean => {
@@ -156,14 +174,15 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
   // Initialize workspaces when user changes
   useEffect(() => {
     if (user?.uid) {
-      refreshWorkspaces();
-    } else {
-      setAvailableWorkspaces([]);
-      setCurrentWorkspace(null);
+      const unsubscribePromise = refreshWorkspaces();
+      return () => {
+        Promise.resolve(unsubscribePromise).then(unsub => unsub && unsub());
+      };
+    } else if (!loading) { 
       setWorkspaceLoading(false);
     }
-  }, [user?.uid, refreshWorkspaces]);
-
+  }, [user?.uid, loading, refreshWorkspaces]);
+  
   return {
     user,
     loading: loading || workspaceLoading,
@@ -177,26 +196,4 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     isPartnerAdminFor,
     canModifyPartner
   };
-}
-
-// Helper function to update custom claims (would need to be implemented as a cloud function)
-async function updateUserCustomClaims(uid: string, claims: any): Promise<void> {
-  // This would call a cloud function or API endpoint to update custom claims
-  // Example:
-  try {
-    const response = await fetch('/api/auth/update-claims', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ uid, claims }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update custom claims');
-    }
-  } catch (error) {
-    console.error('Error updating custom claims:', error);
-    throw error;
-  }
 }

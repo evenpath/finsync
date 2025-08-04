@@ -1537,9 +1537,11 @@ export interface MultiWorkspaceFirebaseAuthUser extends Omit<FirebaseAuthUser, '
 }
 
 // User Workspace Link document structure
+// User Workspace Link document structure
 export interface WorkspaceInvitation {
   id?: string;
-  email: string;
+  email?: string;
+  phoneNumber?: string; // Support for phone-based invitations
   partnerId: string;
   tenantId: string;
   role: 'partner_admin' | 'employee';

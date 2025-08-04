@@ -1,4 +1,3 @@
-
 // src/app/employee/signup/page.tsx
 "use client";
 
@@ -10,14 +9,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { createUserInTenant } from '@/ai/flows/user-management-flow';
-import { getTenantForEmailAction } from '@/actions/auth-actions';
+import { Phone, User, Building2, Mail } from 'lucide-react';
+import { createEmployeeWithPhone } from '@/services/phone-auth-service';
 
 export default function EmployeeSignupPage() {
   const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [organizationCode, setOrganizationCode] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -27,36 +26,40 @@ export default function EmployeeSignupPage() {
     setIsLoading(true);
 
     try {
-      // Use a conventional email format to look up the organization's tenant.
-      // In a real application, this might be a direct lookup on the code itself.
-      const domainEmail = `admin@${organizationCode}`;
-      
-      const tenantLookup = await getTenantForEmailAction(domainEmail);
-      
-      if (!tenantLookup.success || !tenantLookup.tenantId || !tenantLookup.partnerId) {
-        throw new Error("Organization not found. Please check your organization code or contact your admin.");
+      // For now, we'll use a simple invite code system
+      // In production, this would validate against workspace invitations
+      if (!inviteCode) {
+        throw new Error("Please enter an invitation code from your organization.");
       }
 
-      // Create the user as an 'employee' in the found tenant.
-      const userResult = await createUserInTenant({
-        email,
-        password,
-        tenantId: tenantLookup.tenantId,
+      // Parse invite code (format: PARTNER_ID-TENANT_ID)
+      const [partnerId, tenantId] = inviteCode.split('-');
+      
+      if (!partnerId || !tenantId) {
+        throw new Error("Invalid invitation code format. Please check with your organization admin.");
+      }
+
+      // Create employee with phone number
+      const result = await createEmployeeWithPhone({
+        phoneNumber,
         displayName: name,
-        partnerId: tenantLookup.partnerId,
+        email: email || undefined,
+        partnerId,
+        tenantId,
         role: 'employee',
+        invitedBy: 'system' // In production, this would be the actual inviter's ID
       });
 
-      if (!userResult.success) {
-        throw new Error(userResult.message || "Failed to create your account.");
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
       toast({
         title: "Account Created!",
-        description: "You can now sign in to access your workspace.",
+        description: "You can now sign in using your phone number.",
       });
 
-      router.push('/partner/login');
+      router.push('/employee/login');
 
     } catch (error: any) {
       console.error("Employee Signup Error:", error);
@@ -72,69 +75,97 @@ export default function EmployeeSignupPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary/50">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-md">
         <form onSubmit={handleSignup}>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Join Your Team</CardTitle>
-            <CardDescription>Enter your details and organization code to get started.</CardDescription>
+            <CardDescription>
+              Create your account to join your organization's workspace.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-             <div className="grid gap-2">
-              <Label htmlFor="organizationCode">Organization Code</Label>
-              <Input 
-                id="organizationCode" 
-                type="text" 
-                placeholder="your-company-code" 
-                required 
-                value={organizationCode}
-                onChange={(e) => setOrganizationCode(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input 
-                id="name" 
-                type="text" 
-                placeholder="Your Full Name" 
-                required 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="name" 
+                  type="text" 
+                  placeholder="John Doe" 
+                  required 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isLoading}
+                  className="pl-10"
+                />
+              </div>
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="email">Work Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="you@company.com" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
+              <Label htmlFor="phone">Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="phone" 
+                  type="tel" 
+                  placeholder="+1 555-123-4567" 
+                  required 
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  disabled={isLoading}
+                  className="pl-10"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                You'll use this number to sign in to your account.
+              </p>
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+              <Label htmlFor="email">Email Address (Optional)</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="john@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="inviteCode">Invitation Code</Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="inviteCode" 
+                  type="text" 
+                  placeholder="ABC123-DEF456" 
+                  required 
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  disabled={isLoading}
+                  className="pl-10 font-mono"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Enter the invitation code provided by your organization admin.
+              </p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating Account...' : 'Sign Up'}
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
-             <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/partner/login" className="underline">Sign in</Link>
+            <div className="text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link href="/employee/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
             </div>
           </CardFooter>
         </form>
