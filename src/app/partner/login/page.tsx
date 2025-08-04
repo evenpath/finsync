@@ -25,7 +25,8 @@ export default function PartnerLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    auth.tenantId = null; // Reset tenantId before each login attempt
+    
+    let tenantIdForAuth: string | null = null;
 
     try {
       // 1. Find the tenant ID for the user's email
@@ -36,7 +37,8 @@ export default function PartnerLoginPage() {
       }
       
       // 2. Set the tenant context on the auth instance
-      auth.tenantId = tenantLookup.tenantId;
+      tenantIdForAuth = tenantLookup.tenantId;
+      auth.tenantId = tenantIdForAuth;
 
       // 3. Sign in the user within their tenant
       await signInWithEmailAndPassword(auth, email, password);
@@ -62,7 +64,9 @@ export default function PartnerLoginPage() {
     } finally {
         setIsLoading(false);
         // Reset tenantId for the next login attempt (important for shared auth instances)
-        auth.tenantId = null;
+        if (tenantIdForAuth) {
+          auth.tenantId = null;
+        }
     }
   };
 
