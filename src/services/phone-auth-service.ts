@@ -220,7 +220,7 @@ export async function createEmployeeWithPhone(input: {
       invitedBy: input.invitedBy,
       invitedAt: FieldValue.serverTimestamp() as any,
       partnerName: '', // Will be updated by partner service
-      partnerAvatar: undefined,
+      partnerAvatar: null,
       lastAccessedAt: FieldValue.serverTimestamp() as any
     };
 
