@@ -28,15 +28,11 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
   try {
     // Get or create user profile
     let userProfile = null;
-    const userQuery = query(
-      collection(db, 'users'),
-      where('phoneNumber', '==', phoneNumber)
-    );
+    const userDocRef = doc(db, 'users', uid);
+    const userDoc = await userDocRef.get();
     
-    const userSnapshot = await getDocs(userQuery);
-    
-    if (userSnapshot.empty) {
-      // Create user profile if doesn't exist
+    if (!userDoc.exists()) {
+      // Create user profile if it doesn't exist
       userProfile = {
         uid,
         phoneNumber,
@@ -70,12 +66,12 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
         timezone: 'UTC'
       };
 
-      await setDoc(doc(db, 'users', uid), userProfile);
+      await setDoc(userDocRef, userProfile);
     } else {
-      userProfile = userSnapshot.docs[0].data();
+      userProfile = userDoc.data();
       
       // Update last active time
-      await updateDoc(doc(db, 'users', uid), {
+      await updateDoc(userDocRef, {
         lastActiveAt: serverTimestamp(),
         isActive: true
       });
@@ -224,7 +220,8 @@ export async function createEmployeeWithPhone(input: {
       invitedBy: input.invitedBy,
       invitedAt: serverTimestamp() as any,
       partnerName: '', // Will be updated by partner service
-      partnerAvatar: undefined
+      partnerAvatar: undefined,
+      lastAccessedAt: serverTimestamp() as any
     };
 
     const linkId = `${userRecord.uid}_${input.partnerId}`;
