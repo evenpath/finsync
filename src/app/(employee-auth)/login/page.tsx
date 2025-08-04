@@ -1,3 +1,4 @@
+
 // src/app/(employee-auth)/login/page.tsx
 "use client";
 
@@ -132,7 +133,7 @@ export default function EmployeeLoginPage() {
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
       let title = "Login Failed";
-      let description = "The OTP is invalid. Please try again.";
+      let description = "An unknown error occurred. Please try again.";
 
       if (error.code === 'auth/code-expired') {
         description = "The verification code has expired. Please send a new one.";
