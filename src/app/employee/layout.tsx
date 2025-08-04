@@ -61,5 +61,6 @@ export default function EmployeeLayout({
           </div>
         </div>
       </EmployeeAuthWrapper>
+    </AuthProvider>
   );
 }
