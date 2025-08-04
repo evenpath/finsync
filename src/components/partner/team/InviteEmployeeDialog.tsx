@@ -18,23 +18,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, UserPlus, Phone, Mail, Loader2, Check } from 'lucide-react';
-import { inviteEmployeeWithPhoneAction } from '@/actions/employee-phone-actions';
 import { inviteEmployeeAction } from '@/actions/partner-actions';
-import { formatPhoneNumber, isValidPhoneNumber, getPhonePlaceholder } from '@/utils/phone-utils';
 import { useAuth } from '@/hooks/use-auth';
 
 interface InviteEmployeeDialogProps {
-  partnerId: string;
-  trigger?: React.ReactNode;
-  onSuccess?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onInviteMember: (memberData: { 
+    name: string; 
+    phone?: string; 
+    email?: string;
+    role: 'partner_admin' | 'employee' 
+  }) => Promise<void>;
 }
 
 export default function InviteEmployeeDialog({ 
-  partnerId, 
-  trigger, 
-  onSuccess 
+  isOpen, 
+  onClose,
+  onInviteMember
 }: InviteEmployeeDialogProps) {
-  const [open, setOpen] = useState(false);
   const [inviteMethod, setInviteMethod] = useState<'phone' | 'email'>('phone');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -43,6 +45,8 @@ export default function InviteEmployeeDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  const partnerId = user?.customClaims?.partnerId;
 
   const resetForm = () => {
     setName('');
@@ -55,124 +59,39 @@ export default function InviteEmployeeDialog({
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user?.uid) {
+    if (!partnerId) {
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: "Please log in to invite employees."
+        title: "Could not identify your organization."
       });
       return;
     }
-
-    if (!name.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Name Required",
-        description: "Please enter the employee's name."
-      });
-      return;
-    }
-
-    // Validate based on invite method
-    if (inviteMethod === 'phone') {
-      if (!phone.trim()) {
-        toast({
-          variant: "destructive",
-          title: "Phone Required",
-          description: "Please enter a phone number."
-        });
-        return;
-      }
-
-      const formattedPhone = formatPhoneNumber(phone);
-      if (!isValidPhoneNumber(formattedPhone)) {
-        toast({
-          variant: "destructive",
-          title: "Invalid Phone",
-          description: "Please enter a valid international phone number (e.g., +1234567890)."
-        });
-        return;
-      }
-    } else {
-      if (!email.trim() || !email.includes('@')) {
-        toast({
-          variant: "destructive",
-          title: "Email Required",
-          description: "Please enter a valid email address."
-        });
-        return;
-      }
-    }
-
+    
     setIsLoading(true);
 
     try {
-      let result;
-
-      if (inviteMethod === 'phone') {
-        const formattedPhone = formatPhoneNumber(phone);
-        result = await inviteEmployeeWithPhoneAction({
-          phoneNumber: formattedPhone,
-          name: name.trim(),
-          email: email.trim() || undefined,
-          partnerId,
-          role,
-          invitedBy: user.uid
-        });
-      } else {
-        result = await inviteEmployeeAction({
-          email: email.trim(),
-          name: name.trim(),
-          phone: phone.trim() || undefined,
-          partnerId,
-          role
-        });
-      }
-
-      if (result.success) {
-        toast({
-          title: "Invitation Sent",
-          description: `${name} has been invited to join your team.`
-        });
-        
-        setOpen(false);
-        resetForm();
-        onSuccess?.();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invitation Failed",
-          description: result.message
-        });
-      }
-
-    } catch (error: any) {
-      console.error("Error inviting employee:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred. Please try again."
+      await onInviteMember({
+        name,
+        phone: inviteMethod === 'phone' ? phone : undefined,
+        email: inviteMethod === 'email' ? email : undefined,
+        role
       });
+      resetForm();
+      onClose();
+    } catch (error) {
+      // Parent handles toast
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      setOpen(newOpen);
+    <Dialog open={isOpen} onOpenChange={(newOpen) => {
       if (!newOpen) {
         resetForm();
+        onClose();
       }
     }}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="flex items-center gap-2">
-            <UserPlus className="w-4 h-4" />
-            Invite Employee
-          </Button>
-        )}
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleInvite}>
           <DialogHeader>
@@ -217,7 +136,7 @@ export default function InviteEmployeeDialog({
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder={getPhonePlaceholder()}
+                    placeholder="+15551234567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={isLoading}
@@ -225,21 +144,6 @@ export default function InviteEmployeeDialog({
                   />
                   <p className="text-xs text-muted-foreground">
                     International format required (e.g., +1234567890)
-                  </p>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="email-optional">Email (Optional)</Label>
-                  <Input
-                    id="email-optional"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Email is optional when using phone invitation
                   </p>
                 </div>
               </TabsContent>
@@ -255,18 +159,6 @@ export default function InviteEmployeeDialog({
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
                     required={inviteMethod === 'email'}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="phone-optional">Phone (Optional)</Label>
-                  <Input
-                    id="phone-optional"
-                    type="tel"
-                    placeholder={getPhonePlaceholder()}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={isLoading}
                   />
                 </div>
               </TabsContent>
@@ -293,7 +185,10 @@ export default function InviteEmployeeDialog({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
               disabled={isLoading}
             >
               Cancel

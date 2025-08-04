@@ -22,9 +22,10 @@ import {
   Shield,
   Clock,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Ticket,
 } from "lucide-react";
-import InviteMemberModal from "./InviteMemberModal";
+import InviteEmployeeDialog from "./team/InviteEmployeeDialog";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
@@ -32,6 +33,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import InvitationCodesList from "./team/InvitationCodesList";
+import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
 
 export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
@@ -237,7 +241,6 @@ export default function TeamManagement() {
               Could not identify your organization. This usually happens when your account is missing the necessary permissions (custom claims).
             </p>
             
-            {/* Enhanced debugging info */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
               <p className="font-semibold text-yellow-800 mb-2">Debug Information:</p>
               <div className="text-yellow-700 space-y-1">
@@ -295,113 +298,77 @@ export default function TeamManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold font-headline text-foreground">Team Management</h2>
-          <p className="text-muted-foreground">Manage your team members and their access</p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/partner/team/diagnostics">
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Diagnostics
-            </Button>
-          </Link>
-          <Button onClick={() => setIsInviteModalOpen(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />
-            Invite Member
-          </Button>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Team Members ({teamMembers.length})
+                <CardTitle className="font-headline">
+                  Manage Team
                 </CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
+                 {partnerId && <InviteEmployeeByCodeDialog partnerId={partnerId} />}
               </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="border-b p-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search team members..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
-                  <span className="text-muted-foreground">Loading team members...</span>
-                </div>
-              ) : filteredMembers.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold">No team members found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm ? "No members match your search criteria." : "Get started by inviting your first team member."}
-                  </p>
-                  {!searchTerm && (
-                    <Button onClick={() => setIsInviteModalOpen(true)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Invite First Member
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {filteredMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
-                        selectedMember?.id === member.id ? 'bg-muted' : ''
-                      }`}
-                      onClick={() => setSelectedMember(member)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary">
-                              {member.name?.charAt(0).toUpperCase() || '?'}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{member.name || 'Unnamed'}</p>
-                            <p className="text-sm text-muted-foreground">{member.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={member.role === 'partner_admin' ? 'default' : 'secondary'}>
-                            {member.role?.replace('_', ' ') || 'No Role'}
-                          </Badge>
-                          <Badge variant={member.status === 'active' ? 'default' : 'outline'}>
-                            {member.status || 'unknown'}
-                          </Badge>
-                        </div>
+            <CardContent>
+              <Tabs defaultValue="members">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="members">
+                    <Users className="w-4 h-4 mr-2" />
+                    Team Members ({teamMembers.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="invitations">
+                    <Ticket className="w-4 h-4 mr-2" />
+                    Invitations
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="members">
+                  <div className="border-t mt-4 pt-4">
+                    {isLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+                        <span className="text-muted-foreground">Loading team members...</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ) : filteredMembers.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold">No team members found</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Get started by inviting your first team member.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {filteredMembers.map((member) => (
+                          <div
+                            key={member.id}
+                            className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedMember?.id === member.id ? 'bg-muted' : ''
+                            }`}
+                            onClick={() => setSelectedMember(member)}
+                          >
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-sm font-medium text-primary">
+                                    {member.name?.charAt(0).toUpperCase() || '?'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <p className="font-medium">{member.name || 'Unnamed'}</p>
+                                  <p className="text-sm text-muted-foreground">{member.email}</p>
+                                </div>
+                              </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="invitations">
+                  <div className="border-t mt-4 pt-4">
+                    {partnerId && <InvitationCodesList partnerId={partnerId} />}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
@@ -478,10 +445,10 @@ export default function TeamManagement() {
         </div>
       </div>
 
-      <InviteMemberModal
+      <InviteEmployeeDialog
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
-        onInvite={handleInviteMember}
+        onInviteMember={handleInviteMember}
       />
     </div>
   );

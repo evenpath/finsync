@@ -25,7 +25,7 @@ import {
   AlertTriangle,
   RefreshCw
 } from "lucide-react";
-import InviteMemberModal from "./InviteMemberModal";
+import InviteEmployeeDialog from "../InviteEmployeeDialog";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
@@ -505,7 +505,7 @@ export default function TeamManagement() {
       </div>
 
       {/* Invite Member Modal */}
-      <InviteMemberModal
+      <InviteEmployeeDialog
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
         onInviteMember={handleInviteMember}

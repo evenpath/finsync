@@ -1,0 +1,201 @@
+// src/components/partner/team/InviteEmployeeByCodeDialog.tsx
+"use client";
+
+import React, { useState } from 'react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { UserPlus, Phone, Loader2, Check, Copy, Ticket } from 'lucide-react';
+import { generateEmployeeInvitationCodeAction } from '@/actions/partner-invitation-management';
+import { useAuth } from '@/hooks/use-auth';
+
+interface InviteEmployeeByCodeDialogProps {
+  partnerId: string;
+  onSuccess?: () => void;
+}
+
+export default function InviteEmployeeByCodeDialog({ partnerId, onSuccess }: InviteEmployeeByCodeDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState<'employee' | 'partner_admin'>('employee');
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const resetForm = () => {
+    setName('');
+    setPhone('');
+    setRole('employee');
+    setGeneratedCode(null);
+  };
+  
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    setOpen(newOpen);
+  };
+
+  const handleGenerateCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast({ variant: 'destructive', title: 'You must be logged in.' });
+      return;
+    }
+    
+    setIsLoading(true);
+    setGeneratedCode(null);
+
+    try {
+      const result = await generateEmployeeInvitationCodeAction({
+        phoneNumber: phone,
+        name: name,
+        partnerId: partnerId,
+        role: role,
+        invitedBy: user.uid,
+      });
+
+      if (result.success && result.invitationCode) {
+        setGeneratedCode(result.invitationCode);
+        toast({ title: 'Invitation code generated!' });
+        onSuccess?.();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to generate code',
+          description: result.message,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (generatedCode) {
+      navigator.clipboard.writeText(generatedCode);
+      toast({ title: 'Code copied to clipboard!' });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button>
+          <UserPlus className="w-4 h-4 mr-2" />
+          Invite with Code
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        {!generatedCode ? (
+          <form onSubmit={handleGenerateCode}>
+            <DialogHeader>
+              <DialogTitle>Generate Invitation Code</DialogTitle>
+              <DialogDescription>
+                Create a unique code for a new employee to join your workspace.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Employee's Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Jane Doe"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Employee's Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1234567890"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Role</Label>
+                <Select value={role} onValueChange={(value) => setRole(value as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="employee">Employee</SelectItem>
+                    <SelectItem value="partner_admin">Partner Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Ticket className="w-4 h-4 mr-2" />
+                )}
+                Generate Code
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <div>
+             <DialogHeader>
+              <DialogTitle className='text-green-600 flex items-center gap-2'>
+                <Check className="w-5 h-5"/>
+                Code Generated Successfully!
+                </DialogTitle>
+              <DialogDescription>
+                Share this code with {name}. It expires in 7 days.
+              </DialogDescription>
+            </DialogHeader>
+            <div className='my-6'>
+                <div 
+                  className='text-4xl font-mono tracking-widest text-center p-4 border-2 border-dashed rounded-lg bg-secondary cursor-pointer'
+                  onClick={copyToClipboard}
+                  title="Click to copy"
+                >
+                    {generatedCode}
+                </div>
+            </div>
+            <DialogFooter className="sm:justify-between gap-2">
+               <Button variant="outline" onClick={copyToClipboard}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Code
+                </Button>
+              <Button onClick={() => handleOpenChange(false)}>
+                Done
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
