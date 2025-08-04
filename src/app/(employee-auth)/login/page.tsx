@@ -131,10 +131,19 @@ export default function EmployeeLoginPage() {
 
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
+      let title = "Login Failed";
+      let description = "The OTP is invalid. Please try again.";
+
+      if (error.code === 'auth/code-expired') {
+        description = "The verification code has expired. Please send a new one.";
+      } else if (error.code === 'auth/invalid-verification-code') {
+        description = "The verification code is incorrect. Please check the code and try again.";
+      }
+      
       toast({
         variant: "destructive",
-        title: "Login Failed",
-        description: "The OTP is invalid or has expired. Please try again.",
+        title: title,
+        description: description,
       });
     } finally {
       setIsLoading(false);
