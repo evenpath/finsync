@@ -15,27 +15,21 @@ import { Button } from '@/components/ui/button';
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, currentWorkspace, availableWorkspaces } = useMultiWorkspaceAuth();
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   React.useEffect(() => {
     if (!loading) {
-      if (user && (user.customClaims?.role === 'employee' || user.customClaims?.role === 'partner_admin')) {
-        setIsAuthorized(true);
-      } else if (!user) {
+      if (!user) {
         // If not logged in, redirect to login
-        router.push('/employee/login');
-      } else if (user.customClaims?.role === 'Super Admin' || user.customClaims?.role === 'Admin') {
-        // Redirect admins to admin dashboard
-        router.push('/admin');
-      } else {
-        // Unknown role, redirect to login
-        router.push('/employee/login');
+        router.push('/login');
+      } else if (user.customClaims?.role && user.customClaims.role !== 'employee' && user.customClaims.role !== 'partner_admin') {
+         // If logged in but not an employee or partner_admin, redirect to home
+        router.push('/');
       }
     }
   }, [user, loading, router]);
 
   // Show loading skeleton while auth state is being determined
-  if (loading || !isAuthorized) {
+  if (loading) {
     return (
       <div className="flex h-screen">
         <div className="w-20 p-4 border-r bg-gray-100">
@@ -55,6 +49,16 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // After loading, if user is not authorized, they will be redirected by the useEffect.
+  // We can show a simple message or skeleton in the meantime.
+  if (!user || (user.customClaims?.role !== 'employee' && user.customClaims?.role !== 'partner_admin')) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+            <p>Redirecting...</p>
+        </div>
+      );
+  }
+  
   // Check if user has workspace access
   if (availableWorkspaces.length === 0) {
     return (
@@ -86,7 +90,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
                 Refresh
               </Button>
               <Button 
-                onClick={() => router.push('/employee/login')}
+                onClick={() => router.push('/login')}
                 className="flex-1"
               >
                 Back to Login

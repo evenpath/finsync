@@ -1,4 +1,4 @@
-// src/app/employee/login/page.tsx
+// src/app/(employee-auth)/login/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,8 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { Phone, KeyRound, Building2, Users, ArrowRight } from 'lucide-react';
-import { handlePhoneAuthUser } from '@/services/phone-auth-service';
+import { handlePhoneAuthAction } from '@/actions/employee-phone-actions';
 import type { WorkspaceAccess } from '@/lib/types';
+import Link from 'next/link';
 
 declare global {
   interface Window {
@@ -93,7 +94,7 @@ export default function EmployeeLoginPage() {
 
       // Handle post-authentication workspace access
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
-      const authResult = await handlePhoneAuthUser(formattedPhone, user.uid);
+      const authResult = await handlePhoneAuthAction(formattedPhone, user.uid);
       
       if (!authResult.success) {
         toast({
@@ -103,21 +104,13 @@ export default function EmployeeLoginPage() {
         });
         return;
       }
-
-      if (authResult.hasMultipleWorkspaces && authResult.workspaces) {
-        setWorkspaces(authResult.workspaces);
-        setShowWorkspaceSelection(true);
-        toast({ 
-          title: "Login Successful", 
-          description: "Please select your workspace to continue." 
-        });
-      } else {
-        toast({ 
-          title: "Login Successful", 
-          description: "Redirecting to your dashboard..." 
-        });
-        router.push('/employee');
-      }
+      
+      // Redirect to employee dashboard, layout will handle workspace selection
+      toast({ 
+        title: "Login Successful", 
+        description: "Redirecting to your dashboard..." 
+      });
+      router.push('/employee');
 
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
@@ -131,14 +124,6 @@ export default function EmployeeLoginPage() {
     }
   };
 
-  const handleWorkspaceSelection = (workspace: WorkspaceAccess) => {
-    toast({ 
-      title: "Workspace Selected", 
-      description: `Redirecting to ${workspace.partnerName}...` 
-    });
-    router.push('/employee');
-  };
-
   const handleRetry = () => {
     setOtpSent(false);
     setOtp('');
@@ -147,51 +132,8 @@ export default function EmployeeLoginPage() {
     window.confirmationResult = undefined;
   };
 
-  if (showWorkspaceSelection) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary/50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl flex items-center gap-2">
-              <Building2 className="w-6 h-6" />
-              Select Workspace
-            </CardTitle>
-            <CardDescription>
-              You have access to multiple workspaces. Choose one to continue.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {workspaces.map((workspace) => (
-              <div
-                key={workspace.partnerId}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-secondary cursor-pointer transition-colors"
-                onClick={() => handleWorkspaceSelection(workspace)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold">
-                    {workspace.partnerName?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <p className="font-medium">{workspace.partnerName}</p>
-                    <p className="text-sm text-muted-foreground capitalize">{workspace.role}</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground" />
-              </div>
-            ))}
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" onClick={handleRetry} className="w-full">
-              Back to Login
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary/50">
+    <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="font-headline text-2xl flex items-center gap-2">
@@ -228,10 +170,16 @@ export default function EmployeeLoginPage() {
                 </p>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Sending..." : "Send OTP"}
               </Button>
+              <div className="text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link href="/signup" className="text-primary hover:underline">
+                  Sign up
+                </Link>
+              </div>
             </CardFooter>
           </form>
         ) : (

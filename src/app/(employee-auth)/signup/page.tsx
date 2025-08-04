@@ -1,4 +1,4 @@
-// src/app/employee/signup/page.tsx
+// src/app/(employee-auth)/signup/page.tsx
 "use client";
 
 import { useState } from 'react';
@@ -59,7 +59,7 @@ export default function EmployeeSignupPage() {
         description: "You can now sign in using your phone number.",
       });
 
-      router.push('/employee/login');
+      router.push('/login');
 
     } catch (error: any) {
       console.error("Employee Signup Error:", error);
@@ -74,7 +74,7 @@ export default function EmployeeSignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary/50">
+    <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <form onSubmit={handleSignup}>
           <CardHeader>
@@ -163,7 +163,7 @@ export default function EmployeeSignupPage() {
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/employee/login" className="text-primary hover:underline">
+              <Link href="/login" className="text-primary hover:underline">
                 Sign in
               </Link>
             </div>
