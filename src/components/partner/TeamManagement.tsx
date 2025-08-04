@@ -28,7 +28,7 @@ import {
 import InviteEmployeeDialog from "./team/InviteEmployeeDialog";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { inviteEmployeeAction } from "@/actions/partner-actions";
+import { inviteEmployeeAction } from "@/actions/team-actions";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
@@ -47,28 +47,7 @@ export default function TeamManagement() {
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Enhanced partnerId extraction with multiple fallbacks
-  const partnerId = useMemo(() => {
-    if (!user?.customClaims) return null;
-    
-    // Try different ways to get partnerId
-    return user.customClaims.partnerId || 
-           user.customClaims.activePartnerId ||
-           (user.customClaims.partnerIds && Object.keys(user.customClaims.partnerIds)[0]) ||
-           null;
-  }, [user?.customClaims]);
-
-  // Enhanced auth check
-  const authUser = useMemo(() => {
-    if (!user) return null;
-    
-    const hasValidRole = user.customClaims?.role === 'partner_admin' || 
-                        user.customClaims?.role === 'employee';
-    const hasPartnerId = !!partnerId;
-    
-    return hasValidRole && hasPartnerId ? user : null;
-  }, [user, partnerId]);
-
+  const partnerId = user?.customClaims?.partnerId;
   const userRole = user?.customClaims?.role;
 
   useEffect(() => {
@@ -78,6 +57,7 @@ export default function TeamManagement() {
     }
 
     if (!partnerId || !db) {
+      setFirestoreError("Could not identify your organization. Please ensure you are logged in correctly and have been assigned to a partner organization.");
       setIsLoading(false);
       return;
     }
@@ -85,7 +65,6 @@ export default function TeamManagement() {
     setIsLoading(true);
     setFirestoreError(null);
     
-    // Query teamMembers collection filtered by partnerId
     const teamMembersRef = collection(db, "teamMembers");
     const q = query(
       teamMembersRef,
@@ -97,55 +76,40 @@ export default function TeamManagement() {
       const membersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        // Ensure dates are converted to strings if they're timestamps
         createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
         lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive,
       } as TeamMember));
       
       setTeamMembers(membersData);
       
-      // Auto-select first member if none selected
       if (!selectedMember && membersData.length > 0) {
         setSelectedMember(membersData[0]);
       } else if (selectedMember) {
-        // Update selected member if it was modified
         const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
-        if (updatedSelectedMember) {
-          setSelectedMember(updatedSelectedMember);
-        } else if (membersData.length > 0) {
-          setSelectedMember(membersData[0]);
-        } else {
-          setSelectedMember(null);
-        }
+        setSelectedMember(updatedSelectedMember || null);
       }
       
       setIsLoading(false);
-      setFirestoreError(null);
     }, (error) => {
       console.error("Firestore error fetching team members:", error);
-      
       let errorMessage = "Could not fetch team members.";
-      
       if (error.code === 'permission-denied') {
-        errorMessage = "Permission denied. Check your Firestore security rules and custom claims.";
-      } else if (error.code === 'failed-precondition') {
-        errorMessage = "Database index missing. Check Firestore console for required indexes.";
-      } else if (error.message) {
-        errorMessage = `Firestore error: ${error.message}`;
+        errorMessage = "Permission denied. Check your Firestore security rules and custom claims. Your account may not have permission to view team members for this partner.";
+      } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
+        errorMessage = "Database index missing. Please check the Firebase console to create the required indexes for the 'teamMembers' collection.";
       }
-      
       setFirestoreError(errorMessage);
       setIsLoading(false);
-      
       toast({
         variant: "destructive",
         title: "Database Error",
-        description: errorMessage
+        description: errorMessage,
+        duration: 9000
       });
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading, toast]);
+  }, [partnerId, authLoading]);
 
   const handleInviteMember = async (newMemberData: { 
     name: string; 
@@ -214,84 +178,29 @@ export default function TeamManagement() {
       return 'Invalid Time';
     }
   };
-  
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <RefreshCw className="animate-spin h-8 w-8 text-primary mx-auto" />
-          <p className="mt-2 text-muted-foreground">Verifying permissions...</p>
-        </div>
-      </div>
-    );
-  }
 
-  if (!authUser || !partnerId) {
+  if (firestoreError) {
     return (
       <div className="flex items-center justify-center h-full p-6">
         <Card className="max-w-lg w-full border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive flex items-center gap-2">
-              <XCircle className="h-6 w-6" />
+              <AlertTriangle className="h-6 w-6" />
               Access Error
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p>
-              Could not identify your organization. This usually happens when your account is missing the necessary permissions (custom claims).
+              {firestoreError}
             </p>
-            
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-              <p className="font-semibold text-yellow-800 mb-2">Debug Information:</p>
-              <div className="text-yellow-700 space-y-1">
-                <div>✅ Authenticated: {user ? 'Yes' : 'No'}</div>
-                <div>✅ Has Custom Claims: {user?.customClaims ? 'Yes' : 'No'}</div>
-                <div>✅ Role: {user?.customClaims?.role || 'Not Set'}</div>
-                <div>✅ Partner ID: {partnerId || 'Not Found'}</div>
-                <div>✅ Tenant ID: {user?.customClaims?.tenantId || 'Not Set'}</div>
-              </div>
-            </div>
-            
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-                <p className="font-semibold text-yellow-800">Troubleshooting Steps:</p>
-                <ol className="list-decimal list-inside text-yellow-700 mt-2 space-y-1">
-                    <li>Ensure you are logged in with the correct account.</li>
-                    <li>Contact your administrator to verify your account has been assigned a `partnerId` and a `role`.</li>
-                    <li>If you are an administrator, you may need to set these claims for the user in the Firebase console or via a script.</li>
-                    <li>Try refreshing the page to reload your permissions.</li>
-                </ol>
-            </div>
-            <div className="flex gap-2 pt-2">
-                <Button asChild variant="outline">
-                  <Link href="/partner/team/diagnostics">
-                    <Settings className="w-4 h-4 mr-2"/>
-                    View Diagnostics
-                  </Link>
-                </Button>
-                <Button onClick={() => window.location.reload()}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh Page
-                </Button>
-            </div>
+            <Button asChild variant="outline">
+              <Link href="/partner/team/diagnostics">
+                <Settings className="w-4 h-4 mr-2"/>
+                View Access Diagnostics
+              </Link>
+            </Button>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-  
-  if (firestoreError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-4">
-          <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
-          <div>
-            <h3 className="text-lg font-semibold text-destructive">Database Error</h3>
-            <p className="text-muted-foreground">{firestoreError}</p>
-          </div>
-           <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-        </div>
       </div>
     );
   }
@@ -306,7 +215,7 @@ export default function TeamManagement() {
                 <CardTitle className="font-headline">
                   Manage Team
                 </CardTitle>
-                 {partnerId && <InviteEmployeeByCodeDialog partnerId={partnerId} />}
+                 {partnerId && userRole === 'partner_admin' && <InviteEmployeeByCodeDialog partnerId={partnerId} />}
               </div>
             </CardHeader>
             <CardContent>
@@ -354,7 +263,7 @@ export default function TeamManagement() {
                                 </div>
                                 <div>
                                   <p className="font-medium">{member.name || 'Unnamed'}</p>
-                                  <p className="text-sm text-muted-foreground">{member.email}</p>
+                                  <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
                                 </div>
                               </div>
                           </div>
@@ -390,7 +299,7 @@ export default function TeamManagement() {
                     </div>
                     <div>
                       <p className="font-medium">{selectedMember.name || 'Unnamed'}</p>
-                      <p className="text-sm text-muted-foreground">{selectedMember.role?.replace('_', ' ')}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{selectedMember.role?.replace('_', ' ')}</p>
                     </div>
                   </div>
 
@@ -425,7 +334,7 @@ export default function TeamManagement() {
 
                   <div className="pt-4 space-y-2">
                     <Button className="w-full" variant="outline">
-                      <MessageSquare className="w-4 h-4 mr-2" />
+                      <MessageSquare className="w-4 w-4 mr-2" />
                       Send Message
                     </Button>
                     <Button className="w-full" variant="outline">
@@ -444,12 +353,6 @@ export default function TeamManagement() {
           </Card>
         </div>
       </div>
-
-      <InviteEmployeeDialog
-        isOpen={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onInviteMember={handleInviteMember}
-      />
     </div>
   );
 }
