@@ -29,75 +29,28 @@ import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
 import { useMultiWorkspaceAuth } from "@/hooks/use-multi-workspace-auth";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { usePartnerAuth } from "@/hooks/use-partner-auth";
 
 export default function TeamManagement() {
   const { user, currentWorkspace, loading: authLoading } = useMultiWorkspaceAuth();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const { toast } = useToast();
+  
+  const partnerId = currentWorkspace?.partnerId;
+  const { employees, loading: partnerLoading, error: partnerError } = usePartnerAuth(partnerId);
+
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const { toast } = useToast();
-
-  const partnerId = currentWorkspace?.partnerId;
+  
+  const isLoading = authLoading || partnerLoading;
 
   useEffect(() => {
-    if (authLoading || !partnerId || !db) {
-      setIsLoading(authLoading);
-      return;
+    if (!isLoading && employees.length > 0 && !selectedMember) {
+      setSelectedMember(employees[0]);
+    } else if (!isLoading && employees.length === 0) {
+      setSelectedMember(null);
     }
-
-    setIsLoading(true);
-    
-    const employeesRef = collection(db, `partners/${partnerId}/employees`);
-    const q = query(employeesRef);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const membersData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Firestore timestamps need to be converted
-          joinedDate: data.joinedDate?.toDate ? data.joinedDate.toDate().toISOString() : data.joinedDate,
-          lastActive: data.lastActive?.toDate ? data.lastActive.toDate().toISOString() : data.lastActive,
-        } as TeamMember;
-      });
-      
-      setTeamMembers(membersData);
-      
-      if (!selectedMember && membersData.length > 0) {
-        setSelectedMember(membersData[0]);
-      } else if (selectedMember) {
-        const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
-        if (updatedSelectedMember) {
-          setSelectedMember(updatedSelectedMember);
-        } else if (membersData.length > 0) {
-          setSelectedMember(membersData[0]);
-        } else {
-          setSelectedMember(null);
-        }
-      } else if (membersData.length > 0) {
-        setSelectedMember(membersData[0]);
-      } else {
-        setSelectedMember(null);
-      }
-      
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching team members:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not fetch team members. Please check your permissions."
-      });
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [partnerId, authLoading, toast, selectedMember]);
+  }, [isLoading, employees, selectedMember]);
 
   const handleInviteMember = async (newMemberData: { 
     name: string; 
@@ -136,12 +89,11 @@ export default function TeamManagement() {
       }
     } catch (error) {
       console.error("Error inviting member:", error);
-      // Let the caller handle showing the error toast
       throw error;
     }
   };
 
-  const filteredMembers = teamMembers.filter(member =>
+  const filteredMembers = employees.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -164,7 +116,6 @@ export default function TeamManagement() {
     }
   };
 
-
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -176,7 +127,7 @@ export default function TeamManagement() {
     );
   }
 
-  if (!partnerId) {
+  if (!partnerId && !authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">

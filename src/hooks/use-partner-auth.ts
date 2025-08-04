@@ -3,10 +3,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { getPartnerDetailsAction } from '@/actions/partner-actions';
 import type { Partner, TeamMember } from '@/lib/types';
-import { useMultiWorkspaceAuth } from './use-multi-workspace-auth';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
@@ -19,8 +17,7 @@ interface PartnerAuthState {
   error: string | null;
 }
 
-export function usePartnerAuth() {
-  const { user, currentWorkspace, loading: authLoading } = useMultiWorkspaceAuth();
+export function usePartnerAuth(partnerId?: string | null) {
   const [partnerState, setPartnerState] = useState<PartnerAuthState>({
     partner: null,
     employees: [],
@@ -31,10 +28,6 @@ export function usePartnerAuth() {
   });
 
   useEffect(() => {
-    if (authLoading) return;
-
-    const partnerId = currentWorkspace?.partnerId;
-
     if (!partnerId) {
       setPartnerState({
         partner: null,
@@ -42,12 +35,12 @@ export function usePartnerAuth() {
         partnerId: null,
         tenantId: null,
         loading: false,
-        error: 'No active partner workspace selected'
+        error: null // Not an error state, just no partner selected
       });
       return;
     }
 
-    setPartnerState(prev => ({ ...prev, loading: true }));
+    setPartnerState(prev => ({ ...prev, loading: true, partnerId }));
 
     const fetchPartnerDetails = async () => {
       try {
@@ -57,7 +50,6 @@ export function usePartnerAuth() {
           setPartnerState(prev => ({
             ...prev,
             partner: result.partner,
-            partnerId: partnerId,
             tenantId: result.tenantId || null,
             error: null
           }));
@@ -65,7 +57,6 @@ export function usePartnerAuth() {
           setPartnerState(prev => ({
             ...prev,
             partner: null,
-            partnerId: partnerId,
             tenantId: null,
             error: result.message
           }));
@@ -74,7 +65,6 @@ export function usePartnerAuth() {
         setPartnerState(prev => ({
           ...prev,
           partner: null,
-          partnerId: partnerId,
           tenantId: null,
           error: 'Failed to fetch partner details'
         }));
@@ -99,10 +89,10 @@ export function usePartnerAuth() {
 
     return () => unsubscribe();
 
-  }, [currentWorkspace, authLoading]);
+  }, [partnerId]);
 
   return {
     ...partnerState,
-    loading: authLoading || partnerState.loading
+    loading: partnerState.loading
   };
 }
