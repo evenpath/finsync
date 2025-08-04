@@ -1,13 +1,14 @@
-// ============================================================================
-// 6. src/hooks/use-partner-auth.ts (new)
-// ============================================================================
+
+// src/hooks/use-partner-auth.ts
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getPartnerDetailsAction } from '@/actions/partner-actions';
+import type { Partner } from '@/lib/types';
 
 interface PartnerAuthState {
+  partner: Partner | null,
   partnerId: string | null;
   tenantId: string | null;
   loading: boolean;
@@ -17,6 +18,7 @@ interface PartnerAuthState {
 export function usePartnerAuth() {
   const { user, loading: authLoading } = useAuth();
   const [partnerState, setPartnerState] = useState<PartnerAuthState>({
+    partner: null,
     partnerId: null,
     tenantId: null,
     loading: true,
@@ -26,8 +28,11 @@ export function usePartnerAuth() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user?.customClaims?.partnerId) {
+    const partnerId = user?.customClaims?.partnerId;
+
+    if (!partnerId) {
       setPartnerState({
+        partner: null,
         partnerId: null,
         tenantId: null,
         loading: false,
@@ -38,18 +43,20 @@ export function usePartnerAuth() {
 
     const fetchPartnerDetails = async () => {
       try {
-        const result = await getPartnerDetailsAction(user.customClaims.partnerId);
+        const result = await getPartnerDetailsAction(partnerId);
         
-        if (result.success) {
+        if (result.success && result.partner) {
           setPartnerState({
-            partnerId: user.customClaims.partnerId,
+            partner: result.partner,
+            partnerId: partnerId,
             tenantId: result.tenantId || null,
             loading: false,
             error: null
           });
         } else {
           setPartnerState({
-            partnerId: user.customClaims.partnerId,
+            partner: null,
+            partnerId: partnerId,
             tenantId: null,
             loading: false,
             error: result.message
@@ -57,7 +64,8 @@ export function usePartnerAuth() {
         }
       } catch (error: any) {
         setPartnerState({
-          partnerId: user.customClaims.partnerId,
+          partner: null,
+          partnerId: partnerId,
           tenantId: null,
           loading: false,
           error: 'Failed to fetch partner details'

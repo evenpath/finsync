@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Briefcase, ChevronsUpDown, PlusCircle, Check, Building, Users, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ const WorkspaceDropdown = ({
                 </div>
               </div>
               
-              {workspace.unreadCount > 0 && (
+              {(workspace.unreadCount || 0) > 0 && (
                 <div className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {workspace.unreadCount > 99 ? '99+' : workspace.unreadCount}
                 </div>
@@ -134,7 +135,6 @@ export default function EnhancedWorkspaceSwitcher() {
     availableWorkspaces,
     switchWorkspace,
     hasAccessToPartner,
-    isPartnerAdminFor
   } = useMultiWorkspaceAuth();
 
   const handleWorkspaceSwitch = async (partnerId: string) => {
@@ -144,10 +144,8 @@ export default function EnhancedWorkspaceSwitcher() {
     try {
       const success = await switchWorkspace(partnerId);
       if (success) {
-        // Optionally show success notification
         console.log(`Switched to workspace: ${partnerId}`);
       } else {
-        // Show error notification
         console.error('Failed to switch workspace');
       }
     } catch (error) {
@@ -255,7 +253,6 @@ export default function EnhancedWorkspaceSwitcher() {
         className="w-12 h-12 mt-auto text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors"
         title="Join Workspace"
         onClick={() => {
-          // TODO: Implement join workspace modal
           console.log('Join workspace clicked');
         }}
       >

@@ -5,6 +5,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { adminAuth } from '@/lib/firebase-admin';
 import { createUserMapping, validateTenantId } from '@/services/tenant-service';
+import * as admin from 'firebase-admin/auth';
 
 const CreateUserInTenantInputSchema = z.object({
   email: z.string().email().optional().describe('The email address of the new user. Required if phone number is not provided.'),
@@ -68,7 +69,7 @@ const createUserInTenantFlow = ai.defineFlow(
       // Step 1: Create the user within the specified tenant
       const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
       
-      const userToCreate: admin.auth.CreateRequest = {
+      const userToCreate: admin.CreateRequest = {
         password: input.password,
         displayName: input.displayName,
       };
@@ -93,31 +94,31 @@ const createUserInTenantFlow = ai.defineFlow(
       await tenantAuth.setCustomUserClaims(userRecord.uid, claims);
       console.log(`Successfully set claims for user ${userRecord.uid}:`, claims);
 
-      // Step 3: Create the user mapping for quick tenant lookup during login
-      // Mapping is always done by email for now, as phone lookups are not directly supported for tenant resolution.
-      const mappingIdentifier = input.email || `${input.phone}@suupe.com`;
-      
-      const mappingResult = await createUserMapping(
-        mappingIdentifier, 
-        input.tenantId, 
-        input.partnerId
-      );
-
-      if (!mappingResult.success) {
-          // If mapping fails, it's a critical issue for login.
-          // Consider a rollback or cleanup strategy here in a real app.
-          console.warn(`CRITICAL: Failed to create user mapping for ${mappingIdentifier}. User will not be able to log in.`, mappingResult.message);
-          return {
-              success: false,
-              message: `User created, but failed to set up login mapping. Please contact support. Error: ${mappingResult.message}`,
+      // Step 3: Create user mappings for quick tenant lookup during login
+      if (input.email) {
+          const mappingResult = await createUserMapping(input.email, input.tenantId, input.partnerId);
+          if (!mappingResult.success) {
+              console.warn(`CRITICAL: Failed to create email mapping for ${input.email}.`, mappingResult.message);
+              // Decide on rollback strategy if needed
+          } else {
+              console.log(`Successfully created email mapping for ${input.email}`);
           }
       }
-      console.log(`Successfully created user mapping for ${mappingIdentifier}`);
+
+      if (input.phone) {
+          const mappingResult = await createUserMapping(input.phone, input.tenantId, input.partnerId);
+          if (!mappingResult.success) {
+              console.warn(`CRITICAL: Failed to create phone mapping for ${input.phone}.`, mappingResult.message);
+              // Decide on rollback strategy if needed
+          } else {
+              console.log(`Successfully created phone mapping for ${input.phone}`);
+          }
+      }
 
       return {
         success: true,
         userId: userRecord.uid,
-        message: `Successfully created user ${input.email || input.phone} in tenant ${input.tenantId}.`,
+        message: `Successfully created user ${input.displayName} in tenant ${input.tenantId}.`,
       };
 
     } catch (error: any) {

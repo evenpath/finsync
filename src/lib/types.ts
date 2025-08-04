@@ -1,4 +1,5 @@
 
+
 // ============================================================================
 // FIREBASE BACKEND VARIABLES
 // ============================================================================
@@ -77,6 +78,9 @@ export interface UserWorkspaceLink {
   joinedAt: FirebaseTimestamp;
   invitedBy?: string;
   invitedAt?: FirebaseTimestamp;
+  tenantId: string;
+  partnerName: string;
+  partnerAvatar?: string;
 }
 
 export interface UserPreferences {
@@ -309,6 +313,7 @@ export type SuggestWorkflowStepsInput = z.infer<typeof SuggestWorkflowStepsInput
 
 
 export const StepSchema: z.ZodType<any> = z.lazy(() => z.object({
+  id: z.string().optional(),
   type: z.string().describe("The type of the step, e.g., 'ai_agent', 'human_input', 'conditional_branch', 'api_call', 'notification'."),
   name: z.string().describe("A human-readable name for the step, e.g., 'Classify Request Urgency'."),
   description: z.string().describe("A brief explanation of what this step does."),
@@ -1421,7 +1426,7 @@ export interface ResponseMapping {
 
 export interface APIAuthentication {
   type: 'none' | 'api_key' | 'bearer_token' | 'basic_auth' | 'oauth2';
-  credentials: Record<string, any>;
+  credentials: Record<string, any>; // Encrypted
 }
 
 export interface EscalationRule {
@@ -1496,4 +1501,70 @@ export interface FirestoreCollections {
 export interface ResourceAccess {
   resource: string;
   action: 'read' | 'write' | 'delete' | 'admin';
+}
+
+export interface MultiWorkspaceCustomClaims {
+  role: 'Super Admin' | 'Admin' | 'partner_admin' | 'employee';
+  
+  // Legacy single workspace support (backward compatibility)
+  partnerId?: string;
+  tenantId?: string;
+  
+  // NEW: Multi-workspace support
+  partnerIds?: string[]; // Array of partner IDs user has access to
+  workspaces?: WorkspaceAccess[]; // Detailed workspace access info
+  
+  // Current active workspace (for UI context)
+  activePartnerId?: string;
+  activeTenantId?: string;
+}
+
+export interface WorkspaceAccess {
+  partnerId: string;
+  tenantId: string;
+  role: 'partner_admin' | 'employee';
+  permissions: string[];
+  status: 'active' | 'invited' | 'suspended';
+  partnerName: string;
+  partnerAvatar?: string;
+}
+
+// Enhanced FirebaseAuthUser with multi-workspace support
+export interface MultiWorkspaceFirebaseAuthUser extends Omit<FirebaseAuthUser, 'customClaims'> {
+  customClaims?: MultiWorkspaceCustomClaims;
+}
+
+// User Workspace Link document structure
+export interface WorkspaceInvitation {
+  id?: string;
+  email: string;
+  partnerId: string;
+  tenantId: string;
+  role: 'partner_admin' | 'employee';
+  invitedBy: string; // User ID
+  invitedAt: FirebaseTimestamp;
+  expiresAt: any; // Allow for serverTimestamp
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  inviteCode?: string; // Optional invite code for self-service joining
+  
+  // Partner details for the invitation
+  partnerName: string;
+  inviterName: string;
+  inviterEmail: string;
+}
+
+// Multi-workspace authentication state
+export interface MultiWorkspaceAuthState extends AuthState {
+  user: MultiWorkspaceFirebaseAuthUser | null;
+  currentWorkspace: WorkspaceAccess | null;
+  availableWorkspaces: WorkspaceAccess[];
+  
+  // Workspace switching
+  switchWorkspace: (partnerId: string) => Promise<boolean>;
+  refreshWorkspaces: () => Promise<void | (() => void)>;
+  
+  // Multi-workspace permissions
+  hasAccessToPartner: (partnerId: string) => boolean;
+  isPartnerAdminFor: (partnerId: string) => boolean;
+  canModifyPartner: (partnerId: string) => boolean;
 }

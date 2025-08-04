@@ -3,7 +3,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -13,8 +13,12 @@ import {
   TrendingUp,
   Briefcase,
   Zap,
+  LogOut,
 } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
+import { useAuth } from '@/hooks/use-auth';
+import { getAuth, signOut } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/partner" },
@@ -28,6 +32,18 @@ const menuItems = [
 
 export default function PartnerSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const auth = getAuth();
+  const router = useRouter();
+  
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/partner/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <div className="w-64 bg-card border-r flex flex-col">
@@ -74,12 +90,15 @@ export default function PartnerSidebar() {
       <div className="p-4 border-t">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
-            PA
+            {(user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'P').toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Partner Admin</p>
-            <p className="text-xs text-muted-foreground">admin@techcorp.com</p>
+            <p className="text-sm font-medium text-foreground truncate">{user?.displayName || user?.email}</p>
+            <p className="text-xs text-muted-foreground capitalize">{user?.customClaims?.role?.replace('_', ' ') || 'Partner'}</p>
           </div>
+           <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+              <LogOut className="w-5 h-5" />
+           </Button>
         </div>
       </div>
     </div>

@@ -1,9 +1,11 @@
+
 // src/services/workspace-management.ts
 'use server';
 
 import { db, adminAuth } from '@/lib/firebase-admin';
-import { collection, doc, setDoc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
-import type { UserWorkspaceLink, WorkspaceInvitation, WorkspaceAccess } from '@/lib/types/multi-workspace';
+import { doc, setDoc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp, collection, DocumentData, Timestamp } from 'firebase/firestore';
+import type { UserWorkspaceLink, WorkspaceInvitation, WorkspaceAccess } from '@/lib/types';
+
 
 export interface InviteUserToWorkspaceInput {
   email: string;
@@ -51,9 +53,9 @@ export async function inviteUserToWorkspace(input: InviteUserToWorkspaceInput): 
       };
     }
 
-    const partnerData = partnerDoc.data();
-    const inviterDoc = await db.collection('userProfiles').doc(input.invitedBy).get();
-    const inviterData = inviterDoc.data();
+    const partnerData = partnerDoc.data() as DocumentData;
+    const inviterDoc = await db.collection('users').doc(input.invitedBy).get();
+    const inviterData = inviterDoc.data() as DocumentData;
 
     // Create workspace invitation
     const invitationId = doc(collection(db, 'workspaceInvitations')).id;
@@ -64,8 +66,8 @@ export async function inviteUserToWorkspace(input: InviteUserToWorkspaceInput): 
       tenantId: input.tenantId,
       role: input.role,
       invitedBy: input.invitedBy,
-      invitedAt: serverTimestamp(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      invitedAt: serverTimestamp() as any,
+      expiresAt: Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       status: 'pending',
       partnerName: partnerData?.name || 'Unknown Organization',
       inviterName: inviterData?.displayName || 'Unknown User',
@@ -196,22 +198,21 @@ async function createUserWorkspaceLink(input: {
   if (!db) throw new Error('Database not available');
 
   const linkId = `${input.userId}_${input.partnerId}`;
-  const workspaceLink: UserWorkspaceLink = {
-    id: linkId,
+  const workspaceLink: Partial<UserWorkspaceLink> = {
     userId: input.userId,
     partnerId: input.partnerId,
     tenantId: input.tenantId,
     role: input.role,
     status: input.status,
     permissions: input.permissions,
-    joinedAt: serverTimestamp(),
+    joinedAt: serverTimestamp() as any,
     invitedBy: input.invitedBy,
-    invitedAt: input.invitedBy ? serverTimestamp() : undefined,
+    invitedAt: input.invitedBy ? serverTimestamp() as any : undefined,
     partnerName: input.partnerName,
-    lastAccessedAt: input.status === 'active' ? serverTimestamp() : undefined
+    //lastAccessedAt: input.status === 'active' ? serverTimestamp() : undefined
   };
 
-  await setDoc(doc(db, 'userWorkspaceLinks', linkId), workspaceLink);
+  await setDoc(doc(db, 'userWorkspaceLinks', linkId), workspaceLink, { merge: true });
 }
 
 /**
@@ -239,7 +240,9 @@ export async function updateUserMultiWorkspaceAccess(userId: string): Promise<vo
         tenantId: data.tenantId,
         role: data.role,
         permissions: data.permissions,
-        status: data.status
+        status: data.status,
+        partnerName: data.partnerName,
+        partnerAvatar: data.partnerAvatar
       });
       partnerIds.push(data.partnerId);
     });
@@ -318,7 +321,7 @@ export async function getUserWorkspaces(userId: string): Promise<UserWorkspaceLi
     const workspaces: UserWorkspaceLink[] = [];
 
     snapshot.forEach((doc) => {
-      workspaces.push({ id: doc.id, ...doc.data() } as UserWorkspaceLink);
+      workspaces.push({ ...doc.data() } as UserWorkspaceLink);
     });
 
     return workspaces;

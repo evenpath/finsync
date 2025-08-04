@@ -1,7 +1,7 @@
-// ============================================================================
-// 2. src/services/tenant-service.ts (modified)
-// ============================================================================
+
+// src/services/tenant-service.ts
 import { db, adminAuth } from '@/lib/firebase-admin';
+import type { Partner } from '@/lib/types';
 
 export interface TenantLookupResult {
   success: boolean;
@@ -11,9 +11,9 @@ export interface TenantLookupResult {
 }
 
 /**
- * Gets the tenant ID for a given email address.
+ * Gets the tenant ID for a given email address or phone number.
  */
-export async function getTenantIdForEmail(email: string): Promise<TenantLookupResult> {
+export async function getTenantIdForEmail(identifier: string): Promise<TenantLookupResult> {
   if (!db) {
     return {
       success: false,
@@ -22,8 +22,8 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
   }
 
   try {
-    const lowercasedEmail = email.toLowerCase();
-    const userMappingRef = db.collection('userMappings').doc(lowercasedEmail);
+    const lowercasedIdentifier = identifier.toLowerCase();
+    const userMappingRef = db.collection('userMappings').doc(lowercasedIdentifier);
     const doc = await userMappingRef.get();
     
     if (doc.exists) {
@@ -42,7 +42,7 @@ export async function getTenantIdForEmail(email: string): Promise<TenantLookupRe
     };
     
   } catch (error: any) {
-    console.error("Error looking up tenant for email:", email, error);
+    console.error("Error looking up tenant for identifier:", identifier, error);
     return {
       success: false,
       message: "Failed to lookup organization. Please try again."
@@ -90,9 +90,9 @@ export async function getPartnerTenantId(partnerId: string): Promise<TenantLooku
 }
 
 /**
- * Creates a user mapping between an email and tenant ID.
+ * Creates a user mapping between an identifier (email/phone) and tenant ID.
  */
-export async function createUserMapping(email: string, tenantId: string, partnerId?: string): Promise<TenantLookupResult> {
+export async function createUserMapping(identifier: string, tenantId: string, partnerId?: string): Promise<TenantLookupResult> {
   if (!db) {
     return {
       success: false,
@@ -101,19 +101,19 @@ export async function createUserMapping(email: string, tenantId: string, partner
   }
 
   try {
-    const lowercasedEmail = email.toLowerCase();
-    const userMappingRef = db.collection('userMappings').doc(lowercasedEmail);
+    const lowercasedIdentifier = identifier.toLowerCase();
+    const userMappingRef = db.collection('userMappings').doc(lowercasedIdentifier);
     
     const doc = await userMappingRef.get();
     if(doc.exists) {
         return {
             success: false,
-            message: `Mapping for ${email} already exists.`
+            message: `Mapping for ${identifier} already exists.`
         };
     }
 
     await userMappingRef.set({
-      email: lowercasedEmail,
+      identifier: lowercasedIdentifier,
       tenantId,
       partnerId: partnerId || null,
       createdAt: new Date(),
@@ -157,5 +157,44 @@ export async function validateTenantId(tenantId: string): Promise<boolean> {
       console.error(`Tenant validation failed for ${tenantId}:`, error);
     }
     return false;
+  }
+}
+
+/**
+ * Gets partner details for a given partner ID.
+ */
+export async function getPartnerDetailsByPartnerId(partnerId: string): Promise<{ success: boolean; message: string; partner?: Partner, tenantId?: string }> {
+  if (!db) {
+    return {
+      success: false,
+      message: "Database not available"
+    };
+  }
+
+  try {
+    const partnerRef = db.collection('partners').doc(partnerId);
+    const doc = await partnerRef.get();
+    
+    if (doc.exists) {
+      const data = doc.data() as Partner;
+      return {
+        success: true,
+        partner: { id: doc.id, ...data },
+        tenantId: data.tenantId,
+        message: "Partner details found"
+      };
+    }
+    
+    return {
+      success: false,
+      message: "Partner not found"
+    };
+    
+  } catch (error: any) {
+    console.error("Error looking up partner details:", partnerId, error);
+    return {
+      success: false,
+      message: "Failed to lookup partner details"
+    };
   }
 }

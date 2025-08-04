@@ -3,8 +3,10 @@
 'use server';
 
 import { createUserInTenant } from '@/ai/flows/user-management-flow';
-import { getPartnerTenantId } from '@/services/tenant-service';
+import { getPartnerTenantId, getPartnerDetailsByPartnerId } from '@/services/tenant-service';
 import type { CreateUserInTenantOutput } from '@/ai/flows/user-management-flow';
+import type { Partner } from '@/lib/types';
+
 
 export async function inviteEmployeeAction(data: {
   email?: string;
@@ -45,4 +47,14 @@ export async function inviteEmployeeAction(data: {
       message: "An unexpected error occurred while inviting the employee."
     };
   }
+}
+
+export async function getPartnerDetailsAction(partnerId: string): Promise<{ success: boolean; message: string; partner?: Partner, tenantId?: string }> {
+    try {
+        const result = await getPartnerDetailsByPartnerId(partnerId);
+        return result;
+    } catch (error: any) {
+        console.error("Error in getPartnerDetailsAction:", error);
+        return { success: false, message: "Failed to fetch partner details." };
+    }
 }
