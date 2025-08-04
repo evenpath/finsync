@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { User, Phone, Mail, LogOut } from 'lucide-react';
+import { User, Phone, Mail, LogOut, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -18,6 +18,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function WorkspaceHeader() {
   const { user, loading } = useAuth();
@@ -63,6 +64,14 @@ export default function WorkspaceHeader() {
               Workbase
             </h1>
           </div>
+          <nav>
+            <Link href="/employee/tasks">
+              <Button variant="ghost" size="sm">
+                <ListTodo className="w-4 h-4 mr-2" />
+                My Tasks
+              </Button>
+            </Link>
+          </nav>
         </div>
 
         {/* Right side - User menu */}

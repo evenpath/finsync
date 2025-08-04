@@ -1,84 +1,116 @@
 // src/components/partner/TaskBoard.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
-import Image from "next/image";
-import { Plus, Clock } from 'lucide-react';
-import { mockTasks, mockTeamMembers } from '@/lib/mockData';
-import type { Task } from '@/lib/types';
-import { Progress } from '@/components/ui/progress';
+import { Plus, Loader2 } from 'lucide-react';
+import type { Task, TeamMember } from '@/lib/types';
 import AssignTaskDialog from './tasks/AssignTaskDialog';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import Image from 'next/image';
 
-const columns = [
-    { id: 'assigned', title: 'To Do', color: 'bg-gray-500' },
-    { id: 'in_progress', title: 'In Progress', color: 'bg-blue-500' },
-    { id: 'awaiting_approval', title: 'In Review', color: 'bg-yellow-500' },
-    { id: 'completed', title: 'Done', color: 'bg-green-500' }
-];
+const TaskRow = ({ task, teamMembers }: { task: Task & { id: string }, teamMembers: TeamMember[] }) => {
+    const assignee = teamMembers.find(m => m.id === task.assignee);
 
-const TaskCard = ({ task }: { task: Task & { avatar?: string } }) => {
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'completed': return <Badge variant="success">Completed</Badge>;
+            case 'in_progress': return <Badge variant="info">In Progress</Badge>;
+            case 'awaiting_approval': return <Badge variant="warning">In Review</Badge>;
+            case 'assigned':
+            default:
+                return <Badge variant="secondary">To Do</Badge>;
+        }
+    };
+    
+    const getPriorityBadge = (priority: string) => {
+        switch (priority) {
+            case 'high': return <Badge variant="danger">High</Badge>;
+            case 'medium': return <Badge variant="warning">Medium</Badge>;
+            case 'low':
+            default:
+                return <Badge variant="info">Low</Badge>;
+        }
+    };
+
     return (
-        <Card className="mb-4 p-4 bg-card hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
-            <CardContent className="p-0">
-                <p className="font-semibold text-foreground mb-2">{task.title}</p>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <TableRow>
+            <TableCell>
+                <div className="font-medium">{task.title}</div>
+                <div className="text-sm text-muted-foreground">{task.workflow}</div>
+            </TableCell>
+            <TableCell>
+                {assignee ? (
                     <div className="flex items-center gap-2">
-                        <Clock className="w-3 h-3" />
-                        <span>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</span>
+                        <Image src={assignee.avatar} alt={assignee.name} width={24} height={24} className="rounded-full" data-ai-hint="person user" />
+                        <span>{assignee.name}</span>
                     </div>
-                    {task.assignee && (
-                        <Image 
-                          src={mockTeamMembers.find(m => m.name === task.assignee)?.avatar || "https://placehold.co/32x32.png"} 
-                          alt={task.assignee} 
-                          width={24} 
-                          height={24} 
-                          className="rounded-full"
-                          data-ai-hint="person user"
-                        />
-                    )}
-                </div>
-                 <div className="mt-2">
-                    <Badge variant={task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'info'}>
-                        {task.priority}
-                    </Badge>
-                </div>
-            </CardContent>
-        </Card>
-    );
-};
-
-const TaskColumn = ({ title, tasks, totalTasks, color }: { title: string, tasks: any[], totalTasks: number, color: string }) => {
-    const progress = totalTasks > 0 ? (tasks.length / totalTasks) * 100 : 0;
-
-    return (
-        <div className="w-80 bg-secondary/50 rounded-lg p-2 flex-shrink-0 flex flex-col">
-            <div className="p-2">
-                <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-foreground">{title}</h3>
-                    <span className="text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">{tasks.length}</span>
-                </div>
-                <Progress value={progress} className="h-1" />
-            </div>
-            <div className="space-y-4 h-full overflow-y-auto p-2">
-                {tasks.map(task => <TaskCard key={task.id} task={task} />)}
-            </div>
-        </div>
+                ) : (
+                    <span className="text-muted-foreground">Unassigned</span>
+                )}
+            </TableCell>
+            <TableCell>{getStatusBadge(task.status)}</TableCell>
+            <TableCell>{getPriorityBadge(task.priority)}</TableCell>
+            <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
+        </TableRow>
     );
 };
 
 export default function TaskBoard() {
-    const [tasks, setTasks] = useState(mockTasks);
-    const totalTasks = tasks.length;
-    const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+    const [tasks, setTasks] = useState<any[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { user } = useAuth();
+    const partnerId = user?.customClaims?.partnerId;
+
+    useEffect(() => {
+        if (!partnerId) {
+            setIsLoading(false);
+            return;
+        }
+
+        const taskQuery = query(collection(db, 'tasks'), where('partnerId', '==', partnerId), orderBy('createdAt', 'desc'));
+        const memberQuery = query(collection(db, 'teamMembers'), where('partnerId', '==', partnerId));
+        
+        const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
+            const fetchedTasks = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    // Convert Firestore Timestamps to serializable strings
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+                };
+            });
+            setTasks(fetchedTasks);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching tasks:", error);
+            setIsLoading(false);
+        });
+        
+        const unsubscribeMembers = onSnapshot(memberQuery, (snapshot) => {
+            const fetchedMembers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamMember));
+            setTeamMembers(fetchedMembers);
+        });
+
+        return () => {
+            unsubscribeTasks();
+            unsubscribeMembers();
+        };
+
+    }, [partnerId]);
+    
 
     const handleTaskCreated = (newTask: Task) => {
-        // In a real app, this would be handled by the Firestore listener
-        // For mock data, we just add it to the local state
-        setTasks(prev => [...prev, { ...newTask, id: Date.now() }]);
-        setIsAssignTaskOpen(false);
+        // The Firestore listener will automatically add the new task,
+        // so we don't need to manually update state here.
+        console.log("New task created:", newTask);
     };
 
     return (
@@ -92,16 +124,37 @@ export default function TaskBoard() {
                     </Button>
                 </AssignTaskDialog>
             </div>
-            <div className="flex space-x-6 flex-1 overflow-x-auto">
-                {columns.map(column => (
-                    <TaskColumn
-                        key={column.id}
-                        title={column.title}
-                        tasks={tasks.filter(task => task.status === column.id)}
-                        totalTasks={totalTasks}
-                        color={column.color}
-                    />
-                ))}
+            <div className="border rounded-lg">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Task</TableHead>
+                            <TableHead>Assignee</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Priority</TableHead>
+                            <TableHead>Due Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center h-24">
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                                </TableCell>
+                            </TableRow>
+                        ) : tasks.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                    No tasks found. Create one to get started.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                           tasks.map(task => (
+                                <TaskRow key={task.id} task={task} teamMembers={teamMembers} />
+                           ))
+                        )}
+                    </TableBody>
+                </Table>
             </div>
         </div>
     );
