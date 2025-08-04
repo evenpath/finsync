@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
@@ -25,12 +24,6 @@ export default function WorkspaceHeader() {
   const { toast } = useToast();
   const router = useRouter();
   const auth = getAuth(app);
-
-  const currentWorkspace = user?.customClaims ? {
-    partnerId: user.customClaims.activePartnerId || user.customClaims.partnerId,
-    partnerName: user.customClaims.partnerName || user.displayName || 'Current Workspace',
-    role: user.customClaims.role
-  } : null;
 
   const handleSignOut = async () => {
     try {
@@ -53,39 +46,8 @@ export default function WorkspaceHeader() {
     return (
       <header className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-8 w-48" />
-          </div>
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-8 w-32" />
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  if (!user || !currentWorkspace) {
-    return (
-      <header className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold text-gray-400">
-            No Workspace Selected
-          </div>
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-3">
-                <div className="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-medium">
-                  ?
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-8 w-32" />
         </div>
       </header>
     );
@@ -98,74 +60,65 @@ export default function WorkspaceHeader() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">
-              {currentWorkspace.partnerName}
+              Workbase
             </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge 
-                variant={currentWorkspace.role === 'partner_admin' ? 'default' : 'secondary'}
-                className="text-xs capitalize"
-              >
-                {currentWorkspace.role?.replace('_', ' ') || 'Employee'}
-              </Badge>
-            </div>
           </div>
         </div>
 
         {/* Right side - User menu */}
         <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-3">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                  {user.displayName?.charAt(0)?.toUpperCase() || 
-                   user.phoneNumber?.slice(-2) || 
-                   user.email?.charAt(0)?.toUpperCase() || 
-                   '?'}
-                </div>
-                <div className="text-left hidden md:block">
-                  <div className="text-sm font-medium">
-                    {user.displayName || 'User'}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 px-3">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                    {user.displayName?.charAt(0)?.toUpperCase() || 
+                     user.phoneNumber?.slice(-2) || 
+                     user.email?.charAt(0)?.toUpperCase() || 
+                     '?'}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {user.phoneNumber || user.email || 'No contact info'}
+                  <div className="text-left hidden md:block">
+                    <div className="text-sm font-medium">
+                      {user.displayName || 'User'}
+                    </div>
                   </div>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              
-              <DropdownMenuItem className="flex flex-col items-start p-3">
-                <div className="font-medium">{user.displayName || 'User'}</div>
-                {user.phoneNumber && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                    <Phone className="h-3 w-3" />
-                    {user.phoneNumber}
-                  </div>
-                )}
-                {user.email && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                    <Mail className="h-3 w-3" />
-                    {user.email}
-                  </div>
-                )}
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem>
-                <User className="h-4 w-4 mr-2" />
-                Profile Settings
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                
+                <DropdownMenuItem className="flex flex-col items-start p-3">
+                  <div className="font-medium">{user.displayName || 'User'}</div>
+                  {user.phoneNumber && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                      <Phone className="h-3 w-3" />
+                      {user.phoneNumber}
+                    </div>
+                  )}
+                  {user.email && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                      <Mail className="h-3 w-3" />
+                      {user.email}
+                    </div>
+                  )}
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile Settings
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>
