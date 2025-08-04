@@ -54,3 +54,23 @@ export async function createTaskAction(input: CreateTaskInput): Promise<CreateTa
         };
     }
 }
+
+/**
+ * Deletes a task from Firestore.
+ */
+export async function deleteTaskAction(taskId: string): Promise<{ success: boolean; message: string }> {
+    if (!db) {
+        return { success: false, message: 'Database not available.' };
+    }
+    if (!taskId) {
+        return { success: false, message: 'Task ID is required.' };
+    }
+
+    try {
+        await db.collection('tasks').doc(taskId).delete();
+        return { success: true, message: 'Task deleted successfully.' };
+    } catch (error: any) {
+        console.error('Error deleting task:', error);
+        return { success: false, message: `Failed to delete task: ${error.message}` };
+    }
+}

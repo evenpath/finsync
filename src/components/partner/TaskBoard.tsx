@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Trash2 } from 'lucide-react';
 import type { Task, TeamMember } from '@/lib/types';
 import AssignTaskDialog from './tasks/AssignTaskDialog';
 import { useAuth } from '@/hooks/use-auth';
@@ -12,8 +12,21 @@ import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestor
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Image from 'next/image';
+import { deleteTaskAction } from '@/actions/task-actions';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
-const TaskRow = ({ task, teamMembers }: { task: Task & { id: string }, teamMembers: TeamMember[] }) => {
+const TaskRow = ({ task, teamMembers, onDelete }: { task: Task & { id: string }, teamMembers: TeamMember[], onDelete: (taskId: string) => void }) => {
     const assignee = teamMembers.find(m => m.id === task.assignee);
 
     const getStatusBadge = (status: string) => {
@@ -56,16 +69,39 @@ const TaskRow = ({ task, teamMembers }: { task: Task & { id: string }, teamMembe
             <TableCell>{getStatusBadge(task.status)}</TableCell>
             <TableCell>{getPriorityBadge(task.priority)}</TableCell>
             <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
+            <TableCell className="text-right">
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the task
+                          "{task.title}".
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(task.id)}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+            </TableCell>
         </TableRow>
     );
 };
 
 export default function TaskBoard() {
-    const [tasks, setTasks] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<(Task & { id: string })[]>([]);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
     const partnerId = user?.customClaims?.partnerId;
+    const { toast } = useToast();
 
     useEffect(() => {
         if (!partnerId) {
@@ -82,10 +118,9 @@ export default function TaskBoard() {
                 return {
                     id: doc.id,
                     ...data,
-                    // Convert Firestore Timestamps to serializable strings
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-                };
+                } as Task & { id: string };
             });
             setTasks(fetchedTasks);
             setIsLoading(false);
@@ -106,10 +141,23 @@ export default function TaskBoard() {
 
     }, [partnerId]);
     
+    const handleDeleteTask = async (taskId: string) => {
+        const result = await deleteTaskAction(taskId);
+        if (result.success) {
+            toast({
+                title: 'Task Deleted',
+                description: result.message,
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: result.message,
+            });
+        }
+    };
 
     const handleTaskCreated = (newTask: Task) => {
-        // The Firestore listener will automatically add the new task,
-        // so we don't need to manually update state here.
         console.log("New task created:", newTask);
     };
 
@@ -133,24 +181,25 @@ export default function TaskBoard() {
                             <TableHead>Status</TableHead>
                             <TableHead>Priority</TableHead>
                             <TableHead>Due Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">
+                                <TableCell colSpan={6} className="text-center h-24">
                                     <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                                 </TableCell>
                             </TableRow>
                         ) : tasks.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                     No tasks found. Create one to get started.
                                 </TableCell>
                             </TableRow>
                         ) : (
                            tasks.map(task => (
-                                <TaskRow key={task.id} task={task} teamMembers={teamMembers} />
+                                <TaskRow key={task.id} task={task} teamMembers={teamMembers} onDelete={handleDeleteTask} />
                            ))
                         )}
                     </TableBody>
