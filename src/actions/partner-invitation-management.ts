@@ -174,6 +174,10 @@ export async function regenerateInvitationCodeAction(invitationId: string, partn
 
     const invitationData = invitationDoc.data();
 
+    if (!invitationData) {
+        return { success: false, message: 'Invitation data is missing.' };
+    }
+
     // Verify the invitation belongs to this partner
     if (invitationData?.partnerId !== partnerId) {
       return {

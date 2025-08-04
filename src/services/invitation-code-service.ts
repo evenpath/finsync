@@ -4,6 +4,7 @@
 import { db, adminAuth } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { CodeBasedInvitation, CreateInvitationCodeOutput, AcceptInvitationCodeOutput } from '@/lib/types/invitation';
+import type { TeamMember } from '@/lib/types';
 
 /**
  * Generate a unique 8-character alphanumeric invitation code
@@ -61,10 +62,9 @@ export async function generateInvitationCode(input: {
       };
     }
 
-    const inviterDoc = await db.collection('users').doc(input.invitedBy).get();
+    const inviterUser = await adminAuth.getUser(input.invitedBy);
     const partnerData = partnerDoc.data();
-    const inviterData = inviterDoc.exists ? inviterDoc.data() : null;
-
+    
     // Generate unique code (retry up to 5 times if collision)
     let invitationCode = '';
     let attempts = 0;
@@ -115,8 +115,8 @@ export async function generateInvitationCode(input: {
       expiresAt: Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       status: 'pending',
       partnerName: partnerData?.name || 'Unknown Organization',
-      inviterName: inviterData?.displayName || 'Unknown Admin',
-      inviterEmail: inviterData?.email || 'unknown@example.com'
+      inviterName: inviterUser?.displayName || 'Unknown Admin',
+      inviterEmail: inviterUser?.email || 'unknown@example.com'
     };
 
     await invitationRef.set(invitation);
@@ -236,6 +236,28 @@ export async function acceptInvitationByCode(input: {
 
     await workspaceLinkRef.set(workspaceLink);
     console.log(`[DEBUG] acceptInvitationByCode: Created workspace link for user ${input.uid}`); // DEBUG
+    
+    // Create Team Member document
+    const teamMemberRef = db.collection('teamMembers').doc(input.uid);
+    const teamMemberData: Omit<TeamMember, 'id'> = {
+        userId: input.uid,
+        partnerId: invitation.partnerId,
+        name: invitation.name,
+        email: '', // Not available from phone invite, can be updated later
+        phone: invitation.phoneNumber,
+        role: invitation.role,
+        status: 'active', // User is now active
+        avatar: `https://placehold.co/40x40.png?text=${invitation.name.charAt(0)}`,
+        joinedDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        tasksCompleted: 0,
+        avgCompletionTime: '-',
+        skills: [],
+        createdAt: FieldValue.serverTimestamp(),
+    };
+    await teamMemberRef.set(teamMemberData, { merge: true });
+    console.log(`[DEBUG] acceptInvitationByCode: Created team member document for user ${input.uid}`);
+
 
     // Update user's Firebase Auth custom claims
     const currentUser = await adminAuth.getUser(input.uid);
