@@ -53,7 +53,8 @@ export async function inviteEmployeeAction(data: {
             userId: userResult.userId,
             partnerId: data.partnerId,
             name: data.name,
-            email: data.email || data.phone || 'N/A', // Store phone if email is not available
+            email: data.email || 'N/A', // Store email
+            phone: data.phone || 'N/A', // Store phone
             role: data.role || 'employee',
             status: 'invited',
             avatar: `https://placehold.co/40x40.png?text=${data.name.charAt(0)}`,

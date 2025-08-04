@@ -1,3 +1,4 @@
+
 // src/components/partner/TeamManagement.tsx
 "use client";
 
@@ -27,12 +28,12 @@ import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
-import { useAuth } from "@/hooks/use-auth";
+import { useMultiWorkspaceAuth } from "@/hooks/use-multi-workspace-auth";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 
 export default function TeamManagement() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, currentWorkspace, loading: authLoading } = useMultiWorkspaceAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -40,8 +41,7 @@ export default function TeamManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  // Get partnerId from current user's custom claims
-  const partnerId = user?.customClaims?.partnerId;
+  const partnerId = currentWorkspace?.partnerId;
 
   useEffect(() => {
     if (authLoading || !partnerId || !db) {
@@ -51,30 +51,26 @@ export default function TeamManagement() {
 
     setIsLoading(true);
     
-    // Query teamMembers collection filtered by partnerId
-    const teamMembersRef = collection(db, "teamMembers");
-    const q = query(
-      teamMembersRef,
-      where("partnerId", "==", partnerId),
-      orderBy("createdAt", "desc")
-    );
+    const employeesRef = collection(db, `partners/${partnerId}/employees`);
+    const q = query(employeesRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const membersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Ensure dates are converted to strings if they're timestamps
-        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-        lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive,
-      } as TeamMember));
+      const membersData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Firestore timestamps need to be converted
+          joinedDate: data.joinedDate?.toDate ? data.joinedDate.toDate().toISOString() : data.joinedDate,
+          lastActive: data.lastActive?.toDate ? data.lastActive.toDate().toISOString() : data.lastActive,
+        } as TeamMember;
+      });
       
       setTeamMembers(membersData);
       
-      // Auto-select first member if none selected
       if (!selectedMember && membersData.length > 0) {
         setSelectedMember(membersData[0]);
       } else if (selectedMember) {
-        // Update selected member if it was modified
         const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
         if (updatedSelectedMember) {
           setSelectedMember(updatedSelectedMember);
@@ -83,6 +79,10 @@ export default function TeamManagement() {
         } else {
           setSelectedMember(null);
         }
+      } else if (membersData.length > 0) {
+        setSelectedMember(membersData[0]);
+      } else {
+        setSelectedMember(null);
       }
       
       setIsLoading(false);
@@ -132,35 +132,38 @@ export default function TeamManagement() {
           title: "Invitation Failed",
           description: result.message,
         });
+        throw new Error(result.message);
       }
     } catch (error) {
       console.error("Error inviting member:", error);
-      toast({
-        variant: "destructive",
-        title: "An Unexpected Error Occurred",
-        description: "Please try again later.",
-      });
+      // Let the caller handle showing the error toast
+      throw error;
     }
   };
 
-  // Filter team members based on search term
   const filteredMembers = teamMembers.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.phone?.includes(searchTerm)
+    member.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (date: any) => {
-    if (!date) return 'Never';
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString();
+  const formatDate = (dateString: any) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+      return 'Invalid Date';
+    }
   };
 
-  const formatTime = (date: any) => {
-    if (!date) return 'Never';
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleString();
+  const formatTime = (timeString: any) => {
+    if (!timeString || timeString === 'Never') return 'Never';
+     try {
+      return new Date(timeString).toLocaleString();
+    } catch (e) {
+      return 'Invalid Time';
+    }
   };
+
 
   if (authLoading) {
     return (
@@ -199,7 +202,6 @@ export default function TeamManagement() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Team Members List */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -305,7 +307,7 @@ export default function TeamManagement() {
                             Last active: {formatTime(member.lastActive)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Joined: {formatDate(member.createdAt)}
+                            Joined: {formatDate(member.joinedDate)}
                           </p>
                         </div>
                       </div>
@@ -317,7 +319,6 @@ export default function TeamManagement() {
           </Card>
         </div>
 
-        {/* Selected Member Details */}
         <div>
           <Card className="sticky top-6">
             <CardHeader>
@@ -376,7 +377,7 @@ export default function TeamManagement() {
                       <Calendar className="w-4 h-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">Joined</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(selectedMember.createdAt)}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(selectedMember.joinedDate)}</p>
                       </div>
                     </div>
 
@@ -410,7 +411,6 @@ export default function TeamManagement() {
         </div>
       </div>
 
-      {/* Invite Member Modal */}
       <InviteMemberModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
