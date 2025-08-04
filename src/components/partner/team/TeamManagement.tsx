@@ -168,7 +168,11 @@ export default function TeamManagement() {
                 <CardTitle className="font-headline">
                   Manage Team
                 </CardTitle>
-                 {partnerId && userRole === 'partner_admin' && <InviteEmployeeByCodeDialog partnerId={partnerId} />}
+                <div className="flex items-center gap-2">
+                  {partnerId && userRole === 'partner_admin' && (
+                    <InviteEmployeeByCodeDialog partnerId={partnerId} />
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
