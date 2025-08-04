@@ -44,6 +44,7 @@ export default function TeamManagement() {
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Get partnerId from current user's custom claims
   const partnerId = user?.customClaims?.partnerId;
   const userRole = user?.customClaims?.role;
 
@@ -61,22 +62,38 @@ export default function TeamManagement() {
     setIsLoading(true);
     setFirestoreError(null);
     
-    const employeesRef = collection(db, "partners", partnerId, "employees");
-    const q = query(employeesRef, orderBy("name"));
+    // Query teamMembers collection filtered by partnerId
+    const teamMembersRef = collection(db, "teamMembers");
+    const q = query(
+      teamMembersRef,
+      where("partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const membersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        // Ensure dates are converted to strings if they're timestamps
+        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+        lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive,
       } as TeamMember));
       
       setTeamMembers(membersData);
       
+      // Auto-select first member if none selected
       if (!selectedMember && membersData.length > 0) {
         setSelectedMember(membersData[0]);
       } else if (selectedMember) {
+        // Update selected member if it was modified
         const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
-        setSelectedMember(updatedSelectedMember || null);
+        if (updatedSelectedMember) {
+          setSelectedMember(updatedSelectedMember);
+        } else if (membersData.length > 0) {
+          setSelectedMember(membersData[0]);
+        } else {
+          setSelectedMember(null);
+        }
       }
       
       setIsLoading(false);
@@ -85,8 +102,13 @@ export default function TeamManagement() {
       console.error("Firestore error fetching team members:", error);
       
       let errorMessage = "Could not fetch team members.";
+      
       if (error.code === 'permission-denied') {
-        errorMessage = "Permission denied. Check your Firestore security rules.";
+        errorMessage = "Permission denied. Check your Firestore security rules and custom claims.";
+      } else if (error.code === 'failed-precondition') {
+        errorMessage = "Database index missing. Check Firestore console for required indexes.";
+      } else if (error.message) {
+        errorMessage = `Firestore error: ${error.message}`;
       }
       
       setFirestoreError(errorMessage);
@@ -146,30 +168,25 @@ export default function TeamManagement() {
     }
   };
 
+  // Filter team members based on search term
   const filteredMembers = teamMembers.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.phone?.includes(searchTerm)
   );
 
-  const formatDate = (dateString: any) => {
-    if (!dateString) return 'N/A';
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch (e) {
-      return 'Invalid Date';
-    }
+  const formatDate = (date: any) => {
+    if (!date) return 'Never';
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString();
   };
 
-  const formatTime = (timeString: any) => {
-    if (!timeString || timeString === 'Never') return 'Never';
-     try {
-      return new Date(timeString).toLocaleString();
-    } catch (e) {
-      return 'Invalid Time';
-    }
+  const formatTime = (date: any) => {
+    if (!date) return 'Never';
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleString();
   };
-  
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -203,6 +220,7 @@ export default function TeamManagement() {
             <p className="text-muted-foreground">Could not identify your organization. Please log in again.</p>
           </div>
           
+          {/* Debug Information */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left max-w-md">
             <h4 className="font-medium text-yellow-800 mb-2">Debug Information:</h4>
             <div className="text-sm text-yellow-700 space-y-1">
@@ -227,7 +245,7 @@ export default function TeamManagement() {
       </div>
     );
   }
-  
+
   if (firestoreError) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -237,14 +255,21 @@ export default function TeamManagement() {
             <h3 className="text-lg font-semibold text-destructive">Database Error</h3>
             <p className="text-muted-foreground">{firestoreError}</p>
           </div>
-           <Button onClick={() => window.location.reload()}>
+          
+          <div className="flex gap-2">
+            <Link href="/partner/team/diagnostics">
+              <Button variant="outline">
+                View Diagnostics
+              </Button>
+            </Link>
+            <Button onClick={() => window.location.reload()}>
               Try Again
             </Button>
+          </div>
         </div>
       </div>
     );
   }
-
 
   return (
     <div className="space-y-6">
@@ -268,6 +293,7 @@ export default function TeamManagement() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Team Members List */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -373,7 +399,7 @@ export default function TeamManagement() {
                             Last active: {formatTime(member.lastActive)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Joined: {formatDate(member.joinedDate)}
+                            Joined: {formatDate(member.createdAt)}
                           </p>
                         </div>
                       </div>
@@ -385,6 +411,7 @@ export default function TeamManagement() {
           </Card>
         </div>
 
+        {/* Selected Member Details */}
         <div>
           <Card className="sticky top-6">
             <CardHeader>
@@ -443,7 +470,7 @@ export default function TeamManagement() {
                       <Calendar className="w-4 h-4 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">Joined</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(selectedMember.joinedDate)}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(selectedMember.createdAt)}</p>
                       </div>
                     </div>
 
@@ -477,6 +504,7 @@ export default function TeamManagement() {
         </div>
       </div>
 
+      {/* Invite Member Modal */}
       <InviteMemberModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}

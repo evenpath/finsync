@@ -1,4 +1,3 @@
-
 // src/actions/partner-actions.ts
 'use server';
 
@@ -39,7 +38,6 @@ export async function inviteEmployeeAction(data: {
       role: data.role || 'employee',
     });
     
-    // If user creation is successful, save their profile to the partner's employee subcollection
     if (userResult.success && userResult.userId) {
         if (!db) {
             console.error("Database not initialized, cannot save employee profile.");
@@ -53,8 +51,8 @@ export async function inviteEmployeeAction(data: {
             userId: userResult.userId,
             partnerId: data.partnerId,
             name: data.name,
-            email: data.email || 'N/A', // Store email
-            phone: data.phone || 'N/A', // Store phone
+            email: data.email || 'N/A',
+            phone: data.phone || 'N/A',
             role: data.role || 'employee',
             status: 'invited',
             avatar: `https://placehold.co/40x40.png?text=${data.name.charAt(0)}`,
