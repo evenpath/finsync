@@ -11,56 +11,81 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Building2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, currentWorkspace, availableWorkspaces } = useMultiWorkspaceAuth();
+  const { user, loading, isAuthenticated, availableWorkspaces } = useMultiWorkspaceAuth();
   const router = useRouter();
 
+  // This effect handles redirecting unauthenticated users.
   React.useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        // If not logged in, redirect to login
-        router.push('/login');
-      } else if (user.customClaims?.role && user.customClaims.role !== 'employee' && user.customClaims.role !== 'partner_admin') {
-         // If logged in but not an employee or partner_admin, redirect to home
-        router.push('/');
-      }
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [loading, isAuthenticated, router]);
 
-  // Show loading skeleton while auth state is being determined
-  if (loading) {
+  // Show a loading skeleton while we verify authentication.
+  if (loading || !isAuthenticated) {
     return (
-      <div className="flex h-screen">
-        <div className="w-20 p-4 border-r bg-gray-100">
-          <Skeleton className="h-10 w-10 rounded-lg mb-4" />
-          <Skeleton className="h-12 w-12 rounded-full mb-2" />
-          <Skeleton className="h-12 w-12 rounded-full mb-2" />
-        </div>
-        <div className="flex-1">
-          <div className="p-4 border-b">
-            <Skeleton className="h-10 w-48" />
-          </div>
-          <div className="p-6">
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </div>
+      <div className="flex h-screen w-full items-center justify-center">
+        <Skeleton className="h-64 w-full max-w-md" />
       </div>
     );
   }
-
-  // After loading, if user is not authorized, they will be redirected by the useEffect.
-  // We can show a simple message or skeleton in the meantime.
-  if (!user || (user.customClaims?.role !== 'employee' && user.customClaims?.role !== 'partner_admin')) {
+  
+  // If the user is authenticated but does not have the correct role, deny access.
+  const userRole = user?.customClaims?.role;
+  if (userRole && userRole !== 'employee' && userRole !== 'partner_admin') {
       return (
-        <div className="flex items-center justify-center min-h-screen">
-            <p>Redirecting...</p>
+        <div className="flex h-screen w-full items-center justify-center p-4">
+            <Card className="w-full max-w-md border-destructive">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertCircle />
+                        Access Denied
+                    </CardTitle>
+                    <CardDescription>
+                        Your account role ({userRole}) does not have permission to access this page.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Link href="/">
+                        <Button variant="outline">Go to Homepage</Button>
+                    </Link>
+                </CardContent>
+            </Card>
         </div>
       );
   }
-  
-  // If authorized, show the employee dashboard. The dashboard itself will handle
-  // the case where there are no workspaces.
+
+  // If the user is an employee but has no workspaces, show a helpful message.
+  if (availableWorkspaces.length === 0) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Building2 />
+                        No Workspace Access
+                    </CardTitle>
+                    <CardDescription>
+                        Your account is not yet associated with any workspace.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Please contact your organization's administrator. They will need to send you an invitation to join your team's workspace.
+                    </p>
+                    <Link href="/login">
+                        <Button variant="outline">Back to Login</Button>
+                    </Link>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
+  // If all checks pass, show the employee dashboard.
   return (
     <div className="flex h-screen bg-secondary/30">
       <EnhancedWorkspaceSwitcher />
