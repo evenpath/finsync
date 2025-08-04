@@ -5,7 +5,8 @@
 import { createUserInTenant } from '@/ai/flows/user-management-flow';
 import { getPartnerTenantId, getPartnerDetailsByPartnerId } from '@/services/tenant-service';
 import type { CreateUserInTenantOutput } from '@/ai/flows/user-management-flow';
-import type { Partner } from '@/lib/types';
+import type { Partner, TeamMember } from '@/lib/types';
+import { db } from '@/lib/firebase-admin';
 
 
 export async function inviteEmployeeAction(data: {
@@ -37,6 +38,37 @@ export async function inviteEmployeeAction(data: {
       partnerId: data.partnerId,
       role: data.role || 'employee',
     });
+    
+    // If user creation is successful, save their profile to the partner's employee subcollection
+    if (userResult.success && userResult.userId) {
+        if (!db) {
+            console.error("Database not initialized, cannot save employee profile.");
+            return {
+                success: false,
+                message: "User account created, but could not save profile. Please contact support."
+            };
+        }
+        
+        const employeeData: Omit<TeamMember, 'id'> = {
+            userId: userResult.userId,
+            partnerId: data.partnerId,
+            name: data.name,
+            email: data.email || data.phone || 'N/A', // Store phone if email is not available
+            role: data.role || 'employee',
+            status: 'invited',
+            avatar: `https://placehold.co/40x40.png?text=${data.name.charAt(0)}`,
+            joinedDate: new Date().toISOString(),
+            lastActive: 'Never',
+            tasksCompleted: 0,
+            avgCompletionTime: '-',
+            skills: [],
+        };
+        
+        const employeeDocRef = db.collection('partners').doc(data.partnerId).collection('employees').doc(userResult.userId);
+        await employeeDocRef.set(employeeData);
+        console.log(`Saved employee profile for ${data.name} under partner ${data.partnerId}`);
+    }
+
 
     return userResult;
     

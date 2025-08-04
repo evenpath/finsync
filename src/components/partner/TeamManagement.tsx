@@ -2,8 +2,7 @@
 // src/components/partner/TeamManagement.tsx
 "use client";
 
-import React, { useState } from "react";
-import { mockTeamMembers } from "@/lib/mockData";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/shared/Badge";
@@ -23,20 +22,55 @@ import {
 import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
+import { usePartnerAuth } from "@/hooks/use-partner-auth";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, query } from "firebase/firestore";
 
 export default function TeamManagement() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(teamMembers[0] || null);
+  const { partner, loading: partnerLoading } = usePartnerAuth();
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user } = useAuth();
 
+  useEffect(() => {
+    if (partnerLoading || !partner?.id || !db) {
+      setIsLoading(partnerLoading);
+      return;
+    }
+
+    setIsLoading(true);
+    const employeesRef = collection(db, `partners/${partner.id}/employees`);
+    const q = query(employeesRef);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const membersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as TeamMember));
+      setTeamMembers(membersData);
+      
+      if (!selectedMember && membersData.length > 0) {
+        setSelectedMember(membersData[0]);
+      }
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching team members:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not fetch team members."
+      });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [partner, partnerLoading, toast, selectedMember]);
 
   const handleInviteMember = async (newMemberData: { name: string; phone: string; role: 'partner_admin' | 'employee' }) => {
-    const partnerId = user?.customClaims?.partnerId;
-    if (!partnerId) {
+    if (!partner?.id) {
         toast({
             variant: "destructive",
             title: "Error",
@@ -48,7 +82,7 @@ export default function TeamManagement() {
     try {
         const result = await inviteEmployeeAction({
             ...newMemberData,
-            partnerId: partnerId,
+            partnerId: partner.id,
         });
 
         if (result.success) {
@@ -56,22 +90,7 @@ export default function TeamManagement() {
                 title: "Invitation Sent",
                 description: `${newMemberData.name} has been invited to join your team.`,
             });
-            // In a real app, you'd refetch the team members list here.
-            // For now, we'll optimistically add the user to the UI.
-            const newMember: TeamMember = {
-              id: teamMembers.length + 1,
-              name: newMemberData.name,
-              email: newMemberData.phone, // Display phone number here
-              role: newMemberData.role,
-              status: 'invited',
-              lastActive: 'Never',
-              joinedDate: new Date().toISOString().split('T')[0],
-              tasksCompleted: 0,
-              avgCompletionTime: '-',
-              skills: [],
-              avatar: `https://placehold.co/40x40.png?text=${newMemberData.name.charAt(0)}`
-            };
-            setTeamMembers(prev => [...prev, newMember]);
+            // The real-time listener will automatically update the list.
             setIsInviteModalOpen(false);
         } else {
             toast({
@@ -88,6 +107,10 @@ export default function TeamManagement() {
         });
     }
   };
+
+  if (isLoading) {
+    return <div>Loading Team...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -164,11 +187,11 @@ export default function TeamManagement() {
                   </div>
                   <div className="space-y-2 pt-4">
                     <div><label className="text-sm font-medium text-muted-foreground">Contact</label><p>{selectedMember.email}</p></div>
-                    <div><label className="text-sm font-medium text-muted-foreground">Joined</label><p>{selectedMember.joinedDate}</p></div>
+                    <div><label className="text-sm font-medium text-muted-foreground">Joined</label><p>{new Date(selectedMember.joinedDate || Date.now()).toLocaleDateString()}</p></div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground">Skills</label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedMember.skills.length > 0 ? selectedMember.skills.map(skill => (
+                            {selectedMember.skills?.length > 0 ? selectedMember.skills.map(skill => (
                                 <Badge key={skill} variant="purple">{skill}</Badge>
                             )) : <p className="text-sm text-muted-foreground">No skills assigned</p>}
                         </div>
