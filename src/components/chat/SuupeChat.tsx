@@ -61,6 +61,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import Image from 'next/image';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Mock Data for Chat
 const mockUser = {
@@ -969,7 +970,7 @@ const ChatContactsList = ({ chats, selectedChat, onChatSelect, searchTerm, onSea
           <div
             key={chat.id}
             onClick={() => onChatSelect(chat)}
-            className="flex items-center gap-4 p-4 hover:bg-secondary cursor-pointer transition-colors border-b"
+            className={`flex items-center gap-4 p-4 hover:bg-secondary cursor-pointer transition-colors border-b ${selectedChat?.id === chat.id ? 'bg-secondary' : ''}`}
           >
             <div className="relative">
               {getChatIcon(chat)}
@@ -1221,6 +1222,7 @@ const MessageBubble = ({ message, isOwn, onReply, onReact }: any) => {
 };
 
 const ChatHeader = ({ chat, onBack, onShowInfo }: any) => {
+  const isMobile = useIsMobile();
   const getChatAvatar = () => {
     if (chat.type === 'workflow') {
       return (
@@ -1249,9 +1251,11 @@ const ChatHeader = ({ chat, onBack, onShowInfo }: any) => {
   return (
     <div className="flex items-center justify-between p-4 border-b bg-card">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="p-1 hover:bg-secondary rounded-lg">
-          <ChevronLeft className="w-6 h-6 text-muted-foreground" />
-        </button>
+        {isMobile && (
+          <button onClick={onBack} className="p-1 hover:bg-secondary rounded-lg">
+            <ChevronLeft className="w-6 h-6 text-muted-foreground" />
+          </button>
+        )}
         <div 
           className="relative cursor-pointer"
           onClick={() => chat.type === 'group' && onShowInfo?.()}
@@ -1550,6 +1554,81 @@ const ChatInterface = ({ chat, messages, onSendMessage, onBack }: any) => {
       />
     </div>
   );
+};
+
+const MainContent = ({activeTab, selectedChat, setSelectedChat, activeWorkspace, onSendMessage, onNewChat}: any) => {
+    const isMobile = useIsMobile();
+    
+    // For mobile, we only show one view at a time
+    if (isMobile) {
+        switch (activeTab) {
+            case 'chats':
+                return selectedChat ? (
+                    <ChatInterface
+                        chat={selectedChat}
+                        messages={mockMessages}
+                        onSendMessage={onSendMessage}
+                        onBack={() => setSelectedChat(null)}
+                    />
+                ) : (
+                    <ChatContactsList
+                        chats={mockChats}
+                        selectedChat={selectedChat}
+                        onChatSelect={setSelectedChat}
+                        searchTerm={""}
+                        onSearchChange={() => {}}
+                        activeWorkspace={activeWorkspace}
+                        onNewChat={onNewChat}
+                    />
+                );
+            case 'tasks':
+                return <TasksView activeWorkspace={activeWorkspace} />;
+            case 'settings':
+                return <SettingsView activeWorkspace={activeWorkspace} />;
+            default:
+                return (
+                    <div className="flex-1 flex items-center justify-center bg-background">
+                        <div className="text-center">
+                            <p className="text-muted-foreground">Select a tab to continue</p>
+                        </div>
+                    </div>
+                );
+        }
+    }
+    
+    // For desktop, we can have a two-pane layout
+    return (
+        <div className="flex flex-1 overflow-hidden">
+            <div className="w-full md:w-1/3 xl:w-1/4 border-r">
+                <ChatContactsList
+                    chats={mockChats}
+                    selectedChat={selectedChat}
+                    onChatSelect={setSelectedChat}
+                    searchTerm={""}
+                    onSearchChange={() => {}}
+                    activeWorkspace={activeWorkspace}
+                    onNewChat={onNewChat}
+                />
+            </div>
+            <div className="flex-1 hidden md:flex flex-col">
+                {selectedChat ? (
+                    <ChatInterface
+                        chat={selectedChat}
+                        messages={mockMessages}
+                        onSendMessage={onSendMessage}
+                        onBack={() => setSelectedChat(null)}
+                    />
+                ) : (
+                    <div className="flex-1 flex items-center justify-center bg-background">
+                        <div className="text-center">
+                            <MessageSquare className="w-16 h-16 mb-4 text-gray-300" />
+                            <p className="text-lg font-medium text-muted-foreground">Select a chat to start messaging</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
 const TasksView = ({ activeWorkspace }: any) => {
@@ -2141,10 +2220,21 @@ export default function SuupeChatApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeWorkspace, setActiveWorkspace] = useState(mockWorkspaces[0]);
   const [activeTab, setActiveTab] = useState('chats');
+  const isMobile = useIsMobile();
 
-  const handleChatSelect = (chat: any) => {
-    setSelectedChat(chat);
-  };
+  useEffect(() => {
+    // Auto-select the first chat on desktop if none is selected
+    if (!isMobile && !selectedChat && mockChats.length > 0) {
+      setSelectedChat(mockChats[0]);
+    }
+    // If we go to mobile view, and a chat is selected, we want to keep it
+    // if we go to desktop from mobile, and no chat is selected, select one.
+    if (!isMobile && !selectedChat) {
+      setSelectedChat(mockChats[0]);
+    }
+
+  }, [isMobile, selectedChat]);
+
 
   const handleSendMessage = (content: string, replyTo: any) => {
     const newMessage = {
@@ -2167,50 +2257,19 @@ export default function SuupeChatApp() {
     console.log('New chat action');
   };
 
-  const renderMainContent = () => {
-    switch (activeTab) {
-      case 'chats':
-        return selectedChat ? (
-          <ChatInterface
-            chat={selectedChat}
-            messages={mockMessages}
-            onSendMessage={handleSendMessage}
-            onBack={() => setSelectedChat(null)}
-          />
-        ) : (
-          <ChatContactsList
-            chats={mockChats}
-            selectedChat={selectedChat}
-            onChatSelect={handleChatSelect}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            activeWorkspace={activeWorkspace}
-            onNewChat={handleNewChat}
-          />
-        );
-      case 'tasks':
-        return <TasksView activeWorkspace={activeWorkspace} />;
-      case 'settings':
-        return <SettingsView activeWorkspace={activeWorkspace} />;
-      default:
-        return (
-          <div className="flex-1 flex items-center justify-center bg-background">
-            <div className="text-center">
-              <p className="text-muted-foreground">Select a tab to continue</p>
-            </div>
-          </div>
-        );
-    }
-  };
-
   return (
     <div className="h-screen flex flex-col bg-card">
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col">
-          {renderMainContent()}
-        </div>
+        <MainContent 
+            activeTab={activeTab}
+            selectedChat={selectedChat}
+            setSelectedChat={setSelectedChat}
+            activeWorkspace={activeWorkspace}
+            onSendMessage={handleSendMessage}
+            onNewChat={handleNewChat}
+        />
       </div>
-      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      {isMobile && <TabBar activeTab={activeTab} onTabChange={setActiveTab} />}
     </div>
   );
 }
