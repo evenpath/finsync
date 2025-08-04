@@ -8,7 +8,7 @@ import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
 function PartnerTeamDiagnosticsPage() {
   return (
-    <div className="p-6">
+    <div className="p-6 h-full overflow-y-auto">
       <TeamManagementDiagnostics />
     </div>
   );

@@ -2,10 +2,10 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { getPartnerDetailsAction } from '@/actions/partner-actions';
 import type { Partner, TeamMember } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
+import { getPartnerDetailsAction } from '@/actions/partner-actions';
 
 interface PartnerAuthState {
   partner: Partner | null;
@@ -72,9 +72,10 @@ export function usePartnerAuth(partnerId?: string | null) {
     
     fetchPartnerDetails();
 
-    // Listen for employee updates from the correct subcollection
+    // Listen for employee updates from the correct subcollection: partners/{partnerId}/employees
     const employeesRef = collection(db, `partners/${partnerId}/employees`);
     const q = query(employeesRef);
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const membersData = snapshot.docs.map(doc => ({
         id: doc.id,
