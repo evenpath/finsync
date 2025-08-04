@@ -50,7 +50,7 @@ export default function Home() {
           </Card>
         </Link>
         
-        <Link href="/partner/login">
+        <Link href="/employee">
           <Card className="h-full hover:border-primary hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="font-headline text-2xl">Employee Dashboard</CardTitle>
