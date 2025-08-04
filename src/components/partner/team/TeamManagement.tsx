@@ -25,10 +25,8 @@ import {
   RefreshCw,
   Ticket,
 } from "lucide-react";
-import InviteEmployeeDialog from "./InviteEmployeeDialog";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { inviteEmployeeAction } from "@/actions/partner-actions";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
@@ -41,7 +39,6 @@ export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
@@ -109,51 +106,7 @@ export default function TeamManagement() {
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading]);
-
-  const handleInviteMember = async (newMemberData: { 
-    name: string; 
-    phone?: string; 
-    email?: string;
-    role: 'partner_admin' | 'employee' 
-  }) => {
-    if (!partnerId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not identify your organization. Please log in again.",
-      });
-      return;
-    }
-
-    try {
-      const result = await inviteEmployeeAction({
-        ...newMemberData,
-        partnerId: partnerId,
-      });
-
-      if (result.success) {
-        toast({
-          title: "Invitation Sent",
-          description: `${newMemberData.name} has been invited to join your team.`,
-        });
-        setIsInviteModalOpen(false);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invitation Failed",
-          description: result.message,
-        });
-      }
-    } catch (error) {
-      console.error("Error inviting member:", error);
-      toast({
-        variant: "destructive",
-        title: "An Unexpected Error Occurred",
-        description: "Please try again later.",
-      });
-    }
-  };
+  }, [partnerId, authLoading, toast, selectedMember]);
 
   const filteredMembers = teamMembers.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

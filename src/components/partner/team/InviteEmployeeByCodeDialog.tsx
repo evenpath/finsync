@@ -103,7 +103,7 @@ export default function InviteEmployeeByCodeDialog({ partnerId, onSuccess }: Inv
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="w-4 h-4 mr-2" />
-          Invite with Code
+          Invite Employee
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
