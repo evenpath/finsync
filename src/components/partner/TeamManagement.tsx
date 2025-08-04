@@ -1,3 +1,4 @@
+
 // src/components/partner/team/TeamManagement.tsx
 "use client";
 
@@ -5,16 +6,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/shared/Badge";
-import { Input } from "@/components/ui/input";
 import {
-  UserPlus,
-  Filter,
-  Download,
-  Search,
-  Send,
-  MessageSquare,
-  Settings,
-  XCircle,
   Users,
   Phone,
   Mail,
@@ -24,11 +16,12 @@ import {
   AlertTriangle,
   RefreshCw,
   Ticket,
+  MessageSquare,
+  Send,
+  Settings,
 } from "lucide-react";
-import InviteEmployeeDialog from "./team/InviteEmployeeDialog";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { inviteEmployeeAction } from "@/actions/partner-actions";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
@@ -41,7 +34,6 @@ export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
@@ -109,51 +101,7 @@ export default function TeamManagement() {
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading]);
-
-  const handleInviteMember = async (newMemberData: { 
-    name: string; 
-    phone?: string; 
-    email?: string;
-    role: 'partner_admin' | 'employee' 
-  }) => {
-    if (!partnerId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not identify your organization. Please log in again.",
-      });
-      return;
-    }
-
-    try {
-      const result = await inviteEmployeeAction({
-        ...newMemberData,
-        partnerId: partnerId,
-      });
-
-      if (result.success) {
-        toast({
-          title: "Invitation Sent",
-          description: `${newMemberData.name} has been invited to join your team.`,
-        });
-        setIsInviteModalOpen(false);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invitation Failed",
-          description: result.message,
-        });
-      }
-    } catch (error) {
-      console.error("Error inviting member:", error);
-      toast({
-        variant: "destructive",
-        title: "An Unexpected Error Occurred",
-        description: "Please try again later.",
-      });
-    }
-  };
+  }, [partnerId, authLoading, toast, selectedMember]);
 
   const filteredMembers = teamMembers.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -217,13 +165,7 @@ export default function TeamManagement() {
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   {partnerId && userRole === 'partner_admin' && (
-                    <>
-                      <Button onClick={() => setIsInviteModalOpen(true)}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Invite Employee
-                      </Button>
-                      <InviteEmployeeByCodeDialog partnerId={partnerId} />
-                    </>
+                    <InviteEmployeeByCodeDialog partnerId={partnerId} />
                   )}
                 </div>
               </div>
@@ -363,11 +305,6 @@ export default function TeamManagement() {
           </Card>
         </div>
       </div>
-       <InviteEmployeeDialog 
-        isOpen={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onInviteMember={handleInviteMember}
-      />
     </div>
   );
 }
