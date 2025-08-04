@@ -58,6 +58,7 @@ export async function joinWorkspaceWithCodeAction(data: {
   phoneNumber: string;
   uid: string;
 }): Promise<AcceptInvitationCodeOutput> {
+  console.log('[DEBUG] joinWorkspaceWithCodeAction: Received data', data); // DEBUG
   try {
     if (!data.invitationCode || data.invitationCode.trim().length !== 8) {
       return {

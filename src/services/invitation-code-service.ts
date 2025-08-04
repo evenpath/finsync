@@ -146,7 +146,9 @@ export async function acceptInvitationByCode(input: {
   phoneNumber: string;
   uid: string;
 }): Promise<AcceptInvitationCodeOutput> {
+  console.log(`[DEBUG] acceptInvitationByCode: Attempting to accept code '${input.invitationCode}' for user '${input.uid}'`); // DEBUG
   if (!db || !adminAuth) {
+    console.error('[DEBUG] acceptInvitationByCode: Database or Auth not available.'); // DEBUG
     return {
       success: false,
       message: 'Database or Auth not available'
@@ -163,6 +165,7 @@ export async function acceptInvitationByCode(input: {
       .get();
 
     if (invitationQuery.empty) {
+      console.error(`[DEBUG] acceptInvitationByCode: Query for code '${input.invitationCode.toUpperCase()}' returned no results.`); // DEBUG
       return {
         success: false,
         message: 'Invalid or expired invitation code'
@@ -171,10 +174,12 @@ export async function acceptInvitationByCode(input: {
 
     const invitationDoc = invitationQuery.docs[0];
     const invitation = invitationDoc.data() as CodeBasedInvitation;
+    console.log('[DEBUG] acceptInvitationByCode: Found invitation document:', invitationDoc.id); // DEBUG
 
     // Check if code has expired
     const now = Timestamp.now();
     if (invitation.expiresAt.toMillis() < now.toMillis()) {
+      console.warn(`[DEBUG] acceptInvitationByCode: Code expired at ${invitation.expiresAt.toDate()}`); // DEBUG
       await invitationDoc.ref.update({
         status: 'expired',
         expiredAt: FieldValue.serverTimestamp()
@@ -188,6 +193,7 @@ export async function acceptInvitationByCode(input: {
 
     // Verify phone number matches (optional security check)
     if (invitation.phoneNumber !== input.phoneNumber) {
+      console.error(`[DEBUG] acceptInvitationByCode: Phone number mismatch. Expected ${invitation.phoneNumber}, got ${input.phoneNumber}`); // DEBUG
       return {
         success: false,
         message: 'Phone number does not match the invitation'
@@ -203,6 +209,7 @@ export async function acceptInvitationByCode(input: {
       .get();
 
     if (!existingWorkspaceLink.empty) {
+      console.warn(`[DEBUG] acceptInvitationByCode: User ${input.uid} already in workspace ${invitation.partnerId}`); // DEBUG
       return {
         success: false,
         message: 'You are already a member of this workspace'
@@ -228,6 +235,7 @@ export async function acceptInvitationByCode(input: {
     };
 
     await workspaceLinkRef.set(workspaceLink);
+    console.log(`[DEBUG] acceptInvitationByCode: Created workspace link for user ${input.uid}`); // DEBUG
 
     // Update user's Firebase Auth custom claims
     const currentUser = await adminAuth.getUser(input.uid);
@@ -244,6 +252,7 @@ export async function acceptInvitationByCode(input: {
     };
 
     await adminAuth.setCustomUserClaims(input.uid, updatedClaims);
+    console.log(`[DEBUG] acceptInvitationByCode: Updated custom claims for user ${input.uid}`); // DEBUG
 
     // Mark invitation as accepted
     await invitationDoc.ref.update({
@@ -251,6 +260,7 @@ export async function acceptInvitationByCode(input: {
       acceptedAt: FieldValue.serverTimestamp(),
       acceptedBy: input.uid
     });
+    console.log('[DEBUG] acceptInvitationByCode: Marked invitation as accepted.'); // DEBUG
 
     return {
       success: true,
@@ -264,7 +274,7 @@ export async function acceptInvitationByCode(input: {
     };
 
   } catch (error: any) {
-    console.error('Error accepting invitation by code:', error);
+    console.error('[DEBUG] acceptInvitationByCode: CATCH BLOCK', error); // DEBUG
     return {
       success: false,
       message: `Failed to accept invitation: ${error.message}`
@@ -280,7 +290,9 @@ export async function getInvitationByCode(invitationCode: string): Promise<{
   message: string;
   invitation?: CodeBasedInvitation;
 }> {
+  console.log(`[DEBUG] getInvitationByCode: Searching for code: '${invitationCode}'`); // DEBUG
   if (!db) {
+    console.error("[DEBUG] getInvitationByCode: Database not available."); // DEBUG
     return {
       success: false,
       message: 'Database not available'
@@ -296,6 +308,7 @@ export async function getInvitationByCode(invitationCode: string): Promise<{
       .get();
 
     if (invitationQuery.empty) {
+      console.warn(`[DEBUG] getInvitationByCode: No pending invitation found for code '${invitationCode.toUpperCase()}'`); // DEBUG
       return {
         success: false,
         message: 'Invitation code not found or expired'
@@ -303,10 +316,12 @@ export async function getInvitationByCode(invitationCode: string): Promise<{
     }
 
     const invitation = invitationQuery.docs[0].data() as CodeBasedInvitation;
+    console.log(`[DEBUG] getInvitationByCode: Found invitation:`, invitation); // DEBUG
 
     // Check if expired
     const now = Timestamp.now();
     if (invitation.expiresAt.toMillis() < now.toMillis()) {
+      console.warn(`[DEBUG] getInvitationByCode: Invitation ${invitationCode} has expired.`); // DEBUG
       return {
         success: false,
         message: 'This invitation code has expired'
@@ -320,7 +335,7 @@ export async function getInvitationByCode(invitationCode: string): Promise<{
     };
 
   } catch (error: any) {
-    console.error('Error getting invitation by code:', error);
+    console.error('[DEBUG] getInvitationByCode: CATCH BLOCK', error); // DEBUG
     return {
       success: false,
       message: 'Failed to retrieve invitation'
