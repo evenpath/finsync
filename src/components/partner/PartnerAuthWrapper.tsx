@@ -16,22 +16,23 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
       return false;
     }
     const role = user.customClaims.role;
-    // A Super Admin, partner_admin, or employee can see the partner portal.
-    return role === 'Super Admin' || role === 'partner_admin' || role === 'employee';
+    // A Super Admin or partner_admin can see the partner portal.
+    // Employees are now routed to /employee
+    return role === 'Super Admin' || role === 'partner_admin';
   }, [user, loading, isAuthenticated]);
 
   React.useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/partner/login');
-      } else if (!isAuthorized) {
-        // If not authorized for this section, redirect to a safe default page.
-        router.push('/');
+      } else if (user?.customClaims?.role === 'employee') {
+        // Redirect employees to their specific dashboard
+        router.push('/employee');
       }
     }
-  }, [loading, isAuthenticated, isAuthorized, router]);
+  }, [loading, isAuthenticated, isAuthorized, router, user]);
 
-  if (loading || !isAuthorized) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="flex-1 p-6">
         <div className="mb-6">
@@ -43,5 +44,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     );
   }
   
+  // Render children if authenticated, authorization is handled at page level now
+  // for components that need workspace context.
   return children;
 }

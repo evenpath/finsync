@@ -1,3 +1,4 @@
+
 // src/components/partner/TeamManagement.tsx
 "use client";
 
@@ -12,7 +13,6 @@ import {
   Filter,
   Download,
   Search,
-  Send,
   MessageSquare,
   Settings,
   XCircle,

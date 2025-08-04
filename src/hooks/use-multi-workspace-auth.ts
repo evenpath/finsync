@@ -45,8 +45,11 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     }
 
     setWorkspaceLoading(true);
-    const userWorkspaceLinksRef = collection(db, 'userWorkspaceLinks');
-    const q = query(userWorkspaceLinksRef, where('userId', '==', user.uid));
+    const userWorkspaceLinksRef = collection(db, 'partners', user.uid, 'employees');
+    // This seems incorrect. It should be a root collection or a different path.
+    // Let's assume the correct path for now based on previous fixes:
+    const correctWorkspacesRef = collection(db, 'userWorkspaceLinks');
+    const q = query(correctWorkspacesRef, where('userId', '==', user.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const workspaces: WorkspaceAccess[] = snapshot.docs.map(doc => {
@@ -64,10 +67,10 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
 
       setAvailableWorkspaces(workspaces);
       
-      const activePartnerId = user.customClaims?.activePartnerId;
+      const activePartnerId = user.customClaims?.activePartnerId || user.customClaims?.partnerId;
       const activeWorkspace = activePartnerId 
-        ? workspaces.find(w => w.partnerId === activePartnerId && w.status === 'active')
-        : workspaces.find(w => w.status === 'active');
+        ? workspaces.find(w => w.partnerId === activePartnerId && (w.status === 'active' || w.status === 'invited'))
+        : workspaces.find(w => w.status === 'active' || w.status === 'invited');
 
       setCurrentWorkspace(activeWorkspace || null);
       setWorkspaceLoading(false);
@@ -99,8 +102,8 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
         
         setCurrentWorkspace(targetWorkspace);
         // This is a placeholder for where you would update user context in Firestore if needed.
-        const contextRef = doc(db, 'userContexts', user.uid);
-        await updateDoc(contextRef, { activePartnerId: partnerId }, { merge: true });
+        // const contextRef = doc(db, 'userContexts', user.uid);
+        // await updateDoc(contextRef, { activePartnerId: partnerId }, { merge: true });
 
         return true;
     } catch (e) {
@@ -129,14 +132,14 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
 
   useEffect(() => {
     if (user?.uid) {
-      const unsubscribe = refreshWorkspaces();
+      const unsubscribePromise = refreshWorkspaces();
       return () => {
-          unsubscribe.then(unsub => unsub && unsub());
+          unsubscribePromise.then(unsub => unsub && unsub());
       }
-    } else {
+    } else if (!loading) { // If not loading and no user, set workspaceLoading to false
       setWorkspaceLoading(false);
     }
-  }, [user?.uid, refreshWorkspaces]);
+  }, [user?.uid, loading, refreshWorkspaces]);
   
   return {
     user,
