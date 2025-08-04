@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { getTenantForEmailAction } from '@/actions/auth-actions';
 
@@ -25,8 +25,6 @@ export default function PartnerLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    let tenantIdForAuth: string | null = null;
 
     try {
       // 1. Find the tenant ID for the user's email
@@ -36,12 +34,16 @@ export default function PartnerLoginPage() {
         throw new Error(tenantLookup.message || "Your organization could not be found.");
       }
       
-      // 2. Set the tenant context on the auth instance
-      tenantIdForAuth = tenantLookup.tenantId;
-      auth.tenantId = tenantIdForAuth;
-
-      // 3. Sign in the user within their tenant
-      await signInWithEmailAndPassword(auth, email, password);
+      // 2. IMPORTANT: Create a new, temporary auth instance with the correct tenantId
+      // This avoids race conditions with the global `auth` object.
+      const tenantAuth = initializeAuth(app, {
+        persistence: browserLocalPersistence,
+        errorMap: auth.errorMap,
+      });
+      tenantAuth.tenantId = tenantLookup.tenantId;
+      
+      // 3. Sign in the user within their tenant using the temporary auth instance
+      await signInWithEmailAndPassword(tenantAuth, email, password);
       
       toast({ title: "Login Successful", description: "Redirecting to your workspace..." });
       router.push('/partner');
@@ -52,6 +54,8 @@ export default function PartnerLoginPage() {
       let errorMessage = "An unknown error occurred.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.code === 'auth/invalid-tenant-id') {
+          errorMessage = "Your organization could not be found. Please contact support or try signing up.";
       } else if (error.message) {
           errorMessage = error.message;
       }
@@ -63,10 +67,6 @@ export default function PartnerLoginPage() {
       });
     } finally {
         setIsLoading(false);
-        // Reset tenantId for the next login attempt (important for shared auth instances)
-        if (tenantIdForAuth) {
-          auth.tenantId = null;
-        }
     }
   };
 
