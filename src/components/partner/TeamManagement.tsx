@@ -29,8 +29,8 @@ import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
-import { usePartnerAuth } from "@/hooks/use-partner-auth";
 import { useMultiWorkspaceAuth } from "@/hooks/use-multi-workspace-auth";
+import { usePartnerAuth } from "@/hooks/use-partner-auth";
 import Link from "next/link";
 
 export default function TeamManagement() {
@@ -44,8 +44,8 @@ export default function TeamManagement() {
   
   const { 
     employees: teamMembers, 
-    loading: partnerLoading, 
-    error: partnerError 
+    loading: partnerDataLoading, 
+    error: partnerDataError 
   } = usePartnerAuth(partnerId);
 
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
@@ -53,11 +53,16 @@ export default function TeamManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  const isLoading = authLoading || partnerLoading;
+  const isLoading = authLoading || partnerDataLoading;
 
   useEffect(() => {
     if (!selectedMember && teamMembers.length > 0) {
         setSelectedMember(teamMembers[0]);
+    } else if (selectedMember) {
+        // If the selected member is no longer in the list, deselect it
+        if (!teamMembers.some(m => m.id === selectedMember.id)) {
+            setSelectedMember(teamMembers.length > 0 ? teamMembers[0] : null);
+        }
     }
   }, [teamMembers, selectedMember]);
 
@@ -181,14 +186,14 @@ export default function TeamManagement() {
     );
   }
   
-  if (partnerError) {
+  if (partnerDataError) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4">
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
           <div>
             <h3 className="text-lg font-semibold text-destructive">Database Error</h3>
-            <p className="text-muted-foreground">{partnerError}</p>
+            <p className="text-muted-foreground">{partnerDataError}</p>
           </div>
            <Button onClick={() => window.location.reload()}>
               Try Again

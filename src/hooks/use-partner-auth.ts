@@ -39,7 +39,7 @@ export function usePartnerAuth(partnerId?: string | null) {
       return;
     }
 
-    setPartnerState(prev => ({ ...prev, loading: true, partnerId }));
+    setPartnerState(prev => ({ ...prev, loading: true, error: null, partnerId }));
 
     const fetchPartnerDetails = async () => {
       try {
@@ -50,14 +50,14 @@ export function usePartnerAuth(partnerId?: string | null) {
             ...prev,
             partner: result.partner,
             tenantId: result.tenantId || null,
-            error: null
           }));
         } else {
+          // Don't overwrite employee-related errors
           setPartnerState(prev => ({
             ...prev,
             partner: null,
             tenantId: null,
-            error: result.message
+            error: prev.error || result.message,
           }));
         }
       } catch (error: any) {
@@ -65,7 +65,7 @@ export function usePartnerAuth(partnerId?: string | null) {
           ...prev,
           partner: null,
           tenantId: null,
-          error: 'Failed to fetch partner details'
+          error: prev.error || 'Failed to fetch partner details.',
         }));
       }
     };
@@ -81,10 +81,11 @@ export function usePartnerAuth(partnerId?: string | null) {
         id: doc.id,
         ...doc.data()
       } as TeamMember));
-      setPartnerState(prev => ({...prev, employees: membersData, loading: false}));
-    }, (error) => {
-      console.error("Error fetching employees:", error);
-      setPartnerState(prev => ({...prev, loading: false, error: 'Could not fetch team members.'}));
+      setPartnerState(prev => ({ ...prev, employees: membersData, loading: false, error: null }));
+    }, (err) => {
+      console.error("Error fetching employees:", err);
+      // This is a more specific and helpful error message.
+      setPartnerState(prev => ({ ...prev, loading: false, error: 'Could not fetch team members. Please check Firestore permissions.' }));
     });
 
     return () => unsubscribe();
