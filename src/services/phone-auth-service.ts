@@ -19,9 +19,10 @@ export interface PhoneAuthResult {
  */
 export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Promise<PhoneAuthResult> {
   if (!db || !adminAuth) {
+    console.error("handlePhoneAuthUser failed: Firebase Admin SDK not initialized.");
     return {
       success: false,
-      message: 'Database or Auth not available'
+      message: 'Authentication failed: The server is not configured correctly. Please contact support.'
     };
   }
 
@@ -158,9 +159,10 @@ export async function createEmployeeWithPhone(input: {
   invitedBy: string;
 }): Promise<PhoneAuthResult> {
   if (!db || !adminAuth) {
+    console.error("createEmployeeWithPhone failed: Firebase Admin SDK not initialized.");
     return {
       success: false,
-      message: 'Database or Auth not available'
+      message: 'The server is not configured correctly. Please contact support.'
     };
   }
 

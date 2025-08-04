@@ -30,12 +30,16 @@ if (admin.apps.length === 0) {
       });
       console.log('Firebase Admin SDK initialized successfully.');
     } else {
-      console.warn(
-        'Firebase Admin credentials not found. App will run in a limited mode. Please ensure FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set in your environment.'
+      // Throw an error if essential variables are missing.
+      // This prevents the application from running in a broken state.
+      throw new Error(
+        'Firebase Admin credentials not found. Ensure FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set in your environment.'
       );
     }
   } catch (error: any) {
-    console.error("Error initializing Firebase Admin SDK:", error.message);
+    console.error("CRITICAL: Error initializing Firebase Admin SDK:", error.message);
+    // Re-throw the error to halt initialization if it fails
+    throw error;
   }
 } else {
   app = admin.apps[0]!;
