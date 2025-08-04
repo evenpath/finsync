@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import EnhancedWorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
 import WorkspaceHeader from "@/components/worker/WorkspaceHeader";
 import { AuthProvider } from '@/hooks/use-auth';
@@ -77,6 +77,17 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
 
   // If all checks pass, show the employee dashboard. The dashboard itself
   // will handle the case where the user has no workspaces.
+  const pathname = usePathname();
+  const isJoinPage = pathname === '/employee/join';
+  
+  if (isJoinPage) {
+    return (
+      <div className="bg-secondary/30">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-secondary/30">
       <EnhancedWorkspaceSwitcher />

@@ -1,4 +1,3 @@
-
 // src/components/partner/PartnerAuthWrapper.tsx
 "use client";
 
@@ -33,15 +32,17 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
 
   if (loading || !isAuthenticated || !isAuthorized) {
     return (
-      <div className="flex-1 p-6">
-        <div className="mb-6">
-          <Skeleton className="h-10 w-1/3 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
+        <div className="flex-1 flex flex-col h-full">
+            <header className="bg-card border-b px-6 py-4">
+                 <Skeleton className="h-10 w-1/3 mb-2" />
+                 <Skeleton className="h-4 w-1/2" />
+            </header>
+            <main className="flex-1 p-6">
+                <Skeleton className="h-96 w-full" />
+            </main>
         </div>
-        <Skeleton className="h-96 w-full" />
-      </div>
     );
   }
   
-  return children;
+  return <>{children}</>;
 }

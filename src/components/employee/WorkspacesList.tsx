@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { Building2, Users, Crown, Check, Clock, AlertCircle } from 'lucide-react';
+import { Building2, Users, Crown, Check, Clock, AlertCircle, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { WorkspaceAccess } from '@/lib/types';
 import JoinWorkspaceDialog from './JoinWorkspaceDialog';
 import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
+import Link from 'next/link';
 
 const WorkspaceCard = ({ 
   workspace, 
@@ -177,11 +178,16 @@ export default function WorkspacesList() {
             <div className="mx-auto w-12 h-12 flex items-center justify-center bg-destructive/10 rounded-full mb-4">
                 <AlertCircle className="w-6 h-6 text-destructive" />
             </div>
-            <h3 className="text-lg font-medium text-destructive mb-2">Access Denied</h3>
+            <h3 className="text-lg font-medium text-destructive mb-2">No Workspace Found</h3>
             <p className="text-sm text-muted-foreground mb-4 px-4">
-             No workspace access found. Please contact your organization admin to get invited.
+             You are not a member of any workspace yet.
             </p>
-            <JoinWorkspaceDialog />
+            <Button asChild>
+                <Link href="/employee/join">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Join a Workspace
+                </Link>
+            </Button>
         </CardContent>
       </Card>
     );

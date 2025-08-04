@@ -8,17 +8,13 @@ import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
 function PartnerTeamDiagnosticsPage() {
   return (
-    <div className="p-6 h-full overflow-y-auto">
-      <TeamManagementDiagnostics />
-    </div>
+    <PartnerAuthWrapper>
+        <div className="p-6 h-full overflow-y-auto">
+         <TeamManagementDiagnostics />
+        </div>
+    </PartnerAuthWrapper>
   );
 }
 
 
-export default function PartnerTeamDiagnosticsProtected() {
-    return (
-        <PartnerAuthWrapper>
-            <PartnerTeamDiagnosticsPage />
-        </PartnerAuthWrapper>
-    )
-}
+export default PartnerTeamDiagnosticsPage;

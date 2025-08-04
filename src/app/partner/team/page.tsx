@@ -7,7 +7,7 @@ import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
 function PartnerTeamPage() {
   return (
-    <>
+    <PartnerAuthWrapper>
       <PartnerHeader
         title="Team Management"
         subtitle="Manage your team members, roles, and permissions."
@@ -15,14 +15,8 @@ function PartnerTeamPage() {
       <main className="flex-1 overflow-auto p-6">
         <TeamManagement />
       </main>
-    </>
+    </PartnerAuthWrapper>
   );
 }
 
-export default function PartnerTeamProtected() {
-  return (
-    <PartnerAuthWrapper>
-      <PartnerTeamPage />
-    </PartnerAuthWrapper>
-  )
-}
+export default PartnerTeamPage;
