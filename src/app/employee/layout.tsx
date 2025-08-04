@@ -1,3 +1,4 @@
+
 // src/app/employee/layout.tsx
 "use client";
 
@@ -16,6 +17,7 @@ import Link from 'next/link';
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   // This effect handles redirecting unauthenticated users.
   React.useEffect(() => {
@@ -77,7 +79,6 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
 
   // If all checks pass, show the employee dashboard. The dashboard itself
   // will handle the case where the user has no workspaces.
-  const pathname = usePathname();
   const isJoinPage = pathname === '/employee/join';
   
   if (isJoinPage) {
