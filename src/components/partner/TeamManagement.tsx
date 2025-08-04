@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
 
 export default function TeamManagement() {
@@ -100,7 +100,14 @@ export default function TeamManagement() {
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading, toast, selectedMember]);
+  }, [partnerId, authLoading]);
+
+  useEffect(() => {
+    if (!selectedMember && teamMembers.length > 0) {
+        setSelectedMember(teamMembers[0]);
+    }
+  }, [teamMembers, selectedMember]);
+
 
   const handleInviteMember = async (newMemberData: { 
     name: string; 
@@ -175,55 +182,48 @@ export default function TeamManagement() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <RefreshCw className="animate-spin h-8 w-8 text-primary mx-auto" />
-          <p className="mt-2 text-muted-foreground">Loading authentication...</p>
+          <p className="mt-2 text-muted-foreground">Verifying permissions...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || !partnerId) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-destructive">Not Authenticated</h3>
-          <p className="text-muted-foreground">Please log in to access team management.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!partnerId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-4">
-          <XCircle className="h-12 w-12 text-destructive mx-auto" />
-          <div>
-            <h3 className="text-lg font-semibold text-destructive">Access Error</h3>
-            <p className="text-muted-foreground">Could not identify your organization. Please log in again.</p>
-          </div>
-          
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left max-w-md">
-            <h4 className="font-medium text-yellow-800 mb-2">Debug Information:</h4>
-            <div className="text-sm text-yellow-700 space-y-1">
-              <div>User Email: {user.email}</div>
-              <div>User Role: {userRole || 'Not Set'}</div>
-              <div>Partner ID: {partnerId || 'Not Set'}</div>
-              <div>Custom Claims: {user.customClaims ? 'Present' : 'Missing'}</div>
+      <div className="flex items-center justify-center h-full p-6">
+        <Card className="max-w-lg w-full border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <XCircle className="h-6 w-6" />
+              Access Error
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>
+              Could not identify your organization. This usually happens when your account is missing the necessary permissions (custom claims).
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                <p className="font-semibold text-yellow-800">Troubleshooting Steps:</p>
+                <ol className="list-decimal list-inside text-yellow-700 mt-2 space-y-1">
+                    <li>Ensure you are logged in with the correct account.</li>
+                    <li>Contact your administrator to verify your account has been assigned a `partnerId` and a `role`.</li>
+                    <li>If you are an administrator, you may need to set these claims for the user in the Firebase console or via a script.</li>
+                </ol>
             </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Link href="/partner/team/diagnostics">
-              <Button variant="outline">
-                View Diagnostics
-              </Button>
-            </Link>
-            <Button onClick={() => window.location.reload()}>
-              Refresh Page
-            </Button>
-          </div>
-        </div>
+            <div className="flex gap-2 pt-2">
+                <Button asChild variant="outline">
+                  <Link href="/partner/team/diagnostics">
+                    <Settings className="w-4 h-4 mr-2"/>
+                    View Diagnostics
+                  </Link>
+                </Button>
+                <Button onClick={() => window.location.reload()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Page
+                </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -244,7 +244,6 @@ export default function TeamManagement() {
       </div>
     );
   }
-
 
   return (
     <div className="space-y-6">
@@ -271,28 +270,28 @@ export default function TeamManagement() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-headline">
-                  Team Members ({filteredMembers.length})
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="relative w-full max-w-xs">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search members..." 
-                      className="pl-9"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <Filter className="w-4 h-4 mr-2" /> Filter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" /> Export
-                  </Button>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="font-headline">
+                        Team Members ({filteredMembers.length})
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                        <div className="relative w-full max-w-xs">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search members..." 
+                            className="pl-9"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                        <Button variant="outline" size="sm">
+                            <Filter className="w-4 h-4 mr-2" /> Filter
+                        </Button>
+                        <Button variant="outline" size="sm">
+                            <Download className="w-4 h-4 mr-2" /> Export
+                        </Button>
+                    </div>
                 </div>
-              </div>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (

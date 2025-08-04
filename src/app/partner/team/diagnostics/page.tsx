@@ -3,11 +3,22 @@
 
 import React from 'react';
 import TeamManagementDiagnostics from "@/components/partner/TeamManagementDiagnostics";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
-export default function PartnerTeamDiagnosticsPage() {
+
+function PartnerTeamDiagnosticsPage() {
   return (
     <div className="p-6">
       <TeamManagementDiagnostics />
     </div>
   );
+}
+
+
+export default function PartnerTeamDiagnosticsProtected() {
+    return (
+        <PartnerAuthWrapper>
+            <PartnerTeamDiagnosticsPage />
+        </PartnerAuthWrapper>
+    )
 }
