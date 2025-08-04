@@ -2,7 +2,7 @@
 'use server';
 
 import { db, adminAuth } from '@/lib/firebase-admin';
-import { query, where, getDocs, collection, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import type { UserWorkspaceLink, WorkspaceAccess } from '@/lib/types';
 
 export interface PhoneAuthResult {
@@ -27,12 +27,12 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
   }
 
   try {
-    // Get or create user profile
+    // Get or create user profile using admin SDK
     let userProfile = null;
-    const userDocRef = doc(db, 'users', uid);
+    const userDocRef = db.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
     
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
       // Create user profile if it doesn't exist
       userProfile = {
         uid,
@@ -60,32 +60,30 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
           },
           emailDigest: 'never'
         },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lastActiveAt: serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        lastActiveAt: FieldValue.serverTimestamp(),
         isActive: true,
         timezone: 'UTC'
       };
 
-      await setDoc(userDocRef, userProfile);
+      await userDocRef.set(userProfile);
     } else {
       userProfile = userDoc.data();
       
       // Update last active time
-      await updateDoc(userDocRef, {
-        lastActiveAt: serverTimestamp(),
+      await userDocRef.update({
+        lastActiveAt: FieldValue.serverTimestamp(),
         isActive: true
       });
     }
 
-    // Get user's workspace access
-    const workspacesQuery = query(
-      collection(db, 'userWorkspaceLinks'),
-      where('userId', '==', uid),
-      where('status', 'in', ['active', 'invited'])
-    );
+    // Get user's workspace access using admin SDK
+    const workspacesQuery = db.collection('userWorkspaceLinks')
+      .where('userId', '==', uid)
+      .where('status', 'in', ['active', 'invited']);
     
-    const workspacesSnapshot = await getDocs(workspacesQuery);
+    const workspacesSnapshot = await workspacesQuery.get();
     const workspaceLinks = workspacesSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -174,7 +172,7 @@ export async function createEmployeeWithPhone(input: {
       email: input.email || undefined
     });
 
-    // Create user profile
+    // Create user profile using admin SDK
     const userProfile = {
       uid: userRecord.uid,
       phoneNumber: input.phoneNumber,
@@ -201,16 +199,16 @@ export async function createEmployeeWithPhone(input: {
         },
         emailDigest: 'never'
       },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      lastActiveAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastActiveAt: FieldValue.serverTimestamp(),
       isActive: true,
       timezone: 'UTC'
     };
 
-    await setDoc(doc(db, 'users', userRecord.uid), userProfile);
+    await db.collection('users').doc(userRecord.uid).set(userProfile);
 
-    // Create workspace link
+    // Create workspace link using admin SDK
     const workspaceLink: Omit<UserWorkspaceLink, 'id'> = {
       userId: userRecord.uid,
       partnerId: input.partnerId,
@@ -218,16 +216,16 @@ export async function createEmployeeWithPhone(input: {
       role: input.role,
       status: 'invited',
       permissions: [],
-      joinedAt: serverTimestamp() as any,
+      joinedAt: FieldValue.serverTimestamp() as any,
       invitedBy: input.invitedBy,
-      invitedAt: serverTimestamp() as any,
+      invitedAt: FieldValue.serverTimestamp() as any,
       partnerName: '', // Will be updated by partner service
       partnerAvatar: undefined,
-      lastAccessedAt: serverTimestamp() as any
+      lastAccessedAt: FieldValue.serverTimestamp() as any
     };
 
     const linkId = `${userRecord.uid}_${input.partnerId}`;
-    await setDoc(doc(db, 'userWorkspaceLinks', linkId), workspaceLink);
+    await db.collection('userWorkspaceLinks').doc(linkId).set(workspaceLink);
 
     // Set initial custom claims
     await adminAuth.setCustomUserClaims(userRecord.uid, {
