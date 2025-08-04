@@ -28,7 +28,7 @@ import {
 import InviteEmployeeDialog from "./team/InviteEmployeeDialog";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { inviteEmployeeAction } from "@/actions/team-actions";
+import { inviteEmployeeAction } from "@/actions/partner-actions";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
