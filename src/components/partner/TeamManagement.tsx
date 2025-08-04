@@ -101,7 +101,7 @@ export default function TeamManagement() {
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading, toast, selectedMember]);
+  }, [partnerId, authLoading, toast]);
 
   const filteredMembers = teamMembers.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
