@@ -35,13 +35,14 @@ service cloud.firestore {
     function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
     }
-
-    function canAccessPartner(partnerId) {
-      return isAdmin() || (isAuthenticated() && request.auth.token.partnerIds != null && partnerId in request.auth.token.partnerIds);
-    }
     
-    function canModifyPartner(partnerId) {
-      return isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
+    function isPartnerAdminForResource() {
+      // For new documents, check incoming data. For existing, check stored data.
+      let partnerId = request.resource.data.partnerId;
+      if (resource != null) {
+        partnerId = resource.data.partnerId;
+      }
+      return isPartnerAdmin() && request.auth.token.partnerId == partnerId;
     }
 
     // ============================================================================
@@ -49,7 +50,7 @@ service cloud.firestore {
     // ============================================================================
     
     match /partners/{partnerId} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.partnerIds != null && partnerId in request.auth.token.partnerIds);
+      allow read: if isAdmin() || (isPartner() && request.auth.token.partnerId == partnerId);
       allow list: if isAdmin();
       allow create: if isAdmin();
       allow update: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
@@ -66,52 +67,38 @@ service cloud.firestore {
     }
 
     match /teamMembers/{memberId} {
-      allow read: if isAuthenticated() && (isAdmin() || canAccessPartner(resource.data.partnerId));
-      allow list: if isAuthenticated() && 
-                    (isAdmin() || 
-                      (isPartner() && 
-                        request.query.partnerId == request.auth.token.partnerId)
-                    );
-      allow write: if isAuthenticated() && 
-                     (isAdmin() || canModifyPartner(request.resource.data.partnerId));
-    }
-
-    match /invitationCodes/{invitationId} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.phoneNumber == resource.data.phoneNumber);
-      
-      // Allow list for backend validation checks (querying by code)
-      allow list: if isAuthenticated();
-
-      // Partner Admins can manage codes for their own workspace
-      allow write: if isPartnerAdmin() && request.auth.token.partnerId == request.resource.data.partnerId;
-    }
-
-    match /userWorkspaceLinks/{linkId} {
-      allow read: if isOwner(resource.data.userId) || isAdmin();
-
-      // Allow write if you are an admin or if you are the user accepting an invitation.
-      allow write: if isAdmin() || 
-                      (isOwner(resource.data.userId) && 
-                       request.resource.data.status == 'active' &&
-                       resource.data.status == 'invited');
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.token.partnerId == resource.data.partnerId);
+      allow list: if isAuthenticated() && (isAdmin() || (isPartner() && request.query.partnerId == request.auth.token.partnerId));
+      allow write: if isAuthenticated() && (isAdmin() || isPartnerAdminForResource());
     }
     
     match /userWorkspaceContext/{userId} {
       allow read, write: if isOwner(userId) || isAdmin();
     }
+    
+    match /userWorkspaceLinks/{linkId} {
+        allow read: if isOwner(resource.data.userId) || isAdmin() || isPartnerAdminForResource();
+        allow write: if (isPartnerAdminForResource() && request.auth.uid == resource.data.invitedBy) || 
+                        (isOwner(resource.data.userId) && resource.data.status == 'invited' && request.resource.data.status == 'active');
+    }
 
+    match /invitationCodes/{invitationId} {
+      allow list: if isAuthenticated() && (request.auth.token.phoneNumber == request.query.phoneNumber || request.auth.token.partnerId == request.query.partnerId);
+      allow read: if isAuthenticated() && (request.auth.token.phoneNumber == resource.data.phoneNumber || request.auth.token.partnerId == resource.data.partnerId || isAdmin());
+      // Allow partner admins to create invites for their own partnerId
+      allow create: if isPartnerAdmin() && request.auth.token.partnerId == request.resource.data.partnerId;
+      allow update: if (isPartnerAdmin() && request.auth.token.partnerId == resource.data.partnerId) ||
+                       (isAuthenticated() && resource.data.phoneNumber == request.auth.token.phoneNumber);
+      allow delete: if isPartnerAdmin() && request.auth.token.partnerId == resource.data.partnerId;
+    }
+    
     // ============================================================================
-    // OTHER COLLECTIONS (EXAMPLE)
+    // OTHER COLLECTIONS
     // ============================================================================
 
     match /workflowTemplates/{templateId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
-    }
-    
-    // Fallback rule to deny access to any other collections
-    match /{path=**} {
-      allow read, write: if false;
     }
   }
 }
