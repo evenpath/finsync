@@ -81,7 +81,7 @@ export default function EmployeeLoginPage() {
         description = "The phone number is not valid. Please include the country code (e.g., +1).";
       } else if (error.code === 'auth/too-many-requests') {
         description = "You've tried to send too many OTPs. Please try again later.";
-      } else if (error.code === 'auth/internal-error' || (error.message && error.message.includes('missing-phone-number'))) {
+      } else if (error.code === 'auth/internal-error' || (error.message && (error.message.includes('missing-phone-number') || error.message.includes('auth/configuration-not-found')))) {
         title = "Firebase Configuration Error";
         description = "Phone authentication is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method, and enable the 'Phone' provider.";
       }
