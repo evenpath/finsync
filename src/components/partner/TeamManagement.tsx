@@ -1,3 +1,4 @@
+
 // src/components/partner/TeamManagement.tsx
 "use client";
 
@@ -22,12 +23,12 @@ import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
-import { usePartnerAuth } from "@/hooks/use-partner-auth";
+import { useMultiWorkspaceAuth } from "@/hooks/use-multi-workspace-auth";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query } from "firebase/firestore";
 
 export default function TeamManagement() {
-  const { partner, loading: partnerLoading } = usePartnerAuth();
+  const { currentWorkspace, loading: partnerLoading } = useMultiWorkspaceAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -35,13 +36,15 @@ export default function TeamManagement() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (partnerLoading || !partner?.id || !db) {
+    const partnerId = currentWorkspace?.partnerId;
+
+    if (partnerLoading || !partnerId || !db) {
       setIsLoading(partnerLoading);
       return;
     }
 
     setIsLoading(true);
-    const employeesRef = collection(db, `partners/${partner.id}/employees`);
+    const employeesRef = collection(db, `partners/${partnerId}/employees`);
     const q = query(employeesRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -53,6 +56,11 @@ export default function TeamManagement() {
       
       if (!selectedMember && membersData.length > 0) {
         setSelectedMember(membersData[0]);
+      } else if (selectedMember) {
+        // If selected member is no longer in the list (e.g., removed), deselect it
+        if (!membersData.find(m => m.id === selectedMember.id)) {
+          setSelectedMember(membersData[0] || null);
+        }
       }
       setIsLoading(false);
     }, (error) => {
@@ -66,10 +74,12 @@ export default function TeamManagement() {
     });
 
     return () => unsubscribe();
-  }, [partner, partnerLoading, toast, selectedMember]);
+  }, [currentWorkspace, partnerLoading, toast, selectedMember]);
 
   const handleInviteMember = async (newMemberData: { name: string; phone: string; role: 'partner_admin' | 'employee' }) => {
-    if (!partner?.id) {
+    const partnerId = currentWorkspace?.partnerId;
+
+    if (!partnerId) {
         toast({
             variant: "destructive",
             title: "Error",
@@ -81,7 +91,7 @@ export default function TeamManagement() {
     try {
         const result = await inviteEmployeeAction({
             ...newMemberData,
-            partnerId: partner.id,
+            partnerId: partnerId,
         });
 
         if (result.success) {
