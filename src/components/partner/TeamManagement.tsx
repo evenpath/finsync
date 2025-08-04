@@ -215,7 +215,17 @@ export default function TeamManagement() {
                 <CardTitle className="font-headline">
                   Manage Team
                 </CardTitle>
-                 {partnerId && userRole === 'partner_admin' && <InviteEmployeeByCodeDialog partnerId={partnerId} />}
+                <div className="flex items-center gap-2">
+                  {partnerId && userRole === 'partner_admin' && (
+                    <>
+                      <Button onClick={() => setIsInviteModalOpen(true)}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Invite Employee
+                      </Button>
+                      <InviteEmployeeByCodeDialog partnerId={partnerId} />
+                    </>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -353,6 +363,11 @@ export default function TeamManagement() {
           </Card>
         </div>
       </div>
+       <InviteEmployeeDialog 
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onInviteMember={handleInviteMember}
+      />
     </div>
   );
 }
