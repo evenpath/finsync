@@ -1,22 +1,19 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ============================================================================
-    // HELPER FUNCTIONS FOR MULTI-WORKSPACE ARCHITECTURE
+    // HELPER FUNCTIONS
     // ============================================================================
 
     function isSuperAdmin() {
-      return request.auth != null && 
-             (request.auth.token.role == 'Super Admin' || request.auth.token.email == 'core@suupe.com');
+      return request.auth != null && (request.auth.token.role == 'Super Admin' || request.auth.token.email == 'core@suupe.com');
     }
 
     function isAdmin() {
-      return request.auth != null && 
-             (request.auth.token.role == 'Admin' || 
-              request.auth.token.role == 'Super Admin' || 
-              request.auth.token.email == 'core@suupe.com');
+      return request.auth != null && (isSuperAdmin() || request.auth.token.role == 'Admin');
     }
     
     function isPartnerAdmin() {
@@ -34,84 +31,17 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-
-    // ============================================================================
-    // MULTI-WORKSPACE PERMISSION FUNCTIONS
-    // ============================================================================
-    
-    // Check if user belongs to a specific partner (supports multi-workspace)
-    function belongsToPartner(partnerId) {
-      return request.auth != null && 
-             (
-               // Support legacy single partnerId (backward compatibility)
-               request.auth.token.partnerId == partnerId ||
-               // Support multi-workspace partnerIds array
-               (request.auth.token.partnerIds != null && 
-                partnerId in request.auth.token.partnerIds)
-             );
-    }
-    
-    // Check if user can access ANY of the partners they belong to
-    function belongsToAnyPartner() {
-      return request.auth != null && 
-             (
-               request.auth.token.partnerId != null ||
-               (request.auth.token.partnerIds != null && 
-                request.auth.token.partnerIds.size() > 0)
-             );
-    }
     
     function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
     }
 
     function canAccessPartner(partnerId) {
-      return isAdmin() || belongsToPartner(partnerId);
+      return isAdmin() || (isAuthenticated() && request.auth.token.partnerIds != null && partnerId in request.auth.token.partnerIds);
     }
-
+    
     function canModifyPartner(partnerId) {
-      return isAdmin() || (isPartnerAdmin() && belongsToPartner(partnerId));
-    }
-    
-    // Check if user has admin role in a specific partner workspace
-    function isPartnerAdminFor(partnerId) {
-      return isPartnerAdmin() && belongsToPartner(partnerId);
-    }
-    
-    function hasValidPartnerData() {
-      return request.resource.data.keys().hasAll(['name', 'email', 'tenantId']) &&
-             request.resource.data.name is string &&
-             request.resource.data.email is string &&
-             request.resource.data.tenantId is string;
-    }
-
-    // ============================================================================
-    // INVITATION CODES
-    // ============================================================================
-
-    match /invitationCodes/{invitationId} {
-      // Allow unauthenticated users to validate a code before login, and allow
-      // authenticated users to query for their own invitations.
-      // Also allows partner admins to list all codes for their workspace.
-      allow list: if (request.auth == null && request.query.where[0][0] == 'invitationCode') ||
-                     (isAuthenticated() && request.query.where[0][2] == request.auth.token.phoneNumber) ||
-                     canModifyPartner(resource.data.partnerId);
-
-      // Partner admins can read their own invitations. Users can read their own invitations.
-      allow read: if canModifyPartner(resource.data.partnerId) || 
-                     (isAuthenticated() && request.auth.token.phoneNumber == resource.data.phoneNumber);
-      
-      // Partner admins can create/update/delete invitations for their workspace.
-      allow write: if canModifyPartner(request.resource.data.partnerId);
-      
-      // System/admins can manage all invitations.
-      allow read, write: if isAdmin();
-      
-      // Allow an authenticated user to accept an invitation for themselves.
-      allow update: if isAuthenticated() && 
-                       resource.data.phoneNumber == request.auth.token.phoneNumber &&
-                       request.resource.data.status == 'accepted' && 
-                       request.resource.data.acceptedBy == request.auth.uid;
+      return isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
     }
 
     // ============================================================================
@@ -119,12 +49,10 @@ service cloud.firestore {
     // ============================================================================
     
     match /partners/{partnerId} {
-      // Admins can read all partners, Partners can only read their own
-      allow read: if isAdmin() || belongsToPartner(partnerId);
-      // Allow list/query operations for admins (needed for partner management UI)
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.partnerIds != null && partnerId in request.auth.token.partnerIds);
       allow list: if isAdmin();
-      allow create: if isAdmin() && hasValidPartnerData();
-      allow update: if canModifyPartner(partnerId);
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
       allow delete: if isSuperAdmin();
     }
     
@@ -132,200 +60,58 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
     
-    match /userMappings/{email} {
-      // Allow read only for the specific email being looked up during login
-      allow read: if request.auth == null;
-      // Allow authenticated users to read their own mapping
-      allow read: if isAuthenticated() && 
-                     (request.auth.token.email.lower() == email.lower() || isAdmin());
-      // Only system can create/update mappings
+    match /userMappings/{identifier} {
+      allow read: if request.auth == null || isAdmin();
       allow write: if false; 
     }
 
-    // ============================================================================
-    // MULTI-WORKSPACE USER MANAGEMENT
-    // ============================================================================
-    
-    // UserWorkspaceLinks - stores multi-workspace memberships
-    match /userWorkspaceLinks/{linkId} {
-      // Users can read their own workspace links
-      allow read: if isOwner(resource.data.userId) || isAdmin() || 
-                     isPartnerAdminFor(resource.data.partnerId);
-      
-      // Partner admins can create/update links for their workspace
-      allow write: if isPartnerAdminFor(resource.data.partnerId) ||
-                      (isOwner(resource.data.userId) && resource.data.status == 'invited');
-      
-      // System/admins can manage all links
-      allow read, write: if isAdmin();
-      
-      // Allow users to accept invitations
-      allow update: if isOwner(resource.data.userId) && 
-                       resource.data.status == 'invited' &&
-                       request.resource.data.status == 'active';
-    }
-    
-    // User profiles with workspace information
-    match /userProfiles/{userId} {
-      allow read: if isOwner(userId) || isAdmin() || 
-                     // Partner admins can read profiles of users in their workspaces
-                     isPartner();
-      allow write: if isOwner(userId) || isAdmin();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // ============================================================================
-    // TEAM MEMBERS - FIXED FOR PROPER QUERY SUPPORT
-    // ============================================================================
-    
     match /teamMembers/{memberId} {
-      function isPartnerAdminForResource() {
-        // For new documents, check incoming data. For existing, check stored data.
-        let partnerId = request.resource.data.partnerId;
-        if (resource != null) {
-          partnerId = resource.data.partnerId;
-        }
-        return isPartnerAdmin() && request.auth.token.partnerId == partnerId;
-      }
-      
-      // Allow individual document reads
-      allow read: if canAccessPartner(resource.data.partnerId);
-      
-      // Allow list/query operations - CRITICAL FOR QUERIES
+      allow read: if isAuthenticated() && (isAdmin() || canAccessPartner(resource.data.partnerId));
       allow list: if isAuthenticated() && 
-                     (isAdmin() || 
-                      // Allow users to query their own partner's team members
-                      (request.auth.token.partnerId != null && 
-                       // Only allow queries that include partnerId filter
-                       request.query.where[0][0] == 'partnerId'));
+                    (isAdmin() || 
+                      (isPartner() && 
+                        request.query.partnerId == request.auth.token.partnerId)
+                    );
+      allow write: if isAuthenticated() && 
+                     (isAdmin() || canModifyPartner(request.resource.data.partnerId));
+    }
+
+    match /invitationCodes/{invitationId} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.phoneNumber == resource.data.phoneNumber);
       
-      // Allow write operations
-      allow write: if isAdmin() || isPartnerAdminForResource();
-      
-      // Allow create operations
-      allow create: if isAdmin() || isPartnerAdminForResource();
+      // Allow list for backend validation checks (querying by code)
+      allow list: if isAuthenticated();
+
+      // Partner Admins can manage codes for their own workspace
+      allow write: if isPartnerAdmin() && request.auth.token.partnerId == request.resource.data.partnerId;
+    }
+
+    match /userWorkspaceLinks/{linkId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+
+      // Allow write if you are an admin or if you are the user accepting an invitation.
+      allow write: if isAdmin() || 
+                      (isOwner(resource.data.userId) && 
+                       request.resource.data.status == 'active' &&
+                       resource.data.status == 'invited');
+    }
+    
+    match /userWorkspaceContext/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
     // ============================================================================
-    // WORKFLOW & TASK COLLECTIONS (MULTI-WORKSPACE AWARE)
+    // OTHER COLLECTIONS (EXAMPLE)
     // ============================================================================
-    
+
     match /workflowTemplates/{templateId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
     
-    match /workflowInstances/{instanceId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if canModifyPartner(resource.data.partnerId);
-      allow create: if isPartner() && belongsToPartner(request.resource.data.partnerId);
-    }
-    
-    match /workflowExecutions/{executionId} {
-      allow read: if canAccessPartner(get(/databases/$(database)/documents/workflowInstances/$(resource.data.workflowInstanceId)).data.partnerId);
-      allow create: if isPartner() && belongsToPartner(request.resource.data.partnerId);
-      allow update, delete: if false;
-    }
-    
-    match /tasks/{taskId} {
-      allow read: if canAccessPartner(resource.data.partnerId) ||
-                     // Allow task assigned users to read their tasks across workspaces
-                     (resource.data.assignedTo == request.auth.uid && belongsToAnyPartner());
-      allow write: if canModifyPartner(resource.data.partnerId) ||
-                      // Allow assigned users to update task status
-                      (resource.data.assignedTo == request.auth.uid && 
-                       belongsToPartner(resource.data.partnerId));
-      allow create: if isPartner() && belongsToPartner(request.resource.data.partnerId);
-    }
-
-    // ============================================================================
-    // BUSINESS & AI DATA COLLECTIONS
-    // ============================================================================
-    
-    match /businessProfiles/{profileId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if canModifyPartner(resource.data.partnerId);
-      allow create: if isPartnerAdmin() && belongsToPartner(request.resource.data.partnerId);
-    }
-
-    match /aiMemory/{memoryId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if isAdmin() || (isPartnerAdmin() && belongsToPartner(resource.data.partnerId));
-      allow create: if isAdmin() || (isPartnerAdmin() && belongsToAnyPartner());
-    }
-
-    // ============================================================================
-    // COMMUNICATION COLLECTIONS (WORKSPACE-SCOPED)
-    // ============================================================================
-    
-    match /messages/{messageId} {
-      allow read, write: if canAccessPartner(resource.data.partnerId) && 
-                            (resource.data.participants.hasAny([request.auth.uid]) || isAdmin());
-      allow create: if isPartner() && 
-                       belongsToPartner(request.resource.data.partnerId) &&
-                       request.resource.data.participants.hasAny([request.auth.uid]);
-    }
-    
-    match /conversations/{conversationId} {
-      allow read: if isAdmin() || 
-                     (resource.data.participants.hasAny([request.auth.uid]) && 
-                      belongsToPartner(resource.data.partnerId));
-      allow write: if resource.data.participants.hasAny([request.auth.uid]) && 
-                      belongsToPartner(resource.data.partnerId);
-      allow create: if isPartner() && belongsToAnyPartner();
-    }
-    
-    match /notifications/{notificationId} {
-      allow read: if isOwner(resource.data.userId) || isAdmin();
-      allow write: if isOwner(resource.data.userId);
-      allow create: if isAuthenticated();
-    }
-
-    // ============================================================================
-    // SYSTEM & METADATA COLLECTIONS
-    // ============================================================================
-    
-    match /industries/{industryId} {
-      // Public read access for industry templates
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /systemSettings/{settingId} {
-      allow read: if isAdmin();
-      allow write: if isSuperAdmin();
-    }
-    
-    match /auditLogs/{logId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update, delete: if false;
-    }
-
-    // ============================================================================
-    // ANALYTICS & REPORTING COLLECTIONS
-    // ============================================================================
-    
-    match /analytics/{analyticsId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if isAdmin();
-      allow create: if isAdmin() || isPartnerAdmin();
-    }
-    
-    match /reports/{reportId} {
-      allow read: if canAccessPartner(resource.data.partnerId);
-      allow write: if canModifyPartner(resource.data.partnerId);
-      allow create: if isPartner() && belongsToPartner(request.resource.data.partnerId);
-    }
-
-    // ============================================================================
-    // WORKSPACE SWITCHING & CONTEXT
-    // ============================================================================
-    
-    // Current workspace context (for UI state management)
-    match /userWorkspaceContext/{userId} {
-      allow read, write: if isOwner(userId);
-      allow read: if isAdmin();
+    // Fallback rule to deny access to any other collections
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }
