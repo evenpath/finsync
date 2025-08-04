@@ -6,10 +6,11 @@ import { Building2, Users, Crown, Check, Clock, AlertCircle } from 'lucide-react
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { WorkspaceAccess } from '@/lib/types';
 import JoinWorkspaceDialog from './JoinWorkspaceDialog';
+import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 
 const WorkspaceCard = ({ 
   workspace, 
@@ -138,40 +139,28 @@ const WorkspaceCard = ({
 };
 
 export default function WorkspacesList() {
-  const { user, availableWorkspaces, loading } = useMultiWorkspaceAuth();
+  const { user, loading } = useAuth();
+  const { availableWorkspaces, loading: workspaceLoading, switchWorkspace } = useMultiWorkspaceAuth();
   const currentPartnerId = user?.customClaims?.activePartnerId || user?.customClaims?.partnerId;
 
   const handleWorkspaceSwitch = (workspace: WorkspaceAccess) => {
-    // In a real implementation, this would call a backend service
-    // For now, we'll show a simple message
-    console.log('Switch to workspace:', workspace.partnerId);
-    window.location.reload(); // Simple approach for demo
+    switchWorkspace(workspace.partnerId).then(() => {
+        window.location.reload(); // Simple approach for demo
+    });
   };
 
-  if (loading) {
+  if (loading || workspaceLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Skeleton className="h-6 w-6" />
-          <Skeleton className="h-6 w-32" />
-        </div>
-        {[1, 2].map((i) => (
-          <Card key={i}>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <Skeleton className="w-12 h-12 rounded-lg" />
-                <div>
-                  <Skeleton className="h-5 w-32 mb-2" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-full" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardHeader>
+             <Skeleton className="h-6 w-32 mb-2" />
+             <Skeleton className="h-4 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+           <Skeleton className="h-16 w-full" />
+           <Skeleton className="h-10 w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -185,11 +174,11 @@ export default function WorkspacesList() {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
-            <div className="mx-auto w-12 h-12 flex items-center justify-center bg-red-100 rounded-full mb-4">
-                <AlertCircle className="w-6 h-6 text-red-600" />
+            <div className="mx-auto w-12 h-12 flex items-center justify-center bg-destructive/10 rounded-full mb-4">
+                <AlertCircle className="w-6 h-6 text-destructive" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Workspace Access</h3>
-            <p className="text-sm text-gray-500 mb-4 px-4">
+            <h3 className="text-lg font-medium text-destructive mb-2">Access Denied</h3>
+            <p className="text-sm text-muted-foreground mb-4 px-4">
              No workspace access found. Please contact your organization admin to get invited.
             </p>
             <JoinWorkspaceDialog />

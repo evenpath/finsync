@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import EnhancedWorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
 import WorkspaceHeader from "@/components/worker/WorkspaceHeader";
 import { AuthProvider } from '@/hooks/use-auth';
-import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Building2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated, availableWorkspaces } = useMultiWorkspaceAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   // This effect handles redirecting unauthenticated users.
@@ -27,8 +27,25 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
   // Show a loading skeleton while we verify authentication.
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Skeleton className="h-64 w-full max-w-md" />
+      <div className="flex h-screen w-full items-center justify-center bg-secondary/30">
+        <div className="w-20 bg-gray-100 border-r flex flex-col items-center py-4 gap-4 h-full">
+            <Skeleton className="w-12 h-12 rounded-lg" />
+            <Skeleton className="w-12 h-12 rounded-full" />
+        </div>
+        <div className="flex-1 flex flex-col">
+            <header className="bg-white border-b px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-10 w-48" />
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                </div>
+            </header>
+            <main className="flex-1 p-6">
+                <Skeleton className="h-64 w-full" />
+            </main>
+        </div>
       </div>
     );
   }
@@ -37,7 +54,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
   const userRole = user?.customClaims?.role;
   if (userRole && userRole !== 'employee' && userRole !== 'partner_admin') {
       return (
-        <div className="flex h-screen w-full items-center justify-center p-4">
+        <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
             <Card className="w-full max-w-md border-destructive">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-destructive">
@@ -58,34 +75,8 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // If the user is an employee but has no workspaces, show a helpful message.
-  if (availableWorkspaces.length === 0) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Building2 />
-                        No Workspace Access
-                    </CardTitle>
-                    <CardDescription>
-                        Your account is not yet associated with any workspace.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        Please contact your organization's administrator. They will need to send you an invitation to join your team's workspace.
-                    </p>
-                    <Link href="/login">
-                        <Button variant="outline">Back to Login</Button>
-                    </Link>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
-
-  // If all checks pass, show the employee dashboard.
+  // If all checks pass, show the employee dashboard. The dashboard itself
+  // will handle the case where the user has no workspaces.
   return (
     <div className="flex h-screen bg-secondary/30">
       <EnhancedWorkspaceSwitcher />

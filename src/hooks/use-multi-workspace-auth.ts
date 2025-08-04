@@ -1,11 +1,11 @@
-
 // src/hooks/use-multi-workspace-auth.ts
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { switchWorkspaceAction } from '@/actions/workspace-actions';
 import type { 
   MultiWorkspaceAuthState, 
   WorkspaceAccess, 
@@ -14,11 +14,9 @@ import type {
   MultiWorkspaceCustomClaims
 } from '@/lib/types';
 
-
 interface MultiWorkspaceFirebaseAuthUser extends FirebaseAuthUser {
   customClaims?: MultiWorkspaceCustomClaims;
 }
-
 
 export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
   const { user: baseUser, loading, error, isAuthenticated } = useAuth();
@@ -36,53 +34,133 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
       return () => {}; // Return a no-op unsubscribe function
     }
 
-    setWorkspaceLoading(true);
-    // This is a placeholder for where you would query for a user's workspaces.
-    // In a real multi-workspace app, you'd have a 'userWorkspaceLinks' collection or similar.
-    // For now, we construct a "workspace" from the user's primary claim.
-    const { partnerId, tenantId, role } = user.customClaims || {};
+    try {
+      setWorkspaceLoading(true);
 
-    if (partnerId && tenantId && (role === 'partner_admin' || role === 'employee')) {
-        const constructedWorkspace: WorkspaceAccess = {
-            partnerId,
-            tenantId,
-            role,
-            permissions: [], // Permissions would also come from a DB record
-            status: 'active', // Assume active if they can log in
-            partnerName: user.displayName || `Partner ${partnerId}`, // Fallback name
+      // Query for user's workspace links
+      const workspacesQuery = query(
+        collection(db, 'userWorkspaceLinks'),
+        where('userId', '==', user.uid),
+        where('status', 'in', ['active', 'invited'])
+      );
+
+      const unsubscribe = onSnapshot(workspacesQuery, (snapshot) => {
+        const workspaceLinks = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as UserWorkspaceLink[];
+
+        // Convert workspace links to WorkspaceAccess format
+        const workspaces: WorkspaceAccess[] = workspaceLinks.map(link => ({
+          partnerId: link.partnerId,
+          tenantId: link.tenantId,
+          role: link.role,
+          permissions: link.permissions,
+          status: link.status,
+          partnerName: link.partnerName,
+          partnerAvatar: link.partnerAvatar
+        }));
+
+        setAvailableWorkspaces(workspaces);
+
+        // Set current workspace based on custom claims or first available
+        const activePartnerId = user.customClaims?.activePartnerId || user.customClaims?.partnerId;
+        const activeWorkspace = activePartnerId 
+          ? workspaces.find(w => w.partnerId === activePartnerId)
+          : workspaces.find(w => w.status === 'active');
+        
+        setCurrentWorkspace(activeWorkspace || null);
+        setWorkspaceLoading(false);
+      });
+
+      return unsubscribe;
+
+    } catch (error) {
+      console.error('Error fetching workspaces:', error);
+      
+      // Fallback to custom claims if database query fails
+      const { partnerId, tenantId, role, partnerIds } = user.customClaims || {};
+      
+      if (partnerId && tenantId && (role === 'partner_admin' || role === 'employee')) {
+        const fallbackWorkspace: WorkspaceAccess = {
+          partnerId,
+          tenantId,
+          role,
+          permissions: [],
+          status: 'active',
+          partnerName: user.displayName || `Partner ${partnerId}`,
+          partnerAvatar: undefined
         };
-        setAvailableWorkspaces([constructedWorkspace]);
-        setCurrentWorkspace(constructedWorkspace);
-    } else {
+        
+        const allWorkspaces = user.customClaims.workspaces || [fallbackWorkspace]
+        
+        setAvailableWorkspaces(allWorkspaces);
+        setCurrentWorkspace(fallbackWorkspace);
+      } else {
         setAvailableWorkspaces([]);
         setCurrentWorkspace(null);
+      }
+      
+      setWorkspaceLoading(false);
+      return () => {}; // Return a no-op unsubscribe function
     }
-
-    setWorkspaceLoading(false);
-    return () => {}; // Return a no-op unsubscribe function for consistency
   }, [user]);
 
+  // Switch to a different workspace
   const switchWorkspace = useCallback(async (partnerId: string): Promise<boolean> => {
-    // This is a placeholder. In a real app, this would involve a backend call
-    // to update the user's 'activePartnerId' claim, then forcing a token refresh.
-    console.log(`Switching workspace to ${partnerId}`);
-    const targetWorkspace = availableWorkspaces.find(w => w.partnerId === partnerId);
-    if(targetWorkspace) {
-        setCurrentWorkspace(targetWorkspace);
-        return true;
+    if (!user?.uid || !db) return false;
+
+    try {
+      const targetWorkspace = availableWorkspaces.find(w => w.partnerId === partnerId);
+      if (!targetWorkspace) {
+        console.error('Workspace not found or access denied:', partnerId);
+        return false;
+      }
+      
+      const result = await switchWorkspaceAction(user.uid, partnerId);
+      
+      if(result.success) {
+          // Force token refresh to get updated claims
+          await user.getIdToken(true);
+          setCurrentWorkspace(result.workspace);
+          return true;
+      } else {
+          console.error("Failed to switch workspace:", result.message);
+          return false;
+      }
+
+    } catch (error) {
+      console.error('Error switching workspace:', error);
+      return false;
     }
-    return false;
-  }, [availableWorkspaces]);
-  
+  }, [user, availableWorkspaces]);
+
+  // Permission checking functions
   const hasAccessToPartner = useCallback((partnerId: string): boolean => {
     if (!user) return false;
-    if (user.customClaims?.role === 'Super Admin' || user.customClaims?.role === 'Admin') return true;
+    
+    // Super Admin and Admin have access to all partners
+    if (user.customClaims?.role === 'Super Admin' || 
+        user.customClaims?.role === 'Admin' ||
+        user.email === 'core@suupe.com') {
+      return true;
+    }
+
+    // Check if user has access through workspace memberships
     return availableWorkspaces.some(w => w.partnerId === partnerId && w.status === 'active');
   }, [user, availableWorkspaces]);
 
   const isPartnerAdminFor = useCallback((partnerId: string): boolean => {
     if (!user) return false;
-    if (user.customClaims?.role === 'Super Admin' || user.customClaims?.role === 'Admin') return true;
+    
+    // Super Admin and Admin are considered partner admin for all partners
+    if (user.customClaims?.role === 'Super Admin' || 
+        user.customClaims?.role === 'Admin' ||
+        user.email === 'core@suupe.com') {
+      return true;
+    }
+
+    // Check if user is a partner admin for this specific partner
     const workspace = availableWorkspaces.find(w => w.partnerId === partnerId);
     return workspace?.role === 'partner_admin' && workspace.status === 'active';
   }, [user, availableWorkspaces]);
@@ -91,13 +169,13 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     return isPartnerAdminFor(partnerId);
   }, [isPartnerAdminFor]);
 
-
+  // Initialize workspaces when user changes
   useEffect(() => {
     if (user?.uid) {
       const unsubscribePromise = refreshWorkspaces();
       return () => {
-          Promise.resolve(unsubscribePromise).then(unsub => unsub && unsub());
-      }
+        Promise.resolve(unsubscribePromise).then(unsub => unsub && unsub());
+      };
     } else if (!loading) { 
       setWorkspaceLoading(false);
     }
