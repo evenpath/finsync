@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { getTenantForEmailAction } from '@/actions/auth-actions';
 import { Phone, KeyRound } from 'lucide-react';
 
 declare global {
@@ -32,13 +31,14 @@ export default function EmployeeLoginPage() {
 
   useEffect(() => {
     // This will run once when the component mounts
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': (response: any) => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-        console.log("reCAPTCHA solved");
-      }
-    });
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response: any) => {
+          console.log("reCAPTCHA solved");
+        }
+      });
+    }
     
     return () => {
       window.recaptchaVerifier?.clear();
@@ -50,8 +50,6 @@ export default function EmployeeLoginPage() {
     setIsLoading(true);
 
     try {
-      // For employee login via phone, we assume a global context or
-      // a lookup method that doesn't require tenant pre-selection.
       auth.tenantId = null;
 
       const appVerifier = window.recaptchaVerifier!;

@@ -6,19 +6,25 @@ import { useRouter } from 'next/navigation';
 import EnhancedWorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
 import WorkspaceHeader from "@/components/worker/WorkspaceHeader";
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push('/employee/login');
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push('/employee/login');
+      } else if (user?.customClaims?.role && user.customClaims.role !== 'employee') {
+        // If logged in but not an employee, redirect to partner portal as a fallback.
+        router.push('/partner');
+      }
     }
-  }, [loading, isAuthenticated, router]);
+  }, [loading, isAuthenticated, router, user]);
 
-  if (loading || !isAuthenticated) {
+  if (loading || !isAuthenticated || user?.customClaims?.role !== 'employee') {
     return (
       <div className="flex h-screen">
         <div className="w-20 p-4 border-r bg-gray-100">
@@ -38,7 +44,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (isAuthenticated) {
+  if (isAuthenticated && user?.customClaims?.role === 'employee') {
     return (
         <div className="flex h-screen bg-secondary/30">
           <EnhancedWorkspaceSwitcher />
