@@ -36,24 +36,12 @@ service cloud.firestore {
         return request.auth != null && request.auth.uid == userId;
     }
 
-    // Helper function to check if a user is a partner admin for a specific resource
-    // This handles both create (request.resource) and update (resource) operations.
-    function isPartnerAdminForResource() {
-      // For new documents, check incoming data. For existing, check stored data.
-      let partnerId = request.resource.data.partnerId;
-      if (resource != null) {
-        partnerId = resource.data.partnerId;
-      }
-      return isPartnerAdmin() && request.auth.token.partnerId == partnerId;
-    }
-
-
     // ============================================================================
     // CORE COLLECTIONS
     // ============================================================================
     
     match /partners/{partnerId} {
-      allow read: if isAdmin() || (isPartner() && request.auth.token.partnerId == partnerId);
+      allow read: if isAdmin() || request.auth.token.partnerId == partnerId;
       allow list: if isAdmin();
       allow create: if isAdmin();
       allow update: if isAdmin() || (isPartnerAdmin() && request.auth.token.partnerId == partnerId);
@@ -65,22 +53,42 @@ service cloud.firestore {
     }
     
     match /userMappings/{identifier} {
-      // Allow unauthenticated reads for login lookup
-      allow read: if request.auth == null;
-      // Allow admins to read for debugging
+      allow read: if request.auth == null; 
       allow read: if isAdmin();
-      // No client-side writes
       allow write: if false; 
     }
 
     match /teamMembers/{memberId} {
+      function isPartnerAdminForResource() {
+        let partnerId = request.resource.data.partnerId;
+        if (resource != null) {
+          partnerId = resource.data.partnerId;
+        }
+        return isPartnerAdmin() && request.auth.token.partnerId == partnerId;
+      }
+      
       allow read: if isAuthenticated() && (isAdmin() || request.auth.token.partnerId == resource.data.partnerId);
       allow list: if isAuthenticated() && (isAdmin() || (isPartner() && request.query.partnerId == request.auth.token.partnerId));
       allow write: if isAuthenticated() && (isAdmin() || isPartnerAdminForResource());
     }
 
+    match /invitationCodes/{invitationId} {
+        // Partner admins can manage invitations for their own workspace
+        allow read, write: if isPartnerAdmin() && request.auth.token.partnerId == resource.data.partnerId;
+        allow list: if isPartnerAdmin() && request.query.partnerId == request.auth.token.partnerId;
+
+        // Unauthenticated or employee users can query for a specific code to validate it
+        allow list: if (request.auth == null || isEmployee()) && request.query.keys().hasOnly(['invitationCode', 'status', 'limit']);
+
+        // Authenticated users can read/accept an invitation if it matches their phone number
+        allow read, update: if isAuthenticated() && request.auth.token.phone_number == resource.data.phoneNumber;
+        
+        // System Admins have full access
+        allow read, write, list: if isAdmin();
+    }
+
     // ============================================================================
-    // OTHER COLLECTIONS (EXAMPLE)
+    // OTHER COLLECTIONS
     // ============================================================================
 
     match /workflowTemplates/{templateId} {
