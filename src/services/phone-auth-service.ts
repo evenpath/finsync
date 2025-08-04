@@ -223,24 +223,24 @@ export async function createEmployeeWithPhone(input: {
 
     // 5. Create or update the TeamMember document
     const teamMemberRef = db.collection('teamMembers').doc(userRecord.uid);
-    const teamMemberData: Omit<TeamMember, 'id'> = {
-      userId: userRecord.uid,
-      partnerId: input.partnerId,
-      name: input.displayName,
-      email: input.email || userRecord.email || '',
-      phone: input.phoneNumber,
-      role: input.role,
-      status: 'active',
-      avatar: `https://placehold.co/40x40.png?text=${input.displayName.charAt(0)}`,
-      joinedDate: new Date().toISOString(),
-      lastActive: new Date().toISOString(),
-      tasksCompleted: 0,
-      avgCompletionTime: '-',
-      skills: [],
-      createdAt: FieldValue.serverTimestamp(),
+    const teamMemberData: Omit<TeamMember, 'id' | 'createdAt'> = {
+        userId: userRecord.uid,
+        partnerId: input.partnerId,
+        tenantId: input.tenantId,
+        name: input.displayName,
+        email: input.email || userRecord.email || '',
+        phone: input.phoneNumber,
+        role: input.role,
+        status: 'active', // User is now active
+        avatar: `https://placehold.co/40x40.png?text=${input.displayName.charAt(0)}`,
+        joinedDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        tasksCompleted: 0,
+        avgCompletionTime: '-',
+        skills: [],
     };
     // Use set with merge to create if not exists, or update if user has a profile from another team.
-    await teamMemberRef.set(teamMemberData, { merge: true });
+    await teamMemberRef.set({ ...teamMemberData, createdAt: FieldValue.serverTimestamp() }, { merge: true });
     console.log(`Created/updated team member document for UID ${userRecord.uid}`);
     
     // In a multi-workspace context, we would add the new workspace to the user's claims
@@ -253,8 +253,8 @@ export async function createEmployeeWithPhone(input: {
         partnerId: input.partnerId,
         tenantId: input.tenantId,
         role: input.role,
-        status: 'active',
         permissions: [],
+        status: 'active',
         partnerName: partnerName,
         partnerAvatar: undefined,
     };

@@ -1,46 +1,50 @@
-
 // src/components/partner/team/TeamManagement.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Users,
-  Phone,
-  Mail,
-  Calendar,
-  Shield,
-  Clock,
   AlertTriangle,
   RefreshCw,
   Ticket,
-  MessageSquare,
-  Send,
-  Settings,
+  Trash2,
 } from "lucide-react";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, doc, deleteDoc } from "firebase/firestore";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvitationCodesList from "./team/InvitationCodesList";
 import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { removeTeamMemberAction } from "@/actions/team-actions";
+
 
 export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const partnerId = user?.customClaims?.partnerId;
   const userRole = user?.customClaims?.role;
+  const isPartnerAdmin = userRole === 'partner_admin';
 
   useEffect(() => {
     if (authLoading) {
@@ -73,14 +77,6 @@ export default function TeamManagement() {
       } as TeamMember));
       
       setTeamMembers(membersData);
-      
-      if (!selectedMember && membersData.length > 0) {
-        setSelectedMember(membersData[0]);
-      } else if (selectedMember) {
-        const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
-        setSelectedMember(updatedSelectedMember || null);
-      }
-      
       setIsLoading(false);
     }, (error) => {
       console.error("Firestore error fetching team members:", error);
@@ -102,12 +98,36 @@ export default function TeamManagement() {
 
     return () => unsubscribe();
   }, [partnerId, authLoading, toast]);
+  
+  const handleRemoveMember = async (memberToRemove: TeamMember) => {
+    if (!partnerId || !memberToRemove.userId || !memberToRemove.tenantId) {
+       toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Cannot remove member. Missing required information.",
+      });
+      return;
+    }
 
-  const filteredMembers = teamMembers.filter(member =>
-    member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.phone?.includes(searchTerm)
-  );
+    const result = await removeTeamMemberAction({
+      partnerId: partnerId,
+      userIdToRemove: memberToRemove.userId,
+      tenantId: memberToRemove.tenantId
+    });
+
+    if (result.success) {
+      toast({
+        title: "Success",
+        description: result.message,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.message,
+      });
+    }
+  };
 
   const formatDate = (dateString: any) => {
     if (!dateString) return 'N/A';
@@ -118,14 +138,6 @@ export default function TeamManagement() {
     }
   };
 
-  const formatTime = (timeString: any) => {
-    if (!timeString || timeString === 'Never') return 'Never';
-     try {
-      return new Date(timeString).toLocaleString();
-    } catch (e) {
-      return 'Invalid Time';
-    }
-  };
 
   if (firestoreError) {
     return (
@@ -141,12 +153,6 @@ export default function TeamManagement() {
             <p>
               {firestoreError}
             </p>
-            <Button asChild variant="outline">
-              <Link href="/partner/team/diagnostics">
-                <Settings className="w-4 h-4 mr-2"/>
-                View Access Diagnostics
-              </Link>
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -154,157 +160,104 @@ export default function TeamManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-headline">
-                  Manage Team
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  {partnerId && userRole === 'partner_admin' && (
-                    <InviteEmployeeByCodeDialog partnerId={partnerId} />
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="members">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="members">
-                    <Users className="w-4 h-4 mr-2" />
-                    Team Members ({teamMembers.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="invitations">
-                    <Ticket className="w-4 h-4 mr-2" />
-                    Invitations
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="members">
-                  <div className="border-t mt-4 pt-4">
-                    {isLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
-                        <span className="text-muted-foreground">Loading team members...</span>
-                      </div>
-                    ) : filteredMembers.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold">No team members found</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Get started by inviting your first team member.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="divide-y">
-                        {filteredMembers.map((member) => (
-                          <div
-                            key={member.id}
-                            className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
-                              selectedMember?.id === member.id ? 'bg-muted' : ''
-                            }`}
-                            onClick={() => setSelectedMember(member)}
-                          >
-                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <span className="text-sm font-medium text-primary">
-                                    {member.name?.charAt(0).toUpperCase() || '?'}
-                                  </span>
-                                </div>
-                                <div>
-                                  <p className="font-medium">{member.name || 'Unnamed'}</p>
-                                  <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
-                                </div>
-                              </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="invitations">
-                  <div className="border-t mt-4 pt-4">
-                    {partnerId && <InvitationCodesList partnerId={partnerId} />}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="font-headline">
+            Manage Team
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {partnerId && isPartnerAdmin && (
+              <InviteEmployeeByCodeDialog partnerId={partnerId} />
+            )}
+          </div>
         </div>
-
-        {/* Member Details Panel */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Member Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {selectedMember ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-lg font-medium text-primary">
-                        {selectedMember.name?.charAt(0).toUpperCase() || '?'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{selectedMember.name || 'Unnamed'}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{selectedMember.role?.replace('_', ' ')}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{selectedMember.email || 'No email'}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{selectedMember.phone || 'No phone'}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Joined {formatDate(selectedMember.createdAt)}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Last active {formatTime(selectedMember.lastActive)}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-muted-foreground" />
-                      <Badge variant={selectedMember.status === 'active' ? 'default' : 'outline'}>
-                        {selectedMember.status || 'unknown'}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 space-y-2">
-                    <Button className="w-full" variant="outline">
-                      <MessageSquare className="w-4 w-4 mr-2" />
-                      Send Message
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      <Send className="w-4 h-4 mr-2" />
-                      Edit Details
-                    </Button>
-                  </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="members">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="members">
+              <Users className="w-4 h-4 mr-2" />
+              Team Members ({teamMembers.length})
+            </TabsTrigger>
+            <TabsTrigger value="invitations">
+              <Ticket className="w-4 h-4 mr-2" />
+              Invitations
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="members">
+            <div className="border-t mt-4 pt-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+                  <span className="text-muted-foreground">Loading team members...</span>
                 </div>
-              ) : (
+              ) : teamMembers.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Select a team member to view details</p>
+                  <h3 className="text-lg font-semibold">No team members found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Get started by inviting your first team member.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors rounded-lg"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">
+                          {member.name?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{member.name || 'Unnamed'}</p>
+                        <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
+                      </div>
+                      <Badge variant={member.role === 'partner_admin' ? "destructive" : "secondary"}>
+                        {member.role === 'partner_admin' ? 'Admin' : 'Employee'}
+                      </Badge>
+                       <Badge variant={member.status === 'active' ? 'default' : 'outline'}>
+                          {member.status || 'unknown'}
+                        </Badge>
+                       {isPartnerAdmin && user?.uid !== member.userId && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove {member.name} from your team. They will lose access to this workspace. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleRemoveMember(member)}>
+                                  Continue
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                       )}
+                    </div>
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="invitations">
+            <div className="border-t mt-4 pt-4">
+              {partnerId && <InvitationCodesList partnerId={partnerId} />}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }

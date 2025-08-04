@@ -1,5 +1,3 @@
-
-
 // ============================================================================
 // FIREBASE BACKEND VARIABLES
 // ============================================================================
@@ -886,6 +884,7 @@ export interface Task {
 export interface TeamMember {
   id: string; // Should be the user's UID
   userId?: string;
+  tenantId?: string;
   user?: UserProfile;
   partnerId: string;
   name: string;

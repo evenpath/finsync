@@ -5,6 +5,8 @@ import { db, adminAuth } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { CodeBasedInvitation, CreateInvitationCodeOutput, AcceptInvitationCodeOutput } from '@/lib/types/invitation';
 import type { TeamMember } from '@/lib/types';
+import type { UserRecord } from 'firebase-admin/auth';
+
 
 /**
  * Generate a unique 8-character alphanumeric invitation code
@@ -61,9 +63,11 @@ export async function generateInvitationCode(input: {
         message: 'Partner organization not found'
       };
     }
-
-    const inviterUser = await adminAuth.getUser(input.invitedBy);
     const partnerData = partnerDoc.data();
+    
+    // Get inviter details (they exist in a tenant)
+    const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
+    const inviterUser = await tenantAuth.getUser(input.invitedBy);
     
     // Generate unique code (retry up to 5 times if collision)
     let invitationCode = '';
@@ -230,24 +234,25 @@ export async function acceptInvitationByCode(input: {
     await workspaceLinkRef.set(workspaceLink);
     
     // Create Team Member document
+    const userRecord = await adminAuth.getUser(input.uid);
     const teamMemberRef = db.collection('teamMembers').doc(input.uid);
-    const teamMemberData: Omit<TeamMember, 'id'> = {
+    const teamMemberData: Omit<TeamMember, 'id' | 'createdAt'> = {
         userId: input.uid,
         partnerId: invitation.partnerId,
-        name: invitation.name,
-        email: '', // Not available from phone invite, can be updated later
+        tenantId: invitation.tenantId,
+        name: userRecord.displayName || invitation.name,
+        email: userRecord.email || '',
         phone: invitation.phoneNumber,
         role: invitation.role,
         status: 'active', // User is now active
-        avatar: `https://placehold.co/40x40.png?text=${invitation.name.charAt(0)}`,
+        avatar: userRecord.photoURL || `https://placehold.co/40x40.png?text=${invitation.name.charAt(0)}`,
         joinedDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
         tasksCompleted: 0,
         avgCompletionTime: '-',
         skills: [],
-        createdAt: FieldValue.serverTimestamp(),
     };
-    await teamMemberRef.set(teamMemberData, { merge: true });
+    await teamMemberRef.set({ ...teamMemberData, createdAt: FieldValue.serverTimestamp() }, { merge: true });
 
 
     // Update user's Firebase Auth custom claims

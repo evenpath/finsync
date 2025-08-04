@@ -3,7 +3,8 @@
 
 import { db, adminAuth } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import type { UserWorkspaceLink, WorkspaceInvitation, WorkspaceAccess } from '@/lib/types';
+import type { UserWorkspaceLink, WorkspaceInvitation, WorkspaceAccess, TeamMember } from '@/lib/types';
+import type { UserRecord } from 'firebase-admin/auth';
 
 export interface InviteUserToWorkspaceInput {
   email: string;
@@ -51,9 +52,10 @@ export async function inviteUserToWorkspace(input: InviteUserToWorkspaceInput): 
       };
     }
 
-    const partnerData = partnerDoc.data();
-    const inviterDoc = await db.collection('users').doc(input.invitedBy).get();
-    const inviterData = inviterDoc.exists ? inviterDoc.data() : null;
+    // Get inviter details (who is a tenant user)
+    const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
+    const inviterUser = await tenantAuth.getUser(input.invitedBy);
+
 
     // Create workspace invitation using admin SDK
     const invitationRef = db.collection('workspaceInvitations').doc();
@@ -67,9 +69,9 @@ export async function inviteUserToWorkspace(input: InviteUserToWorkspaceInput): 
       invitedAt: FieldValue.serverTimestamp() as any,
       expiresAt: Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       status: 'pending',
-      partnerName: partnerData?.name || 'Unknown Organization',
-      inviterName: inviterData?.displayName || 'Unknown',
-      inviterEmail: inviterData?.email || 'unknown@example.com'
+      partnerName: partnerDoc.data()?.name || 'Unknown Organization',
+      inviterName: inviterUser?.displayName || 'Unknown',
+      inviterEmail: inviterUser?.email || 'unknown@example.com'
     };
 
     await invitationRef.set(invitation);
