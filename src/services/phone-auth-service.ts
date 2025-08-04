@@ -2,8 +2,9 @@
 'use server';
 
 import { db, adminAuth } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
-import type { UserWorkspaceLink, WorkspaceAccess } from '@/lib/types';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import type { UserWorkspaceLink, WorkspaceAccess, TeamMember } from '@/lib/types';
+import type { UserRecord } from 'firebase-admin/auth';
 
 export interface PhoneAuthResult {
   success: boolean;
@@ -144,8 +145,9 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
   }
 }
 
+
 /**
- * Create a new employee with phone number
+ * Creates or links an employee to a partner workspace using their phone number.
  */
 export async function createEmployeeWithPhone(input: {
   phoneNumber: string;
@@ -165,89 +167,131 @@ export async function createEmployeeWithPhone(input: {
   }
 
   try {
-    // Create Firebase Auth user with phone number
-    const userRecord = await adminAuth.createUser({
-      phoneNumber: input.phoneNumber,
-      displayName: input.displayName,
-      email: input.email || undefined
-    });
+    let userRecord: UserRecord;
 
-    // Create user profile using admin SDK
-    const userProfile = {
-      uid: userRecord.uid,
-      phoneNumber: input.phoneNumber,
-      displayName: input.displayName,
-      email: input.email || null,
-      role: input.role,
-      onboardingCompleted: false,
-      preferences: {
-        theme: 'system',
-        language: 'en',
-        notifications: {
-          email: false,
-          push: true,
-          sms: false,
-          workflowCompleted: true,
-          workflowFailed: true,
-          newTeamMember: true,
-          systemUpdates: false
-        },
-        dashboard: {
-          defaultView: 'overview',
-          widgetLayout: [],
-          refreshInterval: 30
-        },
-        emailDigest: 'never'
-      },
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      lastActiveAt: FieldValue.serverTimestamp(),
-      isActive: true,
-      timezone: 'UTC'
-    };
+    // 1. Check if a user with this phone number already exists
+    try {
+      userRecord = await adminAuth.getUserByPhoneNumber(input.phoneNumber);
+      console.log(`User already exists with phone number: ${input.phoneNumber}, UID: ${userRecord.uid}`);
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        // 2. If user doesn't exist, create them
+        console.log(`No user found for ${input.phoneNumber}. Creating new user.`);
+        userRecord = await adminAuth.createUser({
+          phoneNumber: input.phoneNumber,
+          displayName: input.displayName,
+          email: input.email || undefined,
+        });
+        console.log(`New user created with UID: ${userRecord.uid}`);
+      } else {
+        // Rethrow other errors
+        throw error;
+      }
+    }
 
-    await db.collection('users').doc(userRecord.uid).set(userProfile);
+    // 3. Check if the user is already a member of this specific partner's team
+    const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${userRecord.uid}_${input.partnerId}`);
+    const workspaceLinkDoc = await workspaceLinkRef.get();
+    
+    if (workspaceLinkDoc.exists) {
+      return {
+        success: false,
+        message: 'This employee is already a member of your team.'
+      };
+    }
+    
+    const partnerDoc = await db.collection('partners').doc(input.partnerId).get();
+    const partnerName = partnerDoc.exists ? partnerDoc.data()?.name : 'Unknown Organization';
 
-    // Create workspace link using admin SDK
-    const workspaceLink: Omit<UserWorkspaceLink, 'id'> = {
+    // 4. Create the UserWorkspaceLink to add the user to the team
+    const workspaceLinkData: Omit<UserWorkspaceLink, 'id'> = {
       userId: userRecord.uid,
       partnerId: input.partnerId,
       tenantId: input.tenantId,
       role: input.role,
-      status: 'invited',
+      status: 'active', // Adding user directly as active
       permissions: [],
       joinedAt: FieldValue.serverTimestamp() as any,
       invitedBy: input.invitedBy,
       invitedAt: FieldValue.serverTimestamp() as any,
-      partnerName: '', // Will be updated by partner service
+      partnerName: partnerName,
       partnerAvatar: null,
       lastAccessedAt: FieldValue.serverTimestamp() as any
     };
+    await workspaceLinkRef.set(workspaceLinkData);
+    console.log(`Created workspace link for UID ${userRecord.uid} to partner ${input.partnerId}`);
 
-    const linkId = `${userRecord.uid}_${input.partnerId}`;
-    await db.collection('userWorkspaceLinks').doc(linkId).set(workspaceLink);
-
-    // Set initial custom claims
-    await adminAuth.setCustomUserClaims(userRecord.uid, {
-      role: input.role,
+    // 5. Create or update the TeamMember document
+    const teamMemberRef = db.collection('teamMembers').doc(userRecord.uid);
+    const teamMemberData: Omit<TeamMember, 'id'> = {
+      userId: userRecord.uid,
       partnerId: input.partnerId,
-      tenantId: input.tenantId,
-      partnerIds: [input.partnerId],
-      activePartnerId: input.partnerId,
-      activeTenantId: input.tenantId
+      name: input.displayName,
+      email: input.email || userRecord.email || '',
+      phone: input.phoneNumber,
+      role: input.role,
+      status: 'active',
+      avatar: `https://placehold.co/40x40.png?text=${input.displayName.charAt(0)}`,
+      joinedDate: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      tasksCompleted: 0,
+      avgCompletionTime: '-',
+      skills: [],
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    // Use set with merge to create if not exists, or update if user has a profile from another team.
+    await teamMemberRef.set(teamMemberData, { merge: true });
+    console.log(`Created/updated team member document for UID ${userRecord.uid}`);
+    
+    // In a multi-workspace context, we would add the new workspace to the user's claims
+    // instead of overwriting them. This part would need more complex logic to merge claims.
+    // For now, we'll set it as the active one.
+    const currentClaims = userRecord.customClaims || {};
+    const existingWorkspaces = (currentClaims.workspaces as WorkspaceAccess[] || []).filter(w => w.partnerId !== input.partnerId);
+    
+    const newWorkspaceAccess: WorkspaceAccess = {
+        partnerId: input.partnerId,
+        tenantId: input.tenantId,
+        role: input.role,
+        status: 'active',
+        permissions: [],
+        partnerName: partnerName,
+        partnerAvatar: undefined,
+    };
+    
+    const updatedWorkspaces = [...existingWorkspaces, newWorkspaceAccess];
+    
+    await adminAuth.setCustomUserClaims(userRecord.uid, {
+        ...currentClaims,
+        role: input.role,
+        partnerId: input.partnerId, // Set active workspace context
+        tenantId: input.tenantId,
+        partnerIds: updatedWorkspaces.map(w => w.partnerId),
+        workspaces: updatedWorkspaces,
+        activePartnerId: input.partnerId,
+        activeTenantId: input.tenantId
     });
+
 
     return {
       success: true,
-      message: 'Employee created successfully',
-      userId: userRecord.uid
+      message: 'Employee added to your team successfully!',
+      userId: userRecord.uid,
     };
 
   } catch (error: any) {
-    console.error('Error creating employee with phone:', error);
+    console.error('Error in createEmployeeWithPhone:', error);
+    // Provide more user-friendly error messages
+    let message = `Failed to add employee: ${error.message}`;
+    if (error.code === 'auth/phone-number-already-exists' && error.message.includes('already in use by another user')) {
+      // This case should be handled by the logic above, but as a fallback:
+      message = "The phone number is already in use by another user account.";
+    } else if (error.code === 'auth/invalid-phone-number') {
+      message = "The phone number provided is not valid. Please use the E.164 format (e.g., +15551234567).";
+    }
     return {
       success: false,
-      message: `Failed to create employee: ${error.message}`
+      message: message
     };
   }
 }

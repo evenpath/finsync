@@ -1,13 +1,13 @@
 // src/actions/partner-actions.ts
 'use server';
 
-import { createUserInTenant } from '@/ai/flows/user-management-flow';
 import { createEmployeeWithPhone } from '@/services/phone-auth-service';
-import { getPartnerTenantId, getPartnerDetailsByPartnerId } from '@/services/tenant-service';
-import type { CreateUserInTenantOutput } from '@/ai/flows/user-management-flow';
+import { getPartnerTenantId } from '@/services/tenant-service';
 import type { Partner, TeamMember } from '@/lib/types';
 import { db } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
+import type { PhoneAuthResult } from '@/services/phone-auth-service';
+
 
 export async function inviteEmployeeAction(data: {
   email?: string;
@@ -15,7 +15,7 @@ export async function inviteEmployeeAction(data: {
   name: string;
   partnerId: string;
   role?: 'employee' | 'partner_admin';
-}): Promise<CreateUserInTenantOutput> {
+}): Promise<PhoneAuthResult> {
   try {
     // Get the tenant ID associated with this partner
     const partnerTenant = await getPartnerTenantId(data.partnerId);
@@ -27,7 +27,7 @@ export async function inviteEmployeeAction(data: {
       };
     }
 
-    let userResult: CreateUserInTenantOutput;
+    let userResult: PhoneAuthResult;
 
     // Use phone-based creation if phone number is provided
     if (data.phone) {
@@ -40,53 +40,17 @@ export async function inviteEmployeeAction(data: {
         role: data.role || 'employee',
         invitedBy: 'system' // In production, this would be the actual inviter's ID
       });
-    } else if (data.email) {
-      // Fall back to email-based creation
-      userResult = await createUserInTenant({
-        email: data.email,
-        password: Math.random().toString(36).slice(-8), // Generate random temp password
-        tenantId: partnerTenant.tenantId,
-        displayName: data.name,
-        partnerId: data.partnerId,
-        role: data.role || 'employee',
-      });
     } else {
-      return {
-        success: false,
-        message: "Either email or phone number must be provided."
-      };
+        // In the future, you could add email-based creation here using a similar pattern.
+        return {
+            success: false,
+            message: "Phone number is required to invite an employee."
+        };
     }
     
     if (userResult.success && userResult.userId) {
-      if (!db) {
-        console.error("Database not initialized, cannot save employee profile.");
-        return {
-          success: false,
-          message: "User account created, but could not save profile. Please contact support."
-        };
-      }
-      
-      const employeeData: Omit<TeamMember, 'id'> = {
-        userId: userResult.userId,
-        partnerId: data.partnerId,
-        name: data.name,
-        email: data.email || 'N/A',
-        phone: data.phone || 'N/A',
-        role: data.role || 'employee',
-        status: 'active',
-        avatar: `https://placehold.co/40x40.png?text=${data.name.charAt(0)}`,
-        joinedDate: new Date().toISOString(),
-        lastActive: 'Never',
-        tasksCompleted: 0,
-        avgCompletionTime: '-',
-        skills: [],
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      };
-      
-      // Save to the root 'teamMembers' collection
-      const employeeDocRef = db.collection('teamMembers').doc(userResult.userId);
-      await employeeDocRef.set(employeeData);
-      console.log(`Saved employee profile for ${data.name} in teamMembers collection`);
+      // TeamMember document creation is now handled within createEmployeeWithPhone
+      console.log(`Successfully invited/added employee ${data.name} to team.`);
     }
 
     return userResult;
