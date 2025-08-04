@@ -59,7 +59,7 @@ export default function JoinWorkspacePage() {
     setIsLoading(true);
     try {
       const result = await joinWorkspaceWithCodeAction({
-        invitationCode,
+        invitationCode: inviteCode,
         phoneNumber: user.phoneNumber,
         uid: user.uid,
       });
@@ -142,7 +142,7 @@ export default function JoinWorkspacePage() {
                 </div>
                  <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span>Expires in {new Date(preview.expiresAt).toLocaleDateString()}</span>
+                  <span>Expires on {new Date(preview.expiresAt).toLocaleDateString()}</span>
                 </div>
               </CardContent>
             </Card>
