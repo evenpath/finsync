@@ -9,22 +9,23 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth(); // Use the simpler, base auth hook
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        // If not logged in, redirect to the employee login page
-        router.push('/employee/login');
-      } else if (user?.customClaims?.role !== 'employee') {
-        // If logged in but NOT an employee, redirect away from the employee section
-        router.push('/');
-      }
+    if (loading) {
+      return; // Do nothing while loading
     }
-  }, [loading, isAuthenticated, router, user]);
+    if (!isAuthenticated) {
+      // If not logged in, redirect to the employee login page
+      router.push('/employee/login');
+    } else if (user?.customClaims?.role !== 'employee') {
+      // If logged in but NOT an employee, redirect away from the employee section to the homepage
+      router.push('/');
+    }
+  }, [loading, isAuthenticated, user, router]);
 
-  // Show a loading skeleton while auth state is being determined
+  // Show a loading skeleton while auth state is being determined or if user is not yet verified as an employee
   if (loading || !isAuthenticated || user?.customClaims?.role !== 'employee') {
     return (
       <div className="flex h-screen">
@@ -46,22 +47,17 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
   }
   
   // If authenticated and the user is an employee, show the dashboard
-  if (isAuthenticated && user?.customClaims?.role === 'employee') {
-    return (
-        <div className="flex h-screen bg-secondary/30">
-          <EnhancedWorkspaceSwitcher />
-          <div className="flex flex-1 flex-col">
-            <WorkspaceHeader />
-            <main className="flex-1 overflow-auto p-6">
-              {children}
-            </main>
-          </div>
+  return (
+      <div className="flex h-screen bg-secondary/30">
+        <EnhancedWorkspaceSwitcher />
+        <div className="flex flex-1 flex-col">
+          <WorkspaceHeader />
+          <main className="flex-1 overflow-auto p-6">
+            {children}
+          </main>
         </div>
-    );
-  }
-
-  // Fallback, should be handled by the redirect in useEffect
-  return null;
+      </div>
+  );
 }
 
 
