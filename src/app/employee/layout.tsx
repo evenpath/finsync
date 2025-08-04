@@ -7,15 +7,14 @@ import EnhancedWorkspaceSwitcher from "@/components/worker/WorkspaceSwitcher";
 import WorkspaceHeader from "@/components/worker/WorkspaceHeader";
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/partner/login');
+      router.push('/employee/login');
     }
   }, [loading, isAuthenticated, router]);
 
@@ -39,7 +38,21 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
   
-  return children;
+  if (isAuthenticated) {
+    return (
+        <div className="flex h-screen bg-secondary/30">
+          <EnhancedWorkspaceSwitcher />
+          <div className="flex flex-1 flex-col">
+            <WorkspaceHeader />
+            <main className="flex-1 overflow-auto p-6">
+              {children}
+            </main>
+          </div>
+        </div>
+    );
+  }
+
+  return null;
 }
 
 
@@ -51,15 +64,7 @@ export default function EmployeeLayout({
   return (
     <AuthProvider>
       <EmployeeAuthWrapper>
-        <div className="flex h-screen bg-secondary/30">
-          <EnhancedWorkspaceSwitcher />
-          <div className="flex flex-1 flex-col">
-            <WorkspaceHeader />
-            <main className="flex-1 overflow-auto p-6">
-              {children}
-            </main>
-          </div>
-        </div>
+        {children}
       </EmployeeAuthWrapper>
     </AuthProvider>
   );
