@@ -1,3 +1,4 @@
+
 // src/hooks/use-partner-auth.ts
 "use client";
 
@@ -5,7 +6,6 @@ import { useEffect, useState } from 'react';
 import type { Partner, TeamMember } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
-import { getPartnerDetailsAction } from '@/actions/partner-actions';
 
 interface PartnerAuthState {
   partner: Partner | null;
@@ -34,50 +34,18 @@ export function usePartnerAuth(partnerId?: string | null) {
         partnerId: null,
         tenantId: null,
         loading: false,
-        error: null // Not an error state, just no partner selected
+        error: null
       });
       return;
     }
 
     setPartnerState(prev => ({ ...prev, loading: true, error: null, partnerId }));
 
-    const fetchPartnerDetails = async () => {
-      try {
-        const result = await getPartnerDetailsAction(partnerId);
-        
-        if (result.success && result.partner) {
-          setPartnerState(prev => ({
-            ...prev,
-            partner: result.partner,
-            tenantId: result.tenantId || null,
-          }));
-        } else {
-          // Don't overwrite employee-related errors
-          setPartnerState(prev => ({
-            ...prev,
-            partner: null,
-            tenantId: null,
-            error: prev.error || result.message,
-          }));
-        }
-      } catch (error: any) {
-        setPartnerState(prev => ({
-          ...prev,
-          partner: null,
-          tenantId: null,
-          error: prev.error || 'Failed to fetch partner details.',
-        }));
-      }
-    };
-    
-    fetchPartnerDetails();
-
     // Listen for employee updates from the root 'teamMembers' collection
     const employeesRef = collection(db, 'teamMembers');
     const q = query(
         employeesRef, 
-        where("partnerId", "==", partnerId),
-        orderBy("createdAt", "desc")
+        where("partnerId", "==", partnerId)
     );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {

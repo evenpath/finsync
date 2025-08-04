@@ -1,18 +1,17 @@
-
 // src/components/partner/TeamManagement.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/shared/Badge";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
 import {
   UserPlus,
   Filter,
   Download,
   Search,
+  Send,
   MessageSquare,
   Settings,
   XCircle,
@@ -29,43 +28,120 @@ import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
-import { useMultiWorkspaceAuth } from "@/hooks/use-multi-workspace-auth";
-import { usePartnerAuth } from "@/hooks/use-partner-auth";
+import { useAuth } from "@/hooks/use-auth";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
 
 export default function TeamManagement() {
-  const { 
-    user: authUser, 
-    loading: authLoading, 
-    currentWorkspace 
-  } = useMultiWorkspaceAuth();
-  
-  const partnerId = currentWorkspace?.partnerId;
-  
-  const { 
-    employees: teamMembers, 
-    loading: partnerDataLoading, 
-    error: partnerDataError 
-  } = usePartnerAuth(partnerId);
-
+  const { user, loading: authLoading } = useAuth();
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const isLoading = authLoading || partnerDataLoading;
+  // Enhanced partnerId extraction with multiple fallbacks
+  const partnerId = useMemo(() => {
+    if (!user?.customClaims) return null;
+    
+    // Try different ways to get partnerId
+    return user.customClaims.partnerId || 
+           user.customClaims.activePartnerId ||
+           (user.customClaims.partnerIds && Object.keys(user.customClaims.partnerIds)[0]) ||
+           null;
+  }, [user?.customClaims]);
+
+  // Enhanced auth check
+  const authUser = useMemo(() => {
+    if (!user) return null;
+    
+    const hasValidRole = user.customClaims?.role === 'partner_admin' || 
+                        user.customClaims?.role === 'employee';
+    const hasPartnerId = !!partnerId;
+    
+    return hasValidRole && hasPartnerId ? user : null;
+  }, [user, partnerId]);
+
+  const userRole = user?.customClaims?.role;
 
   useEffect(() => {
-    if (!selectedMember && teamMembers.length > 0) {
-        setSelectedMember(teamMembers[0]);
-    } else if (selectedMember) {
-        // If the selected member is no longer in the list, deselect it
-        if (!teamMembers.some(m => m.id === selectedMember.id)) {
-            setSelectedMember(teamMembers.length > 0 ? teamMembers[0] : null);
-        }
+    if (authLoading) {
+      setIsLoading(true);
+      return;
     }
-  }, [teamMembers, selectedMember]);
 
+    if (!partnerId || !db) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setFirestoreError(null);
+    
+    // Query teamMembers collection filtered by partnerId
+    const teamMembersRef = collection(db, "teamMembers");
+    const q = query(
+      teamMembersRef,
+      where("partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const membersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        // Ensure dates are converted to strings if they're timestamps
+        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+        lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive,
+      } as TeamMember));
+      
+      setTeamMembers(membersData);
+      
+      // Auto-select first member if none selected
+      if (!selectedMember && membersData.length > 0) {
+        setSelectedMember(membersData[0]);
+      } else if (selectedMember) {
+        // Update selected member if it was modified
+        const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
+        if (updatedSelectedMember) {
+          setSelectedMember(updatedSelectedMember);
+        } else if (membersData.length > 0) {
+          setSelectedMember(membersData[0]);
+        } else {
+          setSelectedMember(null);
+        }
+      }
+      
+      setIsLoading(false);
+      setFirestoreError(null);
+    }, (error) => {
+      console.error("Firestore error fetching team members:", error);
+      
+      let errorMessage = "Could not fetch team members.";
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = "Permission denied. Check your Firestore security rules and custom claims.";
+      } else if (error.code === 'failed-precondition') {
+        errorMessage = "Database index missing. Check Firestore console for required indexes.";
+      } else if (error.message) {
+        errorMessage = `Firestore error: ${error.message}`;
+      }
+      
+      setFirestoreError(errorMessage);
+      setIsLoading(false);
+      
+      toast({
+        variant: "destructive",
+        title: "Database Error",
+        description: errorMessage
+      });
+    });
+
+    return () => unsubscribe();
+  }, [partnerId, authLoading, toast, selectedMember]);
 
   const handleInviteMember = async (newMemberData: { 
     name: string; 
@@ -160,12 +236,26 @@ export default function TeamManagement() {
             <p>
               Could not identify your organization. This usually happens when your account is missing the necessary permissions (custom claims).
             </p>
+            
+            {/* Enhanced debugging info */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+              <p className="font-semibold text-yellow-800 mb-2">Debug Information:</p>
+              <div className="text-yellow-700 space-y-1">
+                <div>✅ Authenticated: {user ? 'Yes' : 'No'}</div>
+                <div>✅ Has Custom Claims: {user?.customClaims ? 'Yes' : 'No'}</div>
+                <div>✅ Role: {user?.customClaims?.role || 'Not Set'}</div>
+                <div>✅ Partner ID: {partnerId || 'Not Found'}</div>
+                <div>✅ Tenant ID: {user?.customClaims?.tenantId || 'Not Set'}</div>
+              </div>
+            </div>
+            
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
                 <p className="font-semibold text-yellow-800">Troubleshooting Steps:</p>
                 <ol className="list-decimal list-inside text-yellow-700 mt-2 space-y-1">
                     <li>Ensure you are logged in with the correct account.</li>
                     <li>Contact your administrator to verify your account has been assigned a `partnerId` and a `role`.</li>
                     <li>If you are an administrator, you may need to set these claims for the user in the Firebase console or via a script.</li>
+                    <li>Try refreshing the page to reload your permissions.</li>
                 </ol>
             </div>
             <div className="flex gap-2 pt-2">
@@ -186,14 +276,14 @@ export default function TeamManagement() {
     );
   }
   
-  if (partnerDataError) {
+  if (firestoreError) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4">
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
           <div>
             <h3 className="text-lg font-semibold text-destructive">Database Error</h3>
-            <p className="text-muted-foreground">{partnerDataError}</p>
+            <p className="text-muted-foreground">{firestoreError}</p>
           </div>
            <Button onClick={() => window.location.reload()}>
               Try Again
@@ -228,43 +318,47 @@ export default function TeamManagement() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline">
-                        Team Members ({filteredMembers.length})
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                        <div className="relative w-full max-w-xs">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search members..." 
-                            className="pl-9"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
-                        </div>
-                        <Button variant="outline" size="sm">
-                            <Filter className="w-4 h-4 mr-2" /> Filter
-                        </Button>
-                        <Button variant="outline" size="sm">
-                            <Download className="w-4 h-4 mr-2" /> Export
-                        </Button>
-                    </div>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Team Members ({teamMembers.length})
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
                 </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="border-b p-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search team members..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
               {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <RefreshCw className="animate-spin h-8 w-8 text-primary mx-auto" />
-                    <p className="mt-2 text-muted-foreground">Loading team members...</p>
-                  </div>
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+                  <span className="text-muted-foreground">Loading team members...</span>
                 </div>
               ) : filteredMembers.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No Team Members</h3>
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold">No team members found</h3>
                   <p className="text-muted-foreground mb-4">
-                    {searchTerm ? "No members match your search." : "Start building your team by inviting members."}
+                    {searchTerm ? "No members match your search criteria." : "Get started by inviting your first team member."}
                   </p>
                   {!searchTerm && (
                     <Button onClick={() => setIsInviteModalOpen(true)}>
@@ -278,60 +372,30 @@ export default function TeamManagement() {
                   {filteredMembers.map((member) => (
                     <div
                       key={member.id}
-                      className={`p-4 md:p-6 hover:bg-secondary cursor-pointer transition-colors ${
-                        selectedMember?.id === member.id ? 'bg-secondary' : ''
+                      className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                        selectedMember?.id === member.id ? 'bg-muted' : ''
                       }`}
                       onClick={() => setSelectedMember(member)}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <Image
-                              src={member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || 'User')}&background=random`}
-                              alt={member.name || 'Team member'}
-                              width={48}
-                              height={48}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                              member.status === 'active' ? 'bg-green-500' : 
-                              member.status === 'invited' ? 'bg-yellow-500' : 'bg-gray-400'
-                            }`} />
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {member.name?.charAt(0).toUpperCase() || '?'}
+                            </span>
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-foreground">{member.name}</h3>
-                              {member.role === 'partner_admin' && (
-                                <Shield className="w-4 h-4 text-primary" />
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
-                            <div className="flex items-center gap-4 mt-1">
-                              <Badge 
-                                variant={member.role === 'partner_admin' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {member.role === 'partner_admin' ? 'Admin' : 'Employee'}
-                              </Badge>
-                              <Badge 
-                                variant={
-                                  member.status === 'active' ? 'success' : 
-                                  member.status === 'invited' ? 'warning' : 'secondary'
-                                }
-                                className="text-xs"
-                              >
-                                {member.status}
-                              </Badge>
-                            </div>
+                            <p className="font-medium">{member.name || 'Unnamed'}</p>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
                           </div>
                         </div>
-                        <div className="text-right hidden sm:block">
-                          <p className="text-xs text-muted-foreground">
-                            Last active: {formatTime(member.lastActive)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Joined: {formatDate(member.joinedDate)}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={member.role === 'partner_admin' ? 'default' : 'secondary'}>
+                            {member.role?.replace('_', ' ') || 'No Role'}
+                          </Badge>
+                          <Badge variant={member.status === 'active' ? 'default' : 'outline'}>
+                            {member.status || 'unknown'}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -342,90 +406,70 @@ export default function TeamManagement() {
           </Card>
         </div>
 
-        <div>
-          <Card className="sticky top-6">
+        {/* Member Details Panel */}
+        <div className="lg:col-span-1">
+          <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Member Details</CardTitle>
+              <CardTitle>Member Details</CardTitle>
             </CardHeader>
             <CardContent>
               {selectedMember ? (
                 <div className="space-y-4">
-                  <div className="flex flex-col items-center text-center">
-                    <Image
-                      src={selectedMember.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedMember.name || 'User')}&background=random`}
-                      alt={selectedMember.name || 'Team member'}
-                      width={80}
-                      height={80}
-                      className="rounded-full mb-4"
-                    />
-                    <h3 className="text-lg font-semibold text-foreground">{selectedMember.name}</h3>
-                    <p className="text-muted-foreground">{selectedMember.email || selectedMember.phone}</p>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant={selectedMember.role === 'partner_admin' ? 'default' : 'secondary'}>
-                        {selectedMember.role === 'partner_admin' ? 'Admin' : 'Employee'}
-                      </Badge>
-                      <Badge 
-                        variant={
-                          selectedMember.status === 'active' ? 'success' : 
-                          selectedMember.status === 'invited' ? 'warning' : 'secondary'
-                        }
-                      >
-                        {selectedMember.status}
-                      </Badge>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-lg font-medium text-primary">
+                        {selectedMember.name?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedMember.name || 'Unnamed'}</p>
+                      <p className="text-sm text-muted-foreground">{selectedMember.role?.replace('_', ' ')}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-4">
-                    {selectedMember.email && (
-                      <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Email</p>
-                          <p className="text-sm text-muted-foreground">{selectedMember.email}</p>
-                        </div>
-                      </div>
-                    )}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{selectedMember.email || 'No email'}</span>
+                    </div>
                     
-                    {selectedMember.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Phone</p>
-                          <p className="text-sm text-muted-foreground">{selectedMember.phone}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Joined</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(selectedMember.joinedDate)}</p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{selectedMember.phone || 'No phone'}</span>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Last Active</p>
-                        <p className="text-sm text-muted-foreground">{formatTime(selectedMember.lastActive)}</p>
-                      </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Joined {formatDate(selectedMember.createdAt)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Last active {formatTime(selectedMember.lastActive)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant={selectedMember.status === 'active' ? 'default' : 'outline'}>
+                        {selectedMember.status || 'unknown'}
+                      </Badge>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-4">
-                    <Button size="sm" className="flex-1">
+                  <div className="pt-4 space-y-2">
+                    <Button className="w-full" variant="outline">
                       <MessageSquare className="w-4 h-4 mr-2" />
-                      Message
+                      Send Message
                     </Button>
-                    <Button size="sm" variant="outline">
-                      <Settings className="w-4 h-4" />
+                    <Button className="w-full" variant="outline">
+                      <Send className="w-4 h-4 mr-2" />
+                      Edit Details
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">Select a team member to view details</p>
                 </div>
               )}
@@ -437,7 +481,7 @@ export default function TeamManagement() {
       <InviteMemberModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
-        onInviteMember={handleInviteMember}
+        onInvite={handleInviteMember}
       />
     </div>
   );
