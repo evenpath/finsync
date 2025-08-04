@@ -73,7 +73,7 @@ export async function inviteEmployeeAction(data: {
         email: data.email || 'N/A',
         phone: data.phone || 'N/A',
         role: data.role || 'employee',
-        status: 'invited',
+        status: 'active',
         avatar: `https://placehold.co/40x40.png?text=${data.name.charAt(0)}`,
         joinedDate: new Date().toISOString(),
         lastActive: 'Never',
