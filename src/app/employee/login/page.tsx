@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { Phone, KeyRound, Building2, Users } from 'lucide-react';
+import { Phone, KeyRound, Building2, Users, ArrowRight } from 'lucide-react';
 import { handlePhoneAuthUser } from '@/services/phone-auth-service';
+import type { WorkspaceAccess } from '@/lib/types';
 
 declare global {
   interface Window {
@@ -25,7 +26,7 @@ export default function EmployeeLoginPage() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [workspaces, setWorkspaces] = useState<WorkspaceAccess[]>([]);
   const [showWorkspaceSelection, setShowWorkspaceSelection] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -51,20 +52,27 @@ export default function EmployeeLoginPage() {
     setIsLoading(true);
 
     try {
+      // Ensure no tenant ID is set for employee login
       auth.tenantId = null;
 
+      // Format phone number if needed
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+
       const appVerifier = window.recaptchaVerifier!;
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       
       window.confirmationResult = confirmationResult;
       setOtpSent(true);
-      toast({ title: "OTP Sent", description: "Please check your phone for the verification code." });
+      toast({ 
+        title: "OTP Sent", 
+        description: "Please check your phone for the verification code." 
+      });
     } catch (error: any) {
       console.error("Error sending OTP:", error);
       toast({
         variant: "destructive",
         title: "Failed to Send OTP",
-        description: error.message,
+        description: error.message || "Please check your phone number and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -84,7 +92,8 @@ export default function EmployeeLoginPage() {
       const user = result.user;
 
       // Handle post-authentication workspace access
-      const authResult = await handlePhoneAuthUser(phoneNumber, user.uid);
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+      const authResult = await handlePhoneAuthUser(formattedPhone, user.uid);
       
       if (!authResult.success) {
         toast({
@@ -122,12 +131,20 @@ export default function EmployeeLoginPage() {
     }
   };
 
-  const handleWorkspaceSelection = (workspace: any) => {
+  const handleWorkspaceSelection = (workspace: WorkspaceAccess) => {
     toast({ 
       title: "Workspace Selected", 
       description: `Redirecting to ${workspace.partnerName}...` 
     });
     router.push('/employee');
+  };
+
+  const handleRetry = () => {
+    setOtpSent(false);
+    setOtp('');
+    setShowWorkspaceSelection(false);
+    setWorkspaces([]);
+    window.confirmationResult = undefined;
   };
 
   if (showWorkspaceSelection) {
@@ -145,27 +162,29 @@ export default function EmployeeLoginPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {workspaces.map((workspace) => (
-              <Button
+              <div
                 key={workspace.partnerId}
-                variant="outline"
-                className="w-full justify-start h-auto p-4"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-secondary cursor-pointer transition-colors"
                 onClick={() => handleWorkspaceSelection(workspace)}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold">
                     {workspace.partnerName?.charAt(0)?.toUpperCase() || '?'}
                   </div>
-                  <div className="text-left">
-                    <div className="font-medium">{workspace.partnerName}</div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      {workspace.role === 'partner_admin' ? 'Admin' : 'Employee'}
-                    </div>
+                  <div>
+                    <p className="font-medium">{workspace.partnerName}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{workspace.role}</p>
                   </div>
                 </div>
-              </Button>
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </div>
             ))}
           </CardContent>
+          <CardFooter>
+            <Button variant="outline" onClick={handleRetry} className="w-full">
+              Back to Login
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     );
@@ -173,74 +192,85 @@ export default function EmployeeLoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary/50">
-      <div id="recaptcha-container"></div>
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="font-headline text-2xl flex items-center gap-2">
+            <Users className="w-6 h-6" />
+            Employee Login
+          </CardTitle>
+          <CardDescription>
+            {otpSent 
+              ? "Enter the verification code sent to your phone"
+              : "Enter your phone number to receive a verification code"
+            }
+          </CardDescription>
+        </CardHeader>
+        
         {!otpSent ? (
           <form onSubmit={handleSendOtp}>
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl">Employee Login</CardTitle>
-              <CardDescription>Enter your phone number to receive a login code.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="grid gap-2">
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="phone" 
-                      type="tel" 
-                      placeholder="+1 555-123-4567" 
-                      required 
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      disabled={isLoading}
-                      className="pl-10"
-                    />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    placeholder="+1234567890"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Include country code (e.g., +1 for US)
+                </p>
               </div>
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Sending...' : 'Send OTP'}
+                {isLoading ? "Sending..." : "Send OTP"}
               </Button>
             </CardFooter>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp}>
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl">Verify Code</CardTitle>
-              <CardDescription>Enter the 6-digit code sent to your phone.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="grid gap-2">
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
                 <Label htmlFor="otp">Verification Code</Label>
-                 <div className="relative">
-                    <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                        id="otp" 
-                        type="text" 
-                        maxLength={6}
-                        placeholder="123456" 
-                        required 
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        disabled={isLoading}
-                        className="pl-10 tracking-widest text-center"
-                    />
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="otp"
+                    placeholder="123456"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="pl-10"
+                    maxLength={6}
+                    required
+                  />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Sent to {phoneNumber}
+                </p>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
+            <CardFooter className="flex flex-col space-y-2">
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Verifying...' : 'Login'}
+                {isLoading ? "Verifying..." : "Verify & Login"}
               </Button>
-              <Button variant="link" size="sm" onClick={() => setOtpSent(false)}>
-                Use a different phone number
+              <Button type="button" variant="outline" onClick={handleRetry} className="w-full">
+                Back to Phone Number
               </Button>
             </CardFooter>
           </form>
         )}
       </Card>
+      
+      {/* Invisible reCAPTCHA container */}
+      <div id="recaptcha-container"></div>
     </div>
   );
 }
