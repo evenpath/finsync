@@ -4,11 +4,11 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {
@@ -17,8 +17,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     }
     const role = user.customClaims.role;
     // A Super Admin or partner_admin can see the partner portal.
-    // Employees are now routed to /employee
-    return role === 'Super Admin' || role === 'partner_admin';
+    return role === 'Super Admin' || role === 'Admin' || role === 'partner_admin';
   }, [user, loading, isAuthenticated]);
 
   React.useEffect(() => {
@@ -32,7 +31,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     }
   }, [loading, isAuthenticated, isAuthorized, router, user]);
 
-  if (loading || !isAuthenticated) {
+  if (loading || !isAuthenticated || !isAuthorized) {
     return (
       <div className="flex-1 p-6">
         <div className="mb-6">
@@ -44,7 +43,5 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     );
   }
   
-  // Render children if authenticated, authorization is handled at page level now
-  // for components that need workspace context.
   return children;
 }

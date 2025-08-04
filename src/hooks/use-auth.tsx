@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const unsubscribe = onIdTokenChanged(auth, async (firebaseUser: User | null) => {
             if (firebaseUser) {
                 try {
-                    const idTokenResult = await firebaseUser.getIdTokenResult(false); // false means don't force refresh
+                    const idTokenResult = await firebaseUser.getIdTokenResult(true); // force refresh to get latest claims
                     
                     const authUser: FirebaseAuthUser = {
                         uid: firebaseUser.uid,
