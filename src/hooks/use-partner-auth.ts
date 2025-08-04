@@ -1,4 +1,3 @@
-
 // src/hooks/use-partner-auth.ts
 "use client";
 
@@ -73,7 +72,7 @@ export function usePartnerAuth(partnerId?: string | null) {
     
     fetchPartnerDetails();
 
-    // Listen for employee updates
+    // Listen for employee updates from the correct subcollection
     const employeesRef = collection(db, `partners/${partnerId}/employees`);
     const q = query(employeesRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {

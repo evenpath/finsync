@@ -29,78 +29,31 @@ import InviteMemberModal from "./InviteMemberModal";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { inviteEmployeeAction } from "@/actions/partner-actions";
-import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { usePartnerAuth } from "@/hooks/use-partner-auth";
+import { useMultiWorkspaceAuth } from "@/hooks/use-multi-workspace-auth";
 import Link from "next/link";
 
 export default function TeamManagement() {
-  const { user, loading: authLoading } = useAuth();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const { 
+    user: authUser, 
+    loading: authLoading, 
+    currentWorkspace 
+  } = useMultiWorkspaceAuth();
+  
+  const partnerId = currentWorkspace?.partnerId;
+  
+  const { 
+    employees: teamMembers, 
+    loading: partnerLoading, 
+    error: partnerError 
+  } = usePartnerAuth(partnerId);
+
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const partnerId = user?.customClaims?.partnerId;
-  const userRole = user?.customClaims?.role;
-
-  useEffect(() => {
-    if (authLoading) {
-      setIsLoading(true);
-      return;
-    }
-
-    if (!partnerId || !db) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setFirestoreError(null);
-    
-    const employeesRef = collection(db, "partners", partnerId, "employees");
-    const q = query(employeesRef, orderBy("name"));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const membersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as TeamMember));
-      
-      setTeamMembers(membersData);
-      
-      if (!selectedMember && membersData.length > 0) {
-        setSelectedMember(membersData[0]);
-      } else if (selectedMember) {
-        const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
-        setSelectedMember(updatedSelectedMember || null);
-      }
-      
-      setIsLoading(false);
-      setFirestoreError(null);
-    }, (error) => {
-      console.error("Firestore error fetching team members:", error);
-      
-      let errorMessage = "Could not fetch team members.";
-      if (error.code === 'permission-denied') {
-        errorMessage = "Permission denied. Check your Firestore security rules.";
-      }
-      
-      setFirestoreError(errorMessage);
-      setIsLoading(false);
-      
-      toast({
-        variant: "destructive",
-        title: "Database Error",
-        description: errorMessage
-      });
-    });
-
-    return () => unsubscribe();
-  }, [partnerId, authLoading]);
+  const isLoading = authLoading || partnerLoading;
 
   useEffect(() => {
     if (!selectedMember && teamMembers.length > 0) {
@@ -188,7 +141,7 @@ export default function TeamManagement() {
     );
   }
 
-  if (!user || !partnerId) {
+  if (!authUser || !partnerId) {
     return (
       <div className="flex items-center justify-center h-full p-6">
         <Card className="max-w-lg w-full border-destructive">
@@ -228,14 +181,14 @@ export default function TeamManagement() {
     );
   }
   
-  if (firestoreError) {
+  if (partnerError) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4">
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
           <div>
             <h3 className="text-lg font-semibold text-destructive">Database Error</h3>
-            <p className="text-muted-foreground">{firestoreError}</p>
+            <p className="text-muted-foreground">{partnerError}</p>
           </div>
            <Button onClick={() => window.location.reload()}>
               Try Again
