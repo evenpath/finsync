@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/shared/Badge";
 import { CheckCircle, Clock, Circle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import WorkspacesList from "../employee/WorkspacesList";
 
 const tasks = [
     { id: 1, title: "Review Q4 Marketing Proposal", workflow: "Document Review", priority: "high", status: "todo", dueDate: "2 days" },
@@ -42,17 +43,25 @@ export default function WorkerDashboard() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            <div className="space-y-4">
-                <h2 className="text-lg font-bold font-headline flex items-center gap-2"><Circle className="w-5 h-5 text-yellow-500" /> To Do ({todoTasks.length})</h2>
-                {todoTasks.map(task => <TaskCard key={task.id} task={task} />)}
+            <div className="space-y-4 md:col-span-2">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="space-y-4">
+                        <h2 className="text-lg font-bold font-headline flex items-center gap-2"><Circle className="w-5 h-5 text-yellow-500" /> To Do ({todoTasks.length})</h2>
+                        {todoTasks.map(task => <TaskCard key={task.id} task={task} />)}
+                    </div>
+                    <div className="space-y-4">
+                        <h2 className="text-lg font-bold font-headline flex items-center gap-2"><Clock className="w-5 h-5 text-blue-500" /> In Progress ({inProgressTasks.length})</h2>
+                        {inProgressTasks.map(task => <TaskCard key={task.id} task={task} />)}
+                    </div>
+                    <div className="space-y-4">
+                        <h2 className="text-lg font-bold font-headline flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-500" /> Done ({doneTasks.length})</h2>
+                        {doneTasks.map(task => <TaskCard key={task.id} task={task} />)}
+                    </div>
+                </div>
             </div>
+
             <div className="space-y-4">
-                <h2 className="text-lg font-bold font-headline flex items-center gap-2"><Clock className="w-5 h-5 text-blue-500" /> In Progress ({inProgressTasks.length})</h2>
-                {inProgressTasks.map(task => <TaskCard key={task.id} task={task} />)}
-            </div>
-            <div className="space-y-4">
-                <h2 className="text-lg font-bold font-headline flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-500" /> Done ({doneTasks.length})</h2>
-                {doneTasks.map(task => <TaskCard key={task.id} task={task} />)}
+                <WorkspacesList />
             </div>
         </div>
     );
