@@ -35,7 +35,8 @@ export default function TeamManagement() {
 
 
   const handleInviteMember = async (newMemberData: { name: string; phone: string; role: 'partner_admin' | 'employee' }) => {
-    if (!user?.customClaims?.partnerId) {
+    const partnerId = user?.customClaims?.partnerId;
+    if (!partnerId) {
         toast({
             variant: "destructive",
             title: "Error",
@@ -47,8 +48,7 @@ export default function TeamManagement() {
     try {
         const result = await inviteEmployeeAction({
             ...newMemberData,
-            email: `${newMemberData.phone}@suupe.com`, // Create a dummy email for phone auth users
-            partnerId: user.customClaims.partnerId,
+            partnerId: partnerId,
         });
 
         if (result.success) {
