@@ -26,6 +26,8 @@ export default function PartnerLoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    let tenantId: string | null = null;
+
     try {
       // 1. Find the tenant ID for the user's email
       const tenantLookup = await getTenantForEmailAction(email);
@@ -34,8 +36,10 @@ export default function PartnerLoginPage() {
         throw new Error(tenantLookup.message || "Your organization could not be found.");
       }
       
+      tenantId = tenantLookup.tenantId;
+
       // 2. Set the tenant ID on the global auth object for this specific sign-in
-      auth.tenantId = tenantLookup.tenantId;
+      auth.tenantId = tenantId;
       
       // 3. Sign in the user within their tenant
       await signInWithEmailAndPassword(auth, email, password);
