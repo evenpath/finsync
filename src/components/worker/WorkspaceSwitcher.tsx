@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
-import { Briefcase, ChevronsUpDown, PlusCircle, Check, Building } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/use-auth'; // Changed from useMultiWorkspaceAuth
+import React from 'react';
+import { Briefcase } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const WorkspaceAvatar = ({ workspace, size = 'md' }: { workspace: any, size?: 'sm' | 'md' | 'lg' }) => {
   const sizeClasses = {
@@ -11,7 +11,7 @@ const WorkspaceAvatar = ({ workspace, size = 'md' }: { workspace: any, size?: 's
     lg: 'w-16 h-16 text-xl'
   };
 
-  const workspaceName = workspace?.partnerName || workspace?.displayName || 'Workspace';
+  const workspaceName = workspace?.partnerName || 'Workspace';
 
   return (
     <div className={`${sizeClasses[size]} bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold`}>
@@ -23,27 +23,23 @@ const WorkspaceAvatar = ({ workspace, size = 'md' }: { workspace: any, size?: 's
 export default function EnhancedWorkspaceSwitcher() {
   const { user, loading } = useAuth();
 
-  // For an employee, there is only one "workspace" derived from their claims
   const currentWorkspace = user?.customClaims ? {
     partnerId: user.customClaims.partnerId,
     tenantId: user.customClaims.tenantId,
     role: user.customClaims.role,
-    partnerName: user.displayName, // Assuming the display name can represent the workspace
-    status: 'active'
+    partnerName: user.customClaims.partnerName || user.displayName,
   } : null;
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="w-20 bg-gray-100 border-r flex flex-col items-center py-4 gap-4">
-        <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
-        <div className="space-y-2">
-          <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
-        </div>
+        <Skeleton className="w-12 h-12 rounded-lg" />
+        <Skeleton className="w-12 h-12 rounded-full" />
       </div>
     );
   }
 
-  if (!user || !currentWorkspace) {
+  if (!currentWorkspace) {
     return (
       <div className="w-20 bg-gray-100 border-r flex flex-col items-center py-4 gap-4">
         <div className="p-2 rounded-lg bg-gray-300 text-gray-500">

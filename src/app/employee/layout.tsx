@@ -9,24 +9,23 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   React.useEffect(() => {
-    if (loading) {
-      return; // Do nothing while loading
+    if (!loading) {
+      if (user && user.customClaims?.role === 'employee') {
+        setIsAuthorized(true);
+      } else {
+        // If not an employee or not logged in, redirect to login.
+        router.push('/employee/login');
+      }
     }
-    if (!isAuthenticated) {
-      // If not logged in, redirect to the employee login page
-      router.push('/employee/login');
-    } else if (user?.customClaims?.role !== 'employee') {
-      // If logged in but NOT an employee, redirect away from the employee section to the homepage
-      router.push('/');
-    }
-  }, [loading, isAuthenticated, user, router]);
+  }, [user, loading, router]);
 
-  // Show a loading skeleton while auth state is being determined or if user is not yet verified as an employee
-  if (loading || !isAuthenticated || user?.customClaims?.role !== 'employee') {
+  // Show a loading skeleton while auth state is being determined.
+  if (loading || !isAuthorized) {
     return (
       <div className="flex h-screen">
         <div className="w-20 p-4 border-r bg-gray-100">
@@ -46,7 +45,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If authenticated and the user is an employee, show the dashboard
+  // If authorized, show the employee dashboard.
   return (
       <div className="flex h-screen bg-secondary/30">
         <EnhancedWorkspaceSwitcher />

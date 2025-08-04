@@ -28,7 +28,7 @@ export default function WorkspaceHeader() {
     <header className="bg-card border-b px-6 py-3 flex items-center justify-between">
       <div>
         <Button variant="ghost" className="flex items-center gap-2">
-          <h1 className="text-xl font-bold font-headline text-foreground">TechCorp</h1>
+          <h1 className="text-xl font-bold font-headline text-foreground">{user?.customClaims?.partnerName || 'Workspace'}</h1>
           <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />
         </Button>
       </div>
