@@ -10,6 +10,7 @@ import { Plus, Clock } from 'lucide-react';
 import { mockTasks, mockTeamMembers } from '@/lib/mockData';
 import type { Task } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
+import AssignTaskDialog from './tasks/AssignTaskDialog';
 
 const columns = [
     { id: 'assigned', title: 'To Do', color: 'bg-gray-500' },
@@ -64,10 +65,6 @@ const TaskColumn = ({ title, tasks, totalTasks, color }: { title: string, tasks:
             <div className="space-y-4 h-full overflow-y-auto p-2">
                 {tasks.map(task => <TaskCard key={task.id} task={task} />)}
             </div>
-            <Button variant="ghost" className="w-full mt-2">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Task
-            </Button>
         </div>
     );
 };
@@ -75,18 +72,37 @@ const TaskColumn = ({ title, tasks, totalTasks, color }: { title: string, tasks:
 export default function TaskBoard() {
     const [tasks, setTasks] = useState(mockTasks);
     const totalTasks = tasks.length;
+    const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
+
+    const handleTaskCreated = (newTask: Task) => {
+        // In a real app, this would be handled by the Firestore listener
+        // For mock data, we just add it to the local state
+        setTasks(prev => [...prev, { ...newTask, id: Date.now() }]);
+        setIsAssignTaskOpen(false);
+    };
 
     return (
-        <div className="flex space-x-6 h-full">
-            {columns.map(column => (
-                <TaskColumn
-                    key={column.id}
-                    title={column.title}
-                    tasks={tasks.filter(task => task.status === column.id)}
-                    totalTasks={totalTasks}
-                    color={column.color}
-                />
-            ))}
+        <div className="h-full flex flex-col">
+            <div className="p-1 pb-4 flex items-center justify-between">
+                <div />
+                <AssignTaskDialog onTaskCreated={handleTaskCreated}>
+                    <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        New Task
+                    </Button>
+                </AssignTaskDialog>
+            </div>
+            <div className="flex space-x-6 flex-1 overflow-x-auto">
+                {columns.map(column => (
+                    <TaskColumn
+                        key={column.id}
+                        title={column.title}
+                        tasks={tasks.filter(task => task.status === column.id)}
+                        totalTasks={totalTasks}
+                        color={column.color}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
