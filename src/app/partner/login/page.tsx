@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, signInWithEmailAndPassword, initializeAuth, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { getTenantForEmailAction } from '@/actions/auth-actions';
 
@@ -34,16 +34,11 @@ export default function PartnerLoginPage() {
         throw new Error(tenantLookup.message || "Your organization could not be found.");
       }
       
-      // 2. IMPORTANT: Create a new, temporary auth instance with the correct tenantId
-      // This avoids race conditions with the global `auth` object.
-      const tenantAuth = initializeAuth(app, {
-        persistence: browserLocalPersistence,
-        errorMap: auth.errorMap,
-      });
-      tenantAuth.tenantId = tenantLookup.tenantId;
+      // 2. Set the tenant ID on the global auth object for this specific sign-in
+      auth.tenantId = tenantLookup.tenantId;
       
-      // 3. Sign in the user within their tenant using the temporary auth instance
-      await signInWithEmailAndPassword(tenantAuth, email, password);
+      // 3. Sign in the user within their tenant
+      await signInWithEmailAndPassword(auth, email, password);
       
       toast({ title: "Login Successful", description: "Redirecting to your workspace..." });
       router.push('/partner');
@@ -66,6 +61,8 @@ export default function PartnerLoginPage() {
         description: errorMessage,
       });
     } finally {
+        // 4. IMPORTANT: Always reset the tenantId after the operation to not affect other auth calls.
+        auth.tenantId = null; 
         setIsLoading(false);
     }
   };
