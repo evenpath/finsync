@@ -2,10 +2,10 @@
 "use client";
 
 import React from 'react';
-import WorkerDashboard from '@/components/worker/WorkerDashboard';
+import EmployeeTasks from '@/components/employee/EmployeeTasks';
 
 export default function EmployeeDashboard() {
   return (
-    <WorkerDashboard />
+    <EmployeeTasks />
   );
 }

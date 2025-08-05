@@ -18,7 +18,6 @@ import { getAuth, signOut } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export default function WorkspaceHeader() {
   const { user, loading } = useAuth();
@@ -61,17 +60,9 @@ export default function WorkspaceHeader() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">
-              Dashboard
+              My Tasks
             </h1>
           </div>
-          <nav>
-            <Link href="/employee/tasks">
-              <Button variant="ghost" size="sm">
-                <ListTodo className="w-4 h-4 mr-2" />
-                My Tasks
-              </Button>
-            </Link>
-          </nav>
         </div>
 
         {/* Right side - User menu */}
