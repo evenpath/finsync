@@ -157,15 +157,11 @@ export default function TaskBoard() {
         }
     };
 
-    const handleTaskCreated = (newTask: Task) => {
-        console.log("New task created:", newTask);
-    };
-
     return (
         <div className="h-full flex flex-col">
             <div className="p-1 pb-4 flex items-center justify-between">
                 <div />
-                <AssignTaskDialog onTaskCreated={handleTaskCreated}>
+                <AssignTaskDialog>
                     <Button>
                         <Plus className="w-4 h-4 mr-2" />
                         New Task

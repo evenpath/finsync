@@ -26,10 +26,9 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 interface AssignTaskDialogProps {
   children: React.ReactNode;
-  onTaskCreated: (task: Task) => void;
 }
 
-export default function AssignTaskDialog({ children, onTaskCreated }: AssignTaskDialogProps) {
+export default function AssignTaskDialog({ children }: AssignTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +89,6 @@ export default function AssignTaskDialog({ children, onTaskCreated }: AssignTask
 
       if (result.success && result.task) {
         toast({ title: 'Task Created!', description: `${result.task.title} has been assigned.` });
-        onTaskCreated(result.task);
         resetAndClose();
       } else {
         toast({ variant: 'destructive', title: 'Failed to create task', description: result.message });
