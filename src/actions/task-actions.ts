@@ -30,20 +30,27 @@ export async function createTaskAction(input: CreateTaskInput): Promise<CreateTa
     try {
         const taskRef = db.collection('tasks').doc();
         
-        const newTask: Omit<Task, 'id'> = {
+        const newTaskData = {
             ...input,
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
         };
 
-        await taskRef.set(newTask);
+        await taskRef.set(newTaskData);
         
-        const taskData = { id: taskRef.id, ...newTask } as Task;
+        // After creation, we create a serializable object to return to the client.
+        // new Date() is a good approximation for the server timestamp for immediate client-side use.
+        const taskForClient: Task = {
+            id: taskRef.id,
+            ...input,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
 
         return {
             success: true,
             message: 'Task created successfully.',
-            task: taskData,
+            task: taskForClient,
         };
 
     } catch (error: any) {
