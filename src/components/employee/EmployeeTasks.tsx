@@ -32,10 +32,16 @@ export default function EmployeeTasks() {
         );
 
         const unsubscribe = onSnapshot(taskQuery, (snapshot) => {
-            const fetchedTasks = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
+            const fetchedTasks = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    // Convert Firestore Timestamps to ISO strings
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
+                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+                };
+            });
             setTasks(fetchedTasks);
             setIsLoading(false);
         }, (error) => {
