@@ -123,9 +123,7 @@ export default function EmployeeLoginPage() {
 
       if (error.code === 'auth/code-expired') {
         description = "The verification code has expired. Please send a new one.";
-      } else if (error.code === 'auth/invalid-verification-code') {
-        description = "The verification code is incorrect. Please check the code and try again.";
-      } else if (error.code === 'auth/invalid-credential') {
+      } else if (error.code === 'auth/invalid-verification-code' || error.code === 'auth/invalid-credential') {
         description = "The verification code is incorrect. Please check the code and try again.";
       }
       
