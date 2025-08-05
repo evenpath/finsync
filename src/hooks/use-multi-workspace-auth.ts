@@ -61,13 +61,20 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
           partnerAvatar: link.partnerAvatar
         }));
 
-        setAvailableWorkspaces(workspaces);
+        // Filter out duplicates to prevent React key errors
+        const uniqueWorkspaces = workspaces.filter((workspace, index, self) =>
+          index === self.findIndex((w) => (
+            w.partnerId === workspace.partnerId
+          ))
+        );
+
+        setAvailableWorkspaces(uniqueWorkspaces);
 
         // Set current workspace based on custom claims or first available
         const activePartnerId = user.customClaims?.activePartnerId || user.customClaims?.partnerId;
         const activeWorkspace = activePartnerId 
-          ? workspaces.find(w => w.partnerId === activePartnerId)
-          : workspaces.find(w => w.status === 'active');
+          ? uniqueWorkspaces.find(w => w.partnerId === activePartnerId)
+          : uniqueWorkspaces.find(w => w.status === 'active');
         
         setCurrentWorkspace(activeWorkspace || null);
         setWorkspaceLoading(false);
