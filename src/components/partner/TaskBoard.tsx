@@ -118,6 +118,7 @@ export default function TaskBoard() {
                 return {
                     id: doc.id,
                     ...data,
+                    // Convert Firestore Timestamps to ISO strings to make them serializable
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
                 } as Task & { id: string };
