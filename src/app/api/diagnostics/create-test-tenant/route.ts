@@ -1,3 +1,4 @@
+
 // src/app/api/diagnostics/create-test-tenant/route.ts
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
@@ -14,8 +15,11 @@ export async function POST() {
     }
 
     // Create a test tenant with a unique display name for this test run.
+    // The name must be between 4-20 characters.
+    const testTenantName = `diag-test-${Date.now().toString().slice(-8)}`;
+    
     const tenant = await adminAuth.tenantManager().createTenant({
-      displayName: `diagnostic-test-${Date.now()}`,
+      displayName: testTenantName,
     });
 
     // Immediately delete the test tenant to clean up.
