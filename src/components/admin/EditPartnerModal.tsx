@@ -34,6 +34,7 @@ import {
 import { Edit, Trash2 } from 'lucide-react';
 import type { Partner } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { industries } from '@/lib/mockData';
 
 interface EditPartnerModalProps {
   isOpen: boolean;
@@ -58,6 +59,11 @@ export default function EditPartnerModal({ isOpen, onClose, partner, onSave, onD
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value as any }));
+  };
+
+  const handleIndustryChange = (value: string) => {
+    const selectedIndustry = industries.find(ind => ind.id === value) || null;
+    setFormData(prev => ({ ...prev, industry: selectedIndustry }));
   };
   
   const handleNestedInputChange = (parentKey: 'location' | 'stats', nestedKey: string, value: string) => {
@@ -141,6 +147,21 @@ export default function EditPartnerModal({ isOpen, onClose, partner, onSave, onD
                 <Label htmlFor="joinedDate">Joined Date</Label>
                 <Input id="joinedDate" name="joinedDate" type="date" value={new Date(formData.joinedDate).toISOString().split('T')[0]} onChange={handleInputChange} />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="industry">Industry</Label>
+              <Select value={formData.industry?.id || ''} onValueChange={handleIndustryChange}>
+                <SelectTrigger id="industry">
+                  <SelectValue placeholder="Select an industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  {industries.map((industry) => (
+                    <SelectItem key={industry.id} value={industry.id}>
+                      {industry.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
