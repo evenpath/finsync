@@ -2,8 +2,8 @@
 // src/app/admin/diagnostics/page.tsx
 "use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,8 @@ export default function FirebaseDiagnosticsPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [serviceAccountEmail, setServiceAccountEmail] = useState('');
+  const [appHostingAgentEmail, setAppHostingAgentEmail] = useState('');
+
 
   const runDiagnostics = async () => {
     setIsRunning(true);
@@ -41,6 +43,7 @@ export default function FirebaseDiagnosticsPage() {
       const envData = await envResponse.json();
       if(envData.projectId) {
         setProjectId(envData.projectId);
+        setAppHostingAgentEmail(`service-${envData.projectNumber}@gcp-sa-firebaseapphosting.iam.gserviceaccount.com`);
       }
       if(envData.clientEmail) {
         setServiceAccountEmail(envData.clientEmail);
@@ -136,20 +139,20 @@ export default function FirebaseDiagnosticsPage() {
        <Card className="border-blue-500/50 bg-blue-500/5">
         <CardHeader>
           <CardTitle className="text-blue-800">Quick Setup Guide</CardTitle>
+          <CardDescription>Follow these steps to ensure your project is configured correctly for both backend functions and App Hosting deployments.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-           <p>
-            The most common cause of errors is missing IAM permissions for your service account. Please ensure the following roles are assigned to your service account in the Google Cloud Console.
-          </p>
+        <CardContent className="space-y-6 text-sm">
+           
           <div className="p-3 bg-muted rounded-lg">
-            <p className="font-semibold">Your Service Account Email:</p>
-            <p className="font-mono text-xs break-all">{serviceAccountEmail || 'Run diagnostics to find...'}</p>
+            <p className="font-semibold">Step 1: Assign roles to your Backend Service Account</p>
+            <p className="text-xs text-muted-foreground mb-2">This account is used by your server-side code (Genkit flows, Admin SDK calls).</p>
+            <p className="font-mono text-xs break-all">{serviceAccountEmail || 'Run diagnostics to find your service account email...'}</p>
           </div>
           
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
             <li>Go to the <a href={`https://console.cloud.google.com/iam-admin/iam?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Google Cloud IAM page <ExternalLink className="inline w-4 h-4"/></a> for your project.</li>
             <li>Find your service account, click the pencil icon to edit its roles.</li>
-            <li>Add the following **5 roles**:
+            <li>Add the following **5 roles** to this service account:
               <ul className="list-disc list-inside ml-6 mt-2 space-y-1 font-medium text-foreground">
                 <li><code className="bg-muted px-1 py-0.5 rounded">Firebase Admin SDK Administrator Service Agent</code></li>
                 <li><code className="bg-muted px-1 py-0.5 rounded">Service Usage Consumer</code></li>
@@ -158,8 +161,26 @@ export default function FirebaseDiagnosticsPage() {
                 <li><code className="bg-muted px-1 py-0.5 rounded">Cloud Datastore User</code> (for Firestore)</li>
               </ul>
             </li>
-             <li>Ensure Multi-Tenancy is enabled in <a href={`https://console.cloud.google.com/identity-platform/settings?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Identity Platform settings <ExternalLink className="inline w-4 h-4"/></a>.</li>
           </ol>
+
+          <div className="p-3 bg-muted rounded-lg mt-6">
+            <p className="font-semibold">Step 2: Assign roles to the App Hosting Service Agent</p>
+            <p className="text-xs text-muted-foreground mb-2">This account is used by Google to build and deploy your application.</p>
+            <p className="font-mono text-xs break-all">{appHostingAgentEmail || 'Run diagnostics to find your App Hosting agent...'}</p>
+          </div>
+           <ol className="list-decimal list-inside space-y-2 text-muted-foreground" start={4}>
+            <li>On the same IAM page, find the App Hosting service account (it ends in `gcp-sa-firebaseapphosting.iam.gserviceaccount.com`).</li>
+            <li>Ensure it has the <code className="bg-muted px-1 py-0.5 rounded font-medium text-foreground">Firebase App Hosting Service Agent</code> role. This is usually added automatically, but if builds fail, verify it's present. This role includes permissions like `cloudbuild.builds.create`.</li>
+           </ol>
+
+            <div className="p-3 bg-muted rounded-lg mt-6">
+              <p className="font-semibold">Step 3: Enable APIs</p>
+            </div>
+           <ol className="list-decimal list-inside space-y-2 text-muted-foreground" start={6}>
+             <li>Ensure Multi-Tenancy is enabled in <a href={`https://console.cloud.google.com/identity-platform/settings?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Identity Platform settings <ExternalLink className="inline w-4 h-4"/></a>.</li>
+             <li>Ensure the <a href={`https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Cloud Build API <ExternalLink className="inline w-4 h-4"/></a> is enabled for your project.</li>
+          </ol>
+
         </CardContent>
       </Card>
 
