@@ -26,7 +26,7 @@ export default function PartnerDetailView({ partner, onUpdatePartner, onDeletePa
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const industry = partner.industry || { name: 'N/A', icon: '🏢' };
+  const industry = partner.industry || { name: 'No Industry Set', icon: '🏢' };
   
   const handleUpdate = (updatedData: Partner) => {
     onUpdatePartner(updatedData);
@@ -111,7 +111,7 @@ export default function PartnerDetailView({ partner, onUpdatePartner, onDeletePa
               </div>
               <div>
                 <h2 className="text-xl font-bold text-foreground">{partner.name}</h2>
-                <p className="text-muted-foreground">{partner.industry?.name || 'No Industry Set'} • {partner.location.city}, {partner.location.state}</p>
+                <p className="text-muted-foreground">{industry.name} • {partner.location.city}, {partner.location.state}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

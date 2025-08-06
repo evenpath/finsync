@@ -27,7 +27,7 @@ export default function PartnerCard({ partner, isSelected, onSelect }: PartnerCa
             </div>
             <div>
               <h3 className="font-semibold text-foreground">{partner.name}</h3>
-              <p className="text-sm text-muted-foreground">{partner.industry?.name || 'No Industry'}</p>
+              <p className="text-sm text-muted-foreground">{partner.industry?.name || 'No Industry Set'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
