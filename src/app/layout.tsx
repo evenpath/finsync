@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Suupe.com',
-  description: 'AI-powered agentic workflows by Suupe',
+  title: 'Socket',
+  description: 'AI-powered agentic workflows by Socket',
 };
 
 export default function RootLayout({

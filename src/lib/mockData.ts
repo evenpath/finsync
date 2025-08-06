@@ -1,3 +1,4 @@
+
 // src/lib/mockData.ts
 import { Bot, CheckCircle, Database, FileText, Globe, Mail, Target, Users, Zap, Shield, Building, UserPlus, BarChart3, Activity, AlertTriangle, Send, Copy, ExternalLink, PlayCircle, PauseCircle, RotateCcw, Cpu, Network, Layers, Clock } from "lucide-react";
 import type { Industry, Partner, WorkflowTemplate, AdminUser } from './types';
@@ -42,7 +43,7 @@ export const mockAdminUsers: AdminUser[] = [
   {
     id: '1',
     name: 'Super Admin',
-    email: 'core@suupe.com',
+    email: 'core@socket.com',
     role: 'Super Admin',
     status: 'active',
     avatar: 'https://placehold.co/40x40.png?text=SA',
@@ -213,7 +214,7 @@ export const mockSystemLogs = [
     timestamp: "2024-07-30 14:30:22",
     level: "info",
     action: "Partner Created",
-    user: "admin@suupe.com",
+    user: "admin@socket.com",
     details: "New partner 'StartupHub' created successfully",
     ip: "192.168.1.100"
   },
@@ -222,7 +223,7 @@ export const mockSystemLogs = [
     timestamp: "2024-07-30 14:25:15",
     level: "warning",
     action: "Workflow Assignment",
-    user: "admin@suupe.com",
+    user: "admin@socket.com",
     details: "Workflow 'Document Review' assigned to TechCorp Industries",
     ip: "192.168.1.100"
   },

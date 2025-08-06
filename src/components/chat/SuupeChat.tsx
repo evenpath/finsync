@@ -1,5 +1,5 @@
 
-// src/components/chat/SuupeChat.tsx
+// src/components/chat/SocketChat.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -2215,7 +2215,7 @@ const SettingsView = ({ activeWorkspace }: any) => {
 };
 
 // Main Chat App Component
-export default function SuupeChatApp() {
+export default function SocketChatApp() {
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeWorkspace, setActiveWorkspace] = useState(mockWorkspaces[0]);

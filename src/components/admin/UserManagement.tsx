@@ -87,7 +87,7 @@ export default function UserManagement() {
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser?.customClaims?.role !== 'Super Admin' && currentUser?.email !== 'core@suupe.com') return [];
+    if (currentUser?.customClaims?.role !== 'Super Admin' && currentUser?.email !== 'core@socket.com') return [];
     return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
   }, [currentUser, users]);
 

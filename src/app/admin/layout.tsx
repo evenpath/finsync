@@ -1,3 +1,4 @@
+
 // src/app/admin/layout.tsx
 "use client";
 
@@ -19,7 +20,7 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
       return false;
     }
     // A user is a Super Admin if their role is set OR if they use the primary admin email.
-    return user.customClaims?.role === 'Super Admin' || user.email === 'core@suupe.com';
+    return user.customClaims?.role === 'Super Admin' || user.email === 'core@socket.com';
   }, [user, loading]);
 
 

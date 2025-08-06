@@ -1,3 +1,4 @@
+
 // src/hooks/use-multi-workspace-auth.ts
 "use client";
 
@@ -149,7 +150,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     // Super Admin and Admin have access to all partners
     if (user.customClaims?.role === 'Super Admin' || 
         user.customClaims?.role === 'Admin' ||
-        user.email === 'core@suupe.com') {
+        user.email === 'core@socket.com') {
       return true;
     }
 
@@ -163,7 +164,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     // Super Admin and Admin are considered partner admin for all partners
     if (user.customClaims?.role === 'Super Admin' || 
         user.customClaims?.role === 'Admin' ||
-        user.email === 'core@suupe.com') {
+        user.email === 'core@socket.com') {
       return true;
     }
 
