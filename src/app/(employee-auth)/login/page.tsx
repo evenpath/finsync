@@ -9,10 +9,10 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { useToast } from '../../../hooks/use-toast';
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { app } from '../../../lib/firebase';
 import { Phone, KeyRound, Building2, Users, ArrowRight } from 'lucide-react';
-import { handlePhoneAuthAction } from '@/actions/employee-phone-actions';
-import type { WorkspaceAccess } from '@/lib/types';
+import { handlePhoneAuthAction } from '../../../actions/employee-phone-actions';
+import type { WorkspaceAccess } from '../../../lib/types';
 import Link from 'next/link';
 
 declare global {
