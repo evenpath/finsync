@@ -2,10 +2,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { Industry, BusinessProfile } from '@/lib/types';
+import type { Industry, BusinessProfile } from '../../../lib/types';
 import { CheckCircle } from 'lucide-react';
-import IndustrySelector from '@/components/onboarding/IndustrySelector';
-import BusinessProfileForm from '@/components/onboarding/BusinessProfileForm';
+import IndustrySelector from '../../../components/onboarding/IndustrySelector';
+import BusinessProfileForm from '../../../components/onboarding/BusinessProfileForm';
 
 export default function PartnerOnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
