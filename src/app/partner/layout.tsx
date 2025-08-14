@@ -1,5 +1,4 @@
-
-
+// src/app/partner/layout.tsx
 "use client";
 
 import React from 'react';
