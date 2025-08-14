@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import EmployeeTasks from '@/components/employee/EmployeeTasks';
+import EmployeeTasks from '../../components/employee/EmployeeTasks';
 
 export default function EmployeeDashboard() {
   return (
