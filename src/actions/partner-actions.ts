@@ -3,7 +3,7 @@
 
 import { createEmployeeWithPhone } from '@/services/phone-auth-service';
 import { getPartnerTenantId } from '@/services/tenant-service';
-import type { Partner, TeamMember } from '@/lib/types';
+import type { Partner, TeamMember } from '../../lib/types';
 import { db } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
 import type { PhoneAuthResult } from '@/services/phone-auth-service';

@@ -12,7 +12,7 @@ import {
   SuggestIndustryTemplatesOutputSchema,
   type SuggestIndustryTemplatesInput,
   type SuggestIndustryTemplatesOutput
-} from '@/lib/types';
+} from '../../lib/types';
 
 export async function suggestIndustryTemplates(input: SuggestIndustryTemplatesInput): Promise<SuggestIndustryTemplatesOutput> {
   return suggestIndustryTemplatesFlow(input);

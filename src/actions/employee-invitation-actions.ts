@@ -2,7 +2,7 @@
 'use server';
 
 import { getInvitationByCode, acceptInvitationByCode } from '@/services/invitation-code-service';
-import type { InvitationValidationResult, AcceptInvitationCodeOutput } from '@/lib/types/invitation';
+import type { InvitationValidationResult, AcceptInvitationCodeOutput } from '../../lib/types/invitation';
 
 /**
  * Validate invitation code and return details for preview

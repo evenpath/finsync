@@ -3,8 +3,8 @@
 
 import { db, adminAuth } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import type { CodeBasedInvitation, CreateInvitationCodeOutput, AcceptInvitationCodeOutput } from '@/lib/types/invitation';
-import type { TeamMember } from '@/lib/types';
+import type { CodeBasedInvitation, CreateInvitationCodeOutput, AcceptInvitationCodeOutput } from '../../lib/types/invitation';
+import type { TeamMember } from '../../lib/types';
 import type { UserRecord } from 'firebase-admin/auth';
 
 

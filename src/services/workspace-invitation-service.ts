@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   Timestamp 
 } from 'firebase/firestore';
-import type { WorkspaceInvitation, UserWorkspaceLink } from '@/lib/types';
+import type { WorkspaceInvitation, UserWorkspaceLink } from '../../lib/types';
 
 export interface AcceptInvitationResult {
   success: boolean;

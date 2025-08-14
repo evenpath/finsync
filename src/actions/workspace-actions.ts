@@ -12,7 +12,7 @@ import {
   getDocs,
   serverTimestamp 
 } from 'firebase/firestore';
-import type { WorkspaceAccess, UserWorkspaceLink } from '@/lib/types';
+import type { WorkspaceAccess, UserWorkspaceLink } from '../../lib/types';
 
 export interface SwitchWorkspaceResult {
   success: boolean;

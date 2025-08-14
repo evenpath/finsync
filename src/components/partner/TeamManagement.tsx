@@ -65,14 +65,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/button";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PartnerUser, UserRole } from "@/lib/types";
+import { PartnerUser, UserRole } from "../../lib/types";
 import { archiveUser, getPartnerEmployees } from "@/actions/partner-actions";
 import { Badge } from "@/components/ui/badge";
 import InviteEmployeeDialog from "@/components/partner/team/InviteEmployeeDialog";
-import { Invitation } from "@/lib/types/invitation";
+import { Invitation } from "../../lib/types/invitation";
 import { invitationActions } from "@/actions/employee-invitation-actions";
 import { PartnerAuthWrapper } from "@/components/partner/PartnerAuthWrapper";
 import PartnerHeader from "@/components/partner/PartnerHeader";

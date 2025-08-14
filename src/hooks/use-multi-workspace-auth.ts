@@ -13,7 +13,7 @@ import type {
   UserWorkspaceLink, 
   FirebaseAuthUser,
   MultiWorkspaceCustomClaims
-} from '@/lib/types';
+} from '../../lib/types';
 
 interface MultiWorkspaceFirebaseAuthUser extends FirebaseAuthUser {
   customClaims?: MultiWorkspaceCustomClaims;

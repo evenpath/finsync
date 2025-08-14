@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase-admin';
-import type { Partner } from '@/lib/types';
+import type { Partner } from '../../lib/types';
 import * as admin from 'firebase-admin';
 
 // We use a string for the schema because Zod doesn't handle complex nested objects like Partner well.

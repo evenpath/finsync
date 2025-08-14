@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase-admin';
-import type { Task } from '@/lib/types';
+import type { Task } from '../../lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
 interface CreateTaskInput {

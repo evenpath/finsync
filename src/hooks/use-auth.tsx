@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { getAuth, onIdTokenChanged, User } from 'firebase/auth';
-import type { FirebaseAuthUser, AuthState } from '@/lib/types';
+import type { FirebaseAuthUser, AuthState } from '../../lib/types';
 import { app } from '@/lib/firebase';
 
 const auth = getAuth(app);

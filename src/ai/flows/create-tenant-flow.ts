@@ -13,7 +13,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { adminAuth, db } from '@/lib/firebase-admin';
-import type { Partner } from '@/lib/types';
+import type { Partner } from '../../lib/types';
 import * as admin from 'firebase-admin';
 
 const CreateTenantInputSchema = z.object({

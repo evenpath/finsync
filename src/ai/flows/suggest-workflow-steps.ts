@@ -18,7 +18,7 @@ import {
   SuggestWorkflowStepsOutputSchema,
   type SuggestWorkflowStepsInput,
   type SuggestWorkflowStepsOutput,
-} from '@/lib/types';
+} from '../../lib/types';
 
 
 export async function suggestWorkflowSteps(input: SuggestWorkflowStepsInput): Promise<SuggestWorkflowStepsOutput> {
