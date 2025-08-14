@@ -2,9 +2,9 @@
 "use client";
 
 import React from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useAuth } from '../../hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { AlertTriangle, CheckCircle, User, Shield, Database } from 'lucide-react';
 
 export default function TeamManagementDiagnostics() {
