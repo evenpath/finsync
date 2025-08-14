@@ -18,7 +18,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useToast } from "../../hooks/use-toast";
 import { Plus } from "lucide-react";
-import { createTenant } from '@/ai/flows/create-tenant-flow';
+import { createTenant } from '../../ai/flows/create-tenant-flow';
 
 interface PartnerCreationDialogProps {
   onPartnerCreated?: () => void;

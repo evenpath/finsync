@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { mockWorkflowTemplates } from "@/lib/mockData";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Progress } from "../ui/progress";
+import { mockWorkflowTemplates } from "../../lib/mockData";
 import {
   TrendingUp,
   Activity,

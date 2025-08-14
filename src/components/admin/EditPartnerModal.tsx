@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,20 +21,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "../ui/alert-dialog"
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import { Edit, Trash2 } from 'lucide-react';
-import type { Partner } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
-import { industries } from '@/lib/mockData';
+import type { Partner } from '../../lib/types';
+import { useToast } from '../../hooks/use-toast';
+import { industries } from '../../lib/mockData';
 
 interface EditPartnerModalProps {
   isOpen: boolean;

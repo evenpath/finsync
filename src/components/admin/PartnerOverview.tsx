@@ -1,7 +1,7 @@
 // src/components/admin/PartnerOverview.tsx
 import React from 'react';
-import type { Partner } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import type { Partner } from '../../lib/types';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Zap, CheckCircle, TrendingUp, Clock, BarChart } from 'lucide-react';
 
 interface PartnerOverviewProps {

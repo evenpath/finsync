@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useToast } from "../../hooks/use-toast";
 import { Database, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
-import { migrateUserMappings, validateUserMappings } from '@/scripts/migrate-user-mappings';
+import { migrateUserMappings, validateUserMappings } from '../../scripts/migrate-user-mappings';
 
 export default function MigrationTools() {
   const [isMigrating, setIsMigrating] = useState(false);

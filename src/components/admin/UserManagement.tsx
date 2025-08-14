@@ -5,11 +5,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { AdminUser } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
-import { Input } from "@/components/ui/input";
+import type { AdminUser } from "../../lib/types";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../shared/Badge";
+import { Input } from "../ui/input";
 import {
   UserPlus,
   Filter,
@@ -23,11 +23,11 @@ import {
   Wrench,
 } from "lucide-react";
 import InviteAdminModal from "./InviteAdminModal";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { manageAdminUser } from "@/ai/flows/manage-admin-user-flow";
+import { useAuth } from "../../hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
+import { manageAdminUser } from "../../ai/flows/manage-admin-user-flow";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "../../lib/firebase";
 
 
 export default function UserManagement() {

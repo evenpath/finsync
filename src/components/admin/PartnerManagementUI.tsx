@@ -2,21 +2,21 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Partner } from '@/lib/types';
-import PartnerCard from "@/components/admin/PartnerCard";
-import PartnerDetailView from "@/components/admin/PartnerDetailView";
+import type { Partner } from '../../lib/types';
+import PartnerCard from "./PartnerCard";
+import PartnerDetailView from "./PartnerDetailView";
 import { UserPlus, Search, ListFilter, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import AddPartnerModal from "@/components/admin/AddPartnerModal";
-import { Card, CardContent } from '@/components/ui/card';
-import { createTenant } from '@/ai/flows/create-tenant-flow';
-import { createUserInTenant } from '@/ai/flows/user-management-flow';
-import { useToast } from "@/hooks/use-toast";
-import { updatePartner } from '@/ai/flows/update-partner-flow';
-import { db } from '@/lib/firebase';
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import AddPartnerModal from "./AddPartnerModal";
+import { Card, CardContent } from '../ui/card';
+import { createTenant } from '../../ai/flows/create-tenant-flow';
+import { createUserInTenant } from '../../ai/flows/user-management-flow';
+import { useToast } from "../../hooks/use-toast";
+import { updatePartner } from '../../ai/flows/update-partner-flow';
+import { db } from '../../lib/firebase';
 import { collection, onSnapshot, query } from "firebase/firestore";
-import { getTenantForEmailAction } from '@/actions/auth-actions';
+import { getTenantForEmailAction } from '../../actions/auth-actions';
 
 interface PartnerManagementUIProps {
     initialPartners: Partner[];

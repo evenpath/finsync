@@ -1,10 +1,10 @@
 // src/components/admin/PartnerCard.tsx
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/shared/Badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../shared/Badge';
+import { Button } from '../ui/button';
 import { Building2, Users, TrendingUp, Calendar, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
-import type { Partner } from '@/lib/types';
+import type { Partner } from '../../lib/types';
 
 interface PartnerCardProps {
   partner: Partner;

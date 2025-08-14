@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { mockSystemLogs } from "@/lib/mockData";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
+import { mockSystemLogs } from "../../lib/mockData";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../shared/Badge";
 import { Download } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 type LogLevel = 'all' | 'info' | 'warning' | 'error';
 

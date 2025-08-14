@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Building, TrendingUp, CheckCircle, Activity, Zap } from "lucide-react";
-import { mockSystemStats, mockPartners } from "@/lib/mockData";
-import { Badge } from "@/components/ui/badge";
+import { mockSystemStats, mockPartners } from "../../lib/mockData";
+import { Badge } from "../ui/badge";
 
 export default function SystemOverview() {
   const statCards = [

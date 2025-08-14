@@ -3,11 +3,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/shared/Badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Badge } from "../shared/Badge";
 import {
   Plus,
   Search,
@@ -18,7 +18,7 @@ import {
   Clock,
   Users
 } from 'lucide-react';
-import type { WorkflowTemplate } from '@/lib/types';
+import type { WorkflowTemplate } from '../../lib/types';
 
 
 interface WorkflowTemplateGridProps {

@@ -1,10 +1,10 @@
 // src/components/admin/PartnerDetailView.tsx
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/shared/Badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../shared/Badge';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { 
   Building2, 
   Users, 
@@ -21,7 +21,7 @@ import {
   Clock,
   DollarSign
 } from 'lucide-react';
-import type { Partner } from '@/lib/types';
+import type { Partner } from '../../lib/types';
 
 interface PartnerDetailViewProps {
   partner: Partner;
