@@ -2,11 +2,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
-import type { BusinessProfile, WorkflowTemplate } from '@/lib/types';
-import TemplateCard from '@/components/templates/TemplateCard';
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { Badge } from "../shared/Badge";
+import type { BusinessProfile, WorkflowTemplate } from '../../lib/types';
+import TemplateCard from '../templates/TemplateCard';
 import { Sparkles, Loader2, RotateCcw, CheckCircle } from 'lucide-react';
 // import ProblemDescriptionModal from '@/components/ai/ProblemDescriptionModal'; // This would be the next step
 

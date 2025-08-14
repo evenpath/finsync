@@ -1,10 +1,11 @@
+
 // src/components/partner/team/TeamManagement.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
+import { Badge } from "../../ui/badge";
 import {
   Users,
   AlertTriangle,
@@ -12,13 +13,13 @@ import {
   Ticket,
   Trash2,
 } from "lucide-react";
-import type { TeamMember } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
+import type { TeamMember } from "../../../lib/types";
+import { useToast } from "../../../hooks/use-toast";
+import { useAuth } from "../../../hooks/use-auth";
+import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy, doc, deleteDoc } from "firebase/firestore";
 import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import InvitationCodesList from "./team/InvitationCodesList";
 import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
 import {
@@ -31,8 +32,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { removeTeamMemberAction } from "@/actions/team-actions";
+} from "../../ui/alert-dialog";
+import { removeTeamMemberAction } from "../../../actions/team-actions";
 
 
 export default function TeamManagement() {

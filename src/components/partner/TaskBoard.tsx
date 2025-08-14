@@ -1,19 +1,20 @@
+
 // src/components/partner/TaskBoard.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Plus, Loader2, Trash2 } from 'lucide-react';
-import type { Task, TeamMember } from '@/lib/types';
+import type { Task, TeamMember } from '../../lib/types';
 import AssignTaskDialog from './tasks/AssignTaskDialog';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
+import { useAuth } from '../../hooks/use-auth';
+import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Badge } from "../ui/badge";
 import Image from 'next/image';
-import { deleteTaskAction } from '@/actions/task-actions';
-import { useToast } from '@/hooks/use-toast';
+import { deleteTaskAction } from '../../actions/task-actions';
+import { useToast } from '../../hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "../ui/alert-dialog"
 
 const TaskRow = ({ task, teamMembers, onDelete }: { task: Task & { id: string }, teamMembers: TeamMember[], onDelete: (taskId: string) => void }) => {
     const assignee = teamMembers.find(m => m.id === task.assignee);

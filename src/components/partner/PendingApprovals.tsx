@@ -1,10 +1,11 @@
+
 "use client";
 
 import React, { useState } from "react";
-import { mockPendingApprovals } from "@/lib/mockData";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
+import { mockPendingApprovals } from "../../lib/mockData";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../shared/Badge";
 import {
   Filter,
   CheckCircle,

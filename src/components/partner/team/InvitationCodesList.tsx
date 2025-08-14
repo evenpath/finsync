@@ -1,14 +1,15 @@
+
 // src/components/partner/team/InvitationCodesList.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getPartnerInvitationCodesAction, cancelInvitationCodeAction, regenerateInvitationCodeAction } from '@/actions/partner-invitation-management';
-import type { InvitationCodeDisplay } from '@/lib/types/invitation';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getPartnerInvitationCodesAction, cancelInvitationCodeAction, regenerateInvitationCodeAction } from '../../../actions/partner-invitation-management';
+import type { InvitationCodeDisplay } from '../../../lib/types/invitation';
+import { useToast } from '../../../hooks/use-toast';
+import { Button } from '../../ui/button';
+import { Badge } from '../../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { RefreshCw, X, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

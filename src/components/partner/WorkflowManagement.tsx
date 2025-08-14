@@ -1,10 +1,11 @@
+
 "use client";
 
 import React from "react";
-import { mockAssignedWorkflows } from "@/lib/mockData";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
+import { mockAssignedWorkflows } from "../../lib/mockData";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { Badge } from "../shared/Badge";
 import {
   Plus,
   Layers,

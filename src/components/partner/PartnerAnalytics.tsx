@@ -1,7 +1,8 @@
+
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockWorkspaceStats, mockAssignedWorkflows, mockTeamMembers } from "@/lib/mockData";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { mockWorkspaceStats, mockAssignedWorkflows, mockTeamMembers } from "../../lib/mockData";
 import Image from "next/image";
 import { TrendingUp, Activity, Clock, Workflow as WorkflowIcon, Star } from "lucide-react";
 

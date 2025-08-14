@@ -1,10 +1,10 @@
 
 "use client";
 
-import type { WorkflowTemplate } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/shared/Badge";
+import type { WorkflowTemplate } from "../../lib/types";
+import { Button } from "../ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+import { Badge } from "../shared/Badge";
 import { Star } from "lucide-react";
 
 
