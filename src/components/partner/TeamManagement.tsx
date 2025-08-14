@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { useToast } from "../../hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "../../components/ui/alert-dialog";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -51,14 +51,14 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { Input } from "@/components/ui/input";
+import { Input } from "../../components/ui/input";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
+} from "../../components/ui/pagination";
 import {
   Tooltip,
   TooltipContent,
