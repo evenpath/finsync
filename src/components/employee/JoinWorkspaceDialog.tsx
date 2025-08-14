@@ -10,14 +10,14 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+} from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { useToast } from '../../hooks/use-toast';
 import { Plus, Building2, Check, Loader2 } from 'lucide-react';
-import { acceptWorkspaceInvitationAction } from '@/actions/workspace-actions';
-import { useAuth } from '@/hooks/use-auth';
+import { acceptWorkspaceInvitationAction } from '../../actions/workspace-actions';
+import { useAuth } from '../../hooks/use-auth';
 
 interface JoinWorkspaceDialogProps {
   trigger?: React.ReactNode;

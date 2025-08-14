@@ -1,6 +1,6 @@
 import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/shared/Badge";
+import { Button } from "../ui/button";
+import { Badge } from "../shared/Badge";
 
 type PartnerHeaderProps = {
   title: string;

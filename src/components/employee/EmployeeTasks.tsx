@@ -2,13 +2,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
+import { useAuth } from '../../hooks/use-auth';
+import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import type { Task } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import type { Task } from '../../lib/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Badge } from '../ui/badge';
 import { Loader2, ListTodo } from 'lucide-react';
 
 export default function EmployeeTasks() {

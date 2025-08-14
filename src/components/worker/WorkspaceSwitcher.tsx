@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Plus, Check, Settings, LogOut, RefreshCw } from 'lucide-react';
-import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
+import { Skeleton } from '../ui/skeleton';
+import { Button } from '../ui/button';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -13,12 +13,12 @@ import {
   DropdownMenuTrigger, 
   DropdownMenuSeparator,
   DropdownMenuLabel
-} from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+} from '../ui/dropdown-menu';
+import { useToast } from '../../hooks/use-toast';
 import { getAuth, signOut } from 'firebase/auth';
-import { app } from '@/lib/firebase';
-import JoinWorkspaceDialog from '@/components/employee/JoinWorkspaceDialog';
-import type { WorkspaceAccess } from '@/lib/types';
+import { app } from '../../lib/firebase';
+import JoinWorkspaceDialog from '../employee/JoinWorkspaceDialog';
+import type { WorkspaceAccess } from '../../lib/types';
 
 const WorkspaceAvatar = ({ workspace, size = 'md' }: { workspace: any, size?: 'sm' | 'md' | 'lg' }) => {
   const sizeClasses = {

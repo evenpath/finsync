@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { User, Phone, Mail, LogOut, ListTodo } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -11,12 +11,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../ui/dropdown-menu';
+import { useAuth } from '../../hooks/use-auth';
+import { Skeleton } from '../ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
-import { app } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
+import { app } from '../../lib/firebase';
+import { useToast } from '../../hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 export default function WorkspaceHeader() {

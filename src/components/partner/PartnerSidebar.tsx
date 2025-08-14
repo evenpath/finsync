@@ -1,4 +1,3 @@
-
 // src/components/partner/PartnerSidebar.tsx
 "use client";
 
@@ -15,10 +14,10 @@ import {
   Zap,
   LogOut,
 } from "lucide-react";
-import { Badge } from "@/components/shared/Badge";
-import { useAuth } from '@/hooks/use-auth';
+import { Badge } from "../shared/Badge";
+import { useAuth } from '../../hooks/use-auth';
 import { getAuth, signOut } from 'firebase/auth';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/partner" },
