@@ -4,8 +4,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Zap, Save, ChevronDown, ChevronRight, X, ArrowDown, Settings, Play, Eye, Trash2, GripVertical, Sparkles, Clock, Users, Target, MessageSquare, Mail, Phone, MessageCircle, Calendar, AlertTriangle, Edit3, Home, Wrench, Building2, CheckCircle, DollarSign, Star, ChevronUp, Search, Loader2, Bot, Bell, UserPlus } from 'lucide-react';
-import { suggestIndustryTemplates, type IndustryTemplate } from '@/ai/flows/suggest-industry-templates';
-import { suggestWorkflowSteps, type SuggestWorkflowStepsOutput, type StepSchema } from '@/ai/flows/suggest-workflow-steps';
+import { suggestIndustryTemplates, type IndustryTemplate } from '../../../ai/flows/suggest-industry-templates';
+import { suggestWorkflowSteps, type SuggestWorkflowStepsOutput, type StepSchema } from '../../../ai/flows/suggest-workflow-steps';
 
 // Communication channels with better icons
 const communicationChannels = {

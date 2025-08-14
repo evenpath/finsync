@@ -1,6 +1,6 @@
-import AdminHeader from "@/components/admin/AdminHeader";
-import AdminSettings from "@/components/admin/AdminSettings";
-import { Button } from "@/components/ui/button";
+import AdminHeader from "../../../components/admin/AdminHeader";
+import AdminSettings from "../../../components/admin/AdminSettings";
+import { Button } from "../../../components/ui/button";
 import { CheckCircle } from "lucide-react";
 
 export default function AdminSettingsPage() {

@@ -3,10 +3,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react';
-import { Badge } from '@/components/shared/Badge';
+import { Badge } from '../../../components/shared/Badge';
 import Link from 'next/link';
 
 interface DiagnosticResult {

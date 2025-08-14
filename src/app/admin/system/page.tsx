@@ -2,7 +2,7 @@
 // src/app/admin/system/page.tsx
 import React from 'react';
 import { Metadata } from 'next';
-import MigrationTools from '@/components/admin/MigrationTools';
+import MigrationTools from '../../../components/admin/MigrationTools';
 
 export const metadata: Metadata = {
   title: 'System Management | Admin Dashboard',

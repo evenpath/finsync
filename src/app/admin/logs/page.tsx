@@ -1,5 +1,5 @@
-import AdminHeader from "@/components/admin/AdminHeader";
-import SystemLogs from "@/components/admin/SystemLogs";
+import AdminHeader from "../../../components/admin/AdminHeader";
+import SystemLogs from "../../../components/admin/SystemLogs";
 
 export default function AdminLogsPage() {
   return (

@@ -1,7 +1,7 @@
-import AdminHeader from "@/components/admin/AdminHeader";
-import SystemOverview from "@/components/admin/SystemOverview";
+import AdminHeader from "../../components/admin/AdminHeader";
+import SystemOverview from "../../components/admin/SystemOverview";
 import { RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/button";
 
 export default function AdminDashboardPage() {
   return (

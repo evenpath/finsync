@@ -1,7 +1,7 @@
 // src/app/admin/partners/page.tsx
-import AdminHeader from "@/components/admin/AdminHeader";
-import PartnerManagementUI from "@/components/admin/PartnerManagementUI";
-import type { Partner } from '@/lib/types';
+import AdminHeader from "../../../components/admin/AdminHeader";
+import PartnerManagementUI from "../../../components/admin/PartnerManagementUI";
+import type { Partner } from '../../../lib/types';
 
 
 // This is a Server Component that fetches data and passes it to the Client Component.
