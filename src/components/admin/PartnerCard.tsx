@@ -1,41 +1,103 @@
-
 // src/components/admin/PartnerCard.tsx
 import React from 'react';
-import type { Partner } from '../../lib/types';
-import { Card, CardContent } from '../ui/card';
-import { Building } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/shared/Badge';
+import { Button } from '@/components/ui/button';
+import { Building2, Users, TrendingUp, Calendar, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
+import type { Partner } from '@/lib/types';
 
 interface PartnerCardProps {
   partner: Partner;
-  isSelected: boolean;
-  onSelect: () => void;
+  onView?: (partner: Partner) => void;
+  onEdit?: (partner: Partner) => void;
+  onDelete?: (partner: Partner) => void;
 }
 
-export default function PartnerCard({ partner, isSelected, onSelect }: PartnerCardProps) {
-  const industryIcon = partner.industry?.icon || <Building className="w-5 h-5 text-muted-foreground" />;
-  
+export default function PartnerCard({ partner, onView, onEdit, onDelete }: PartnerCardProps) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'suspended': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'Enterprise': return 'text-purple-600 bg-purple-50';
+      case 'Professional': return 'text-blue-600 bg-blue-50';
+      case 'Starter': return 'text-green-600 bg-green-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
+  };
+
   return (
-    <Card 
-      className={`transition-all cursor-pointer ${isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-secondary/50'}`}
-      onClick={onSelect}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-lg`}>
-              {industryIcon}
+    <Card className="hover:shadow-lg transition-shadow duration-200">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-semibold">
+            {partner.name}
+          </CardTitle>
+          <div className="flex items-center space-x-2">
+            <Badge 
+              variant={partner.status === 'active' ? 'default' : 'secondary'}
+              className={`${getStatusColor(partner.status)} text-white`}
+            >
+              {partner.status}
+            </Badge>
+            <Badge variant="outline" className={getPlanColor(partner.plan)}>
+              {partner.plan}
+            </Badge>
+          </div>
+        </div>
+        <div className="flex items-center space-x-1">
+          <Button variant="ghost" size="sm" onClick={() => onView?.(partner)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onEdit?.(partner)}>
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onDelete?.(partner)}>
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Building2 className="h-4 w-4 mr-2" />
+            {partner.businessName}
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Users className="h-4 w-4 mr-2" />
+            {partner.employeeCount} employees
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4 mr-2" />
+            Joined {new Date(partner.joinedDate).toLocaleDateString()}
+          </div>
+          
+          <div className="flex items-center justify-between pt-2 border-t">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Workflows:</span>
+              <span className="ml-1 font-medium">{partner.stats.activeWorkflows}</span>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">{partner.name}</h3>
-              <p className="text-sm text-muted-foreground">{partner.industry?.name || 'No Industry Set'}</p>
+            <div className="text-sm">
+              <span className="text-muted-foreground">Success:</span>
+              <span className="ml-1 font-medium text-green-600">{partner.stats.successRate}%</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              partner.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-            }`}>
-              {partner.status}
-            </span>
+          
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <span className="text-muted-foreground">ROI:</span>
+              <span className="ml-1 font-medium text-blue-600">{partner.stats.avgROI}%</span>
+            </div>
+            <div className="text-sm">
+              <span className="text-muted-foreground">Saved:</span>
+              <span className="ml-1 font-medium">{partner.stats.timeSaved}</span>
+            </div>
           </div>
         </div>
       </CardContent>
