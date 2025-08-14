@@ -13,7 +13,7 @@ import {
   Search,
 } from "lucide-react";
 
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 import {
