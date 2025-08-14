@@ -1,9 +1,9 @@
 
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import type { Industry } from "@/lib/types";
-import { industries as mockIndustries } from "@/lib/mockData";
+import { Card, CardContent } from "../ui/card";
+import type { Industry } from "../../lib/types";
+import { industries as mockIndustries } from "../../lib/mockData";
 
 
 interface IndustrySelectorProps {
