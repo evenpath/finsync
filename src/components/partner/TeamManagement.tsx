@@ -1,11 +1,10 @@
-
 // src/components/partner/team/TeamManagement.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Button } from "../../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
-import { Badge } from "../../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../ui/badge";
 import {
   Users,
   AlertTriangle,
@@ -19,7 +18,7 @@ import { useAuth } from "../../../hooks/use-auth";
 import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy, doc, deleteDoc } from "firebase/firestore";
 import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import InvitationCodesList from "./team/InvitationCodesList";
 import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
 import {
@@ -32,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../../ui/alert-dialog";
+} from "../ui/alert-dialog";
 import { removeTeamMemberAction } from "../../../actions/team-actions";
 
 
