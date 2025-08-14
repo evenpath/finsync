@@ -1,9 +1,9 @@
 
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import PendingApprovals from "@/components/partner/PendingApprovals";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerHeader from "../../../components/partner/PartnerHeader";
+import PendingApprovals from "../../../components/partner/PendingApprovals";
+import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerApprovalsPage() {
   return (

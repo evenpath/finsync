@@ -2,11 +2,11 @@
 // src/app/partner/page.tsx
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import { mockWorkflowTemplates, industries } from "@/lib/mockData";
-import type { BusinessProfile, WorkflowTemplate } from "@/lib/types";
-import HybridWorkflowDashboard from "@/components/partner/HybridWorkflowDashboard";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerHeader from "../../components/partner/PartnerHeader";
+import { mockWorkflowTemplates, industries } from "../../lib/mockData";
+import type { BusinessProfile, WorkflowTemplate } from '../../lib/types';
+import HybridWorkflowDashboard from "../../components/partner/HybridWorkflowDashboard";
+import PartnerAuthWrapper from "../../components/partner/PartnerAuthWrapper";
 
 
 // Mocks for demonstration

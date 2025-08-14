@@ -1,9 +1,9 @@
 
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import TeamManagement from "@/components/partner/TeamManagement";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerHeader from "../../../components/partner/PartnerHeader";
+import TeamManagement from "../../../components/partner/TeamManagement";
+import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerTeamPage() {
   return (

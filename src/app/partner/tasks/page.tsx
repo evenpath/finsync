@@ -1,9 +1,9 @@
 
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import TaskBoard from "@/components/partner/TaskBoard";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerHeader from "../../../components/partner/PartnerHeader";
+import TaskBoard from "../../../components/partner/TaskBoard";
+import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerTasksPage() {
   return (

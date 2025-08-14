@@ -1,11 +1,11 @@
 
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import PartnerAnalytics from "@/components/partner/PartnerAnalytics";
-import { Button } from "@/components/ui/button";
+import PartnerHeader from "../../../components/partner/PartnerHeader";
+import PartnerAnalytics from "../../../components/partner/PartnerAnalytics";
+import { Button } from "../../../components/ui/button";
 import { Download } from "lucide-react";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerAnalyticsPage() {
   return (

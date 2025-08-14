@@ -1,9 +1,9 @@
 
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import WorkflowManagement from "@/components/partner/WorkflowManagement";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerHeader from "../../../components/partner/PartnerHeader";
+import WorkflowManagement from "../../../components/partner/WorkflowManagement";
+import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerWorkflowsPage() {
   return (

@@ -1,10 +1,10 @@
 
 "use client";
 
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PartnerHeader from "../../../components/partner/PartnerHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Settings } from "lucide-react";
-import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
+import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerSettingsPage() {
   return (
