@@ -1,8 +1,8 @@
 
 // src/components/admin/PartnerCard.tsx
 import React from 'react';
-import type { Partner } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card';
+import type { Partner } from '../../lib/types';
+import { Card, CardContent } from '../ui/card';
 import { Building } from 'lucide-react';
 
 interface PartnerCardProps {

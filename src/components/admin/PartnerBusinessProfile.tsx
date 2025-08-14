@@ -1,8 +1,8 @@
 
 // src/components/admin/PartnerBusinessProfile.tsx
 import React from 'react';
-import type { Partner } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import type { Partner } from '../../lib/types';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Building, Users, MapPin, DollarSign, Mail, Phone, Calendar, Star, AlertCircle, Settings, Target } from 'lucide-react';
 
 interface PartnerBusinessProfileProps {

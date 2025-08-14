@@ -17,8 +17,8 @@ import {
   Database,
   Wrench,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { Button } from "../ui/button";
+import { useAuth } from "../../hooks/use-auth";
 import { getAuth, signOut } from "firebase/auth";
 
 const menuItems = [

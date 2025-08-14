@@ -3,9 +3,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { useToast } from "../../hooks/use-toast";
 import { Database, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { migrateUserMappings, validateUserMappings } from '@/scripts/migrate-user-mappings';
 

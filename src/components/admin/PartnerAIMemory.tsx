@@ -3,9 +3,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import type { Partner } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import type { Partner } from '../../lib/types';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { Button } from '../ui/button';
 import { Brain, MessageSquare, Target, CheckCircle, AlertCircle, RotateCcw } from 'lucide-react';
 import AIQuestionDialog from './AIQuestionDialog';
 
