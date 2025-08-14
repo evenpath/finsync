@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 interface DiagnosticResult {
   name: string;
@@ -177,8 +178,8 @@ export default function FirebaseDiagnosticsPage() {
               <p className="font-semibold">Step 3: Enable APIs</p>
             </div>
            <ol className="list-decimal list-inside space-y-2 text-muted-foreground" start={6}>
-             <li>Ensure Multi-Tenancy is enabled in <a href={`https://console.cloud.google.com/identity-platform/settings?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Identity Platform settings <ExternalLink className="inline w-4 h-4"/></a>.</li>
-             <li>Ensure the <a href={`https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Cloud Build API <ExternalLink className="inline w-4 h-4"/></a> is enabled for your project.</li>
+             <li>Ensure Multi-Tenancy is enabled in <Link href={`https://console.cloud.google.com/identity-platform/settings?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Identity Platform settings <ExternalLink className="inline w-4 h-4"/></Link>.</li>
+             <li>Ensure the <Link href={`https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com?project=${projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Cloud Build API <ExternalLink className="inline w-4 h-4"/></Link> is enabled for your project.</li>
           </ol>
 
         </CardContent>

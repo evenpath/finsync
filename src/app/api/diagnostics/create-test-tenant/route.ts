@@ -16,7 +16,8 @@ export async function POST() {
 
     // Create a test tenant with a unique display name for this test run.
     // The name must be between 4-20 characters.
-    const testTenantName = `diag-test-${Date.now().toString().slice(-8)}`;
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const testTenantName = `diag-test-${randomSuffix}`;
     
     const tenant = await adminAuth.tenantManager().createTenant({
       displayName: testTenantName,
