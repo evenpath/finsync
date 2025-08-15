@@ -1,398 +1,367 @@
 // src/components/partner/TeamManagement.tsx
-
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import React, { useState, useEffect, useMemo } from "react";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { Input } from "../ui/input";
 import {
-  Archive,
-  ArchiveRestore,
-  MoreHorizontal,
-  PlusCircle,
+  UserPlus,
+  Filter,
+  Download,
   Search,
+  Send,
+  MessageSquare,
+  Settings,
+  XCircle,
+  Users,
+  Phone,
+  Mail,
+  Calendar,
+  Shield,
+  Clock,
+  AlertTriangle,
+  RefreshCw,
+  Ticket,
 } from "lucide-react";
-
+import type { TeamMember } from "../../lib/types";
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from "../../hooks/use-auth";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import { Input } from "../../components/ui/input";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "../../components/ui/pagination";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../../components/ui/tooltip";
-import { Button } from "../../components/ui/button";
-
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PartnerUser, UserRole } from "../../lib/types";
-import { archiveUser, getPartnerEmployees } from "../../actions/partner-actions";
-import { Badge } from "../../components/ui/badge";
-import InviteEmployeeDialog from "./InviteEmployeeDialog";
-import { Invitation } from "../../lib/types/invitation";
-import { invitationActions } from "../../actions/employee-invitation-actions";
-import { PartnerAuthWrapper } from "../PartnerAuthWrapper";
-import PartnerHeader from "../PartnerHeader";
-import TeamManagementDiagnostics from "../TeamManagementDiagnostics";
+import { db } from "../../lib/firebase";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import Link from "next/link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import InvitationCodesList from "./team/InvitationCodesList";
+import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
 
 export default function TeamManagement() {
-  const [isDiagnostic, setIsDiagnostic] = useState<boolean>(false);
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const {
-    data: employees,
-    isLoading,
-    isError,
-  } = useQuery<PartnerUser[]>({
-    queryKey: ["partnerEmployees", user?.partnerId],
-    queryFn: () => getPartnerEmployees(user?.partnerId!),
-    enabled: !!user?.partnerId,
-  });
+  const partnerId = user?.customClaims?.partnerId;
+  const userRole = user?.customClaims?.role;
 
-  const { data: invitations } = useQuery<Invitation[]>({
-    queryKey: ["partnerInvitations", user?.partnerId],
-    queryFn: () => invitationActions.getPendingInvitations(user?.partnerId!),
-    enabled: !!user?.partnerId,
-  });
+  useEffect(() => {
+    if (authLoading) {
+      setIsLoading(true);
+      return;
+    }
 
-  const archiveUserMutation = useMutation({
-    mutationFn: (userId: string) => archiveUser(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["partnerEmployees"] });
+    if (!partnerId || !db) {
+      setFirestoreError("Could not identify your organization. Please ensure you are logged in correctly and have been assigned to a partner organization.");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setFirestoreError(null);
+    
+    const teamMembersRef = collection(db, "teamMembers");
+    const q = query(
+      teamMembersRef,
+      where("partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const membersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+        lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive,
+      } as TeamMember));
+      
+      setTeamMembers(membersData);
+      
+      if (!selectedMember && membersData.length > 0) {
+        setSelectedMember(membersData[0]);
+      } else if (selectedMember) {
+        const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
+        setSelectedMember(updatedSelectedMember || null);
+      }
+      
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Firestore error fetching team members:", error);
+      let errorMessage = "Could not fetch team members.";
+      if (error.code === 'permission-denied') {
+        errorMessage = "Permission denied. Check your Firestore security rules and custom claims. Your account may not have permission to view team members for this partner.";
+      } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
+        errorMessage = "Database index missing. Please check the Firebase console to create the required indexes for the 'teamMembers' collection.";
+      }
+      setFirestoreError(errorMessage);
+      setIsLoading(false);
       toast({
-        title: "User Archived",
-        description: "The user has been successfully archived.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
         variant: "destructive",
+        title: "Database Error",
+        description: errorMessage,
+        duration: 9000
       });
-    },
-  });
+    });
 
-  const columns: ColumnDef<PartnerUser>[] = [
-    {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.original.email}</span>
-          <span className="text-sm text-gray-500">
-            {row.original.firstName} {row.original.lastName}
-          </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "phone",
-      header: "Phone",
-    },
-    {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => (
-        <Badge
-          variant={
-            row.original.role === UserRole.ADMIN ? "default" : "secondary"
-          }
-        >
-          {row.original.role}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          variant={
-            row.original.isActive
-              ? "success"
-              : row.original.isArchived
-              ? "destructive"
-              : "outline"
-          }
-        >
-          {row.original.isActive
-            ? "Active"
-            : row.original.isArchived
-            ? "Archived"
-            : "Inactive"}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "lastLogin",
-      header: "Last Login",
-      cell: ({ row }) =>
-        row.original.lastLogin ? (
-          <span className="text-sm">
-            {format(new Date(row.original.lastLogin), "PPP")}
-          </span>
-        ) : (
-          "Never"
-        ),
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const user = row.original;
-        const [isDialogOpen, setIsDialogOpen] = useState(false);
-        const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
-        const [isUnarchiveDialogOpen, setIsUnarchiveDialogOpen] =
-          useState(false);
+    return () => unsubscribe();
+  }, [partnerId, authLoading, toast, selectedMember]);
 
-        const handleUnarchive = () => {
-          // Unarchive logic
-        };
+  const filteredMembers = useMemo(() => 
+    teamMembers.filter(member =>
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.phone?.includes(searchTerm)
+    ), [teamMembers, searchTerm]
+  );
 
-        const handleArchive = () => {
-          archiveUserMutation.mutate(user.id);
-          setIsArchiveDialogOpen(false);
-        };
+  const formatDate = (dateString: any) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+      return 'Invalid Date';
+    }
+  };
 
-        const handleEdit = () => {
-          // Edit logic
-        };
+  const formatTime = (timeString: any) => {
+    if (!timeString || timeString === 'Never') return 'Never';
+     try {
+      return new Date(timeString).toLocaleString();
+    } catch (e) {
+      return 'Invalid Time';
+    }
+  };
 
-        return (
-          <div className="flex items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleEdit()}>
-                  Edit User
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {user.isArchived ? (
-                  <DropdownMenuItem
-                    onClick={() => setIsUnarchiveDialogOpen(true)}
-                  >
-                    <ArchiveRestore className="mr-2 h-4 w-4" />
-                    Unarchive
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem
-                    onClick={() => setIsArchiveDialogOpen(true)}
-                  >
-                    <Archive className="mr-2 h-4 w-4" />
-                    Archive
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <AlertDialog open={isArchiveDialogOpen}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action will archive the user. The user will no longer
-                    be able to login. You can unarchive them later.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setIsArchiveDialogOpen(false)}>
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction onClick={handleArchive}>
-                    Archive
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        );
-      },
-    },
-  ];
-
-  const table = useReactTable({
-    data: employees || [],
-    columns,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      columnFilters,
-    },
-  });
+  if (firestoreError) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <Card className="max-w-lg w-full border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-6 w-6" />
+              Access Error
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>
+              {firestoreError}
+            </p>
+            <Button asChild variant="outline">
+              <Link href="/partner/team/diagnostics">
+                <Settings className="w-4 h-4 mr-2"/>
+                View Access Diagnostics
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <PartnerAuthWrapper>
-      <div className="flex flex-col h-full">
-        <PartnerHeader />
-        <div className="flex-1 space-y-4 p-8 pt-6">
-          <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">Team Management</h2>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                className="h-9 px-3"
-                onClick={() => setIsDiagnostic((prev) => !prev)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-2 h-4 w-4"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v4" />
-                  <path d="M12 16h.01" />
-                </svg>
-                Diagnostics
-              </Button>
-              <InviteEmployeeDialog invitations={invitations || []} />
-            </div>
-          </div>
-          {isDiagnostic && <TeamManagementDiagnostics />}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Search employees by email..."
-                value={
-                  (table.getColumn("email")?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table.getColumn("email")?.setFilterValue(event.target.value)
-                }
-                className="max-w-sm"
-              />
-            </div>
-          </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      {isLoading ? "Loading..." : "No results."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="flex items-center justify-end space-x-2 py-4">
-            <Pagination className="justify-end">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                  />
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-headline">
+                  Manage Team
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  {partnerId && userRole === 'partner_admin' && (
+                    <InviteEmployeeByCodeDialog partnerId={partnerId} />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="members">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="members">
+                    <Users className="w-4 h-4 mr-2" />
+                    Team Members ({teamMembers.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="invitations">
+                    <Ticket className="w-4 h-4 mr-2" />
+                    Invitations
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="members">
+                  <div className="border-t mt-4 pt-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search team members..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Filter
+                      </Button>
+                    </div>
+                    
+                    {isLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+                        <span className="text-muted-foreground">Loading team members...</span>
+                      </div>
+                    ) : filteredMembers.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold">
+                          {searchTerm ? 'No matching team members' : 'No team members found'}
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                          {searchTerm ? 'Try adjusting your search terms.' : 'Get started by inviting your first team member.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {filteredMembers.map((member) => (
+                          <div
+                            key={member.id}
+                            className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedMember?.id === member.id ? 'bg-muted' : ''
+                            }`}
+                            onClick={() => setSelectedMember(member)}
+                          >
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-sm font-medium text-primary">
+                                    {member.name?.charAt(0).toUpperCase() || '?'}
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-medium">{member.name || 'Unnamed'}</p>
+                                    <Badge variant={member.status === 'active' ? 'default' : 'outline'}>
+                                      {member.status || 'unknown'}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {member.email || member.phone || 'No contact info'}
+                                  </p>
+                                </div>
+                              </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="invitations">
+                  <div className="border-t mt-4 pt-4">
+                    {partnerId && <InvitationCodesList partnerId={partnerId} />}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Member Details Panel */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Member Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedMember ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-lg font-medium text-primary">
+                        {selectedMember.name?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedMember.name || 'Unnamed'}</p>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {selectedMember.role?.replace('_', ' ')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {selectedMember.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedMember.email}</span>
+                      </div>
+                    )}
+                    
+                    {selectedMember.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedMember.phone}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Joined {formatDate(selectedMember.createdAt)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Last active {formatTime(selectedMember.lastActive)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant={selectedMember.status === 'active' ? 'default' : 'outline'}>
+                        {selectedMember.status || 'unknown'}
+                      </Badge>
+                    </div>
+
+                    {selectedMember.skills && selectedMember.skills.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Skills</p>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedMember.skills.map((skill, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-4 space-y-2">
+                    <Button className="w-full" variant="outline">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Send Message
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Send className="w-4 h-4 mr-2" />
+                      Edit Details
+                    </Button>
+                    {userRole === 'partner_admin' && selectedMember.status === 'active' && (
+                      <Button className="w-full" variant="outline">
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Remove from Team
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Select a team member to view details</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </PartnerAuthWrapper>
+    </div>
   );
 }
