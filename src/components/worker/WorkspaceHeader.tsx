@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '../ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth.tsx';
 import { Skeleton } from '../ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '../../lib/firebase';

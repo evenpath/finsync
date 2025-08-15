@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth.tsx';
 import type { Task, TeamMember } from '../../../lib/types';
 import { createTaskAction } from '@/actions/task-actions';
 import { Loader2, ArrowRight, UserCheck } from 'lucide-react';

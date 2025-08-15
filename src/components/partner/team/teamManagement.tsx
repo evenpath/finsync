@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import type { TeamMember } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from '@/hooks/use-auth.tsx';
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
@@ -291,7 +291,7 @@ export default function TeamManagement() {
 
                   <div className="pt-4 space-y-2">
                     <Button className="w-full" variant="outline">
-                      <MessageSquare className="w-4 w-4 mr-2" />
+                      <MessageSquare className="w-4 h-4 mr-2" />
                       Send Message
                     </Button>
                     <Button className="w-full" variant="outline">

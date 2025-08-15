@@ -5,7 +5,7 @@ import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import EnhancedWorkspaceSwitcher from "../../components/worker/WorkspaceSwitcher";
 import WorkspaceHeader from "../../components/worker/WorkspaceHeader";
-import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { AuthProvider, useAuth } from '@/hooks/use-auth.tsx';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Building2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';

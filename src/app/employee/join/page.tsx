@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { useToast } from "../../../hooks/use-toast";
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth.tsx';
 import { validateInvitationCodeAction, joinWorkspaceWithCodeAction } from '../../../actions/employee-invitation-actions';
 import { Ticket, Loader2, ArrowRight, Building2, User, Clock } from 'lucide-react';
 

@@ -17,7 +17,7 @@ import { Label } from '../ui/label';
 import { useToast } from '../../hooks/use-toast';
 import { Plus, Building2, Check, Loader2 } from 'lucide-react';
 import { acceptWorkspaceInvitationAction } from '../../actions/workspace-actions';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth.tsx';
 
 interface JoinWorkspaceDialogProps {
   trigger?: React.ReactNode;

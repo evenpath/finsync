@@ -15,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Badge } from "../shared/Badge";
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth.tsx';
 import { getAuth, signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 
