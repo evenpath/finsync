@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { Plus, Loader2, Trash2 } from 'lucide-react';
 import type { Task, TeamMember } from '../../lib/types';
 import AssignTaskDialog from './tasks/AssignTaskDialog';
-import { useAuth } from '../../hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";

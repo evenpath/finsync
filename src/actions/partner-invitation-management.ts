@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase-admin';
 import type { InvitationCodeDisplay } from '../../lib/types/invitation';
 import { generateInvitationCode as generateCodeService } from '@/services/invitation-code-service';
 import { getPartnerTenantId } from '@/services/tenant-service';
-import { useAuth } from '../../hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 
 /**
  * Get all invitation codes for a partner's workspace

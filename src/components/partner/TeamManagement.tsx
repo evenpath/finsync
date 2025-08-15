@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Input } from "../ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   UserPlus,
   Filter,
@@ -25,13 +25,13 @@ import {
   RefreshCw,
   Ticket,
 } from "lucide-react";
-import type { TeamMember } from "../../lib/types";
-import { useToast } from "../../hooks/use-toast";
-import { useAuth } from "../../hooks/use-auth";
-import { db } from "../../lib/firebase";
+import type { TeamMember } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvitationCodesList from "./team/InvitationCodesList";
 import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
 

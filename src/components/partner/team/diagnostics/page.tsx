@@ -1,10 +1,9 @@
-
 // src/components/partner/team/diagnostics/page.tsx
 "use client";
 
 import React from 'react';
-import TeamManagementDiagnostics from "../../../partner/TeamManagementDiagnostics";
-import PartnerAuthWrapper from "../../../partner/PartnerAuthWrapper";
+import TeamManagementDiagnostics from "@/components/partner/TeamManagementDiagnostics";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
 
 function PartnerTeamDiagnosticsPage() {
