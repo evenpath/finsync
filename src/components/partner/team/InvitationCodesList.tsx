@@ -1,15 +1,14 @@
-
 // src/components/partner/team/InvitationCodesList.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getPartnerInvitationCodesAction, cancelInvitationCodeAction, regenerateInvitationCodeAction } from '../../../actions/partner-invitation-management';
-import type { InvitationCodeDisplay } from '../../../lib/types/invitation';
-import { useToast } from '../../../hooks/use-toast';
-import { Button } from '../../ui/button';
-import { Badge } from '../../ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
+import { getPartnerInvitationCodesAction, cancelInvitationCodeAction, regenerateInvitationCodeAction } from '@/actions/partner-invitation-management';
+import type { InvitationCodeDisplay } from '@/lib/types/invitation';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RefreshCw, X, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -72,8 +71,8 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
 
   const getStatusBadge = (status: InvitationCodeDisplay['status']) => {
     switch (status) {
-      case 'pending': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'accepted': return <Badge variant="secondary" className="bg-green-100 text-green-800">Accepted</Badge>;
+      case 'pending': return <Badge variant="warning">Pending</Badge>;
+      case 'accepted': return <Badge variant="success">Accepted</Badge>;
       case 'expired': return <Badge variant="outline">Expired</Badge>;
       case 'cancelled': return <Badge variant="destructive">Cancelled</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;

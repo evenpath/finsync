@@ -1,4 +1,3 @@
-
 // src/components/partner/team/InviteEmployeeByCodeDialog.tsx
 "use client";
 
@@ -11,14 +10,14 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
-} from '../../ui/dialog';
-import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
-import { Label } from '../../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { useToast } from '../../../hooks/use-toast';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Phone, Loader2, Check, Copy, Ticket } from 'lucide-react';
-import { generateEmployeeInvitationCodeAction } from '../../../actions/partner-invitation-management';
+import { generateEmployeeInvitationCodeAction } from '@/actions/partner-invitation-management';
 import { useAuth } from '@/hooks/use-auth';
 
 interface InviteEmployeeByCodeDialogProps {

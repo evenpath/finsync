@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Plus, Check, Settings, LogOut, RefreshCw } from 'lucide-react';
-import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
+import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
 import { 

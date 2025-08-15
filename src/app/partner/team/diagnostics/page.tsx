@@ -2,8 +2,8 @@
 "use client";
 
 import React from 'react';
-import TeamManagementDiagnostics from "../../../../components/partner/TeamManagementDiagnostics";
-import PartnerAuthWrapper from "../../../../components/partner/PartnerAuthWrapper";
+import TeamManagementDiagnostics from "@/components/partner/TeamManagementDiagnostics";
+import PartnerAuthWrapper from "@/components/partner/PartnerAuthWrapper";
 
 
 function PartnerTeamDiagnosticsPage() {

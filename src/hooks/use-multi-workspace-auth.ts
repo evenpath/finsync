@@ -1,4 +1,3 @@
-
 // src/hooks/use-multi-workspace-auth.ts
 "use client";
 
