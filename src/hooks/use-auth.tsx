@@ -1,75 +1,27 @@
-
-// src/hooks/use-auth.tsx
 "use client";
 
-import React, { useState, useEffect, useContext, createContext } from 'react';
-import { getAuth, onIdTokenChanged, User } from 'firebase/auth';
-import type { FirebaseAuthUser, AuthState } from '../../lib/types';
-import { app } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../lib/firebase'; // Corrected path
 
-const auth = getAuth(app);
+interface AuthState {
+  user: User | null;
+  loading: boolean;
+}
 
-const AuthContext = createContext<AuthState>({
-  user: null,
-  loading: true,
-  error: null,
-  isAuthenticated: false,
-});
+export function useAuth(): AuthState {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    loading: true,
+  });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<FirebaseAuthUser | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthState({ user, loading: false });
+    });
 
-    useEffect(() => {
-        // Use onIdTokenChanged to listen for claim changes
-        const unsubscribe = onIdTokenChanged(auth, async (firebaseUser: User | null) => {
-            if (firebaseUser) {
-                try {
-                    const idTokenResult = await firebaseUser.getIdTokenResult(true); // force refresh to get latest claims
-                    
-                    const authUser: FirebaseAuthUser = {
-                        uid: firebaseUser.uid,
-                        email: firebaseUser.email,
-                        displayName: firebaseUser.displayName,
-                        photoURL: firebaseUser.photoURL,
-                        phoneNumber: firebaseUser.phoneNumber,
-                        emailVerified: firebaseUser.emailVerified,
-                        customClaims: idTokenResult.claims,
-                        creationTime: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        lastSignInTime: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
-                        providerData: firebaseUser.providerData
-                    };
-                    
-                    setUser(authUser);
-                } catch (e: any) {
-                    console.error("Error processing user auth state:", e);
-                    setError(e.message || "Failed to process user permissions.");
-                    setUser(null);
-                }
-            } else {
-                setUser(null);
-            }
-            setLoading(false);
-        });
+    return () => unsubscribe();
+  }, []);
 
-        return () => unsubscribe();
-    }, []);
-
-    const value: AuthState = {
-        user,
-        loading,
-        error,
-        isAuthenticated: !!user,
-    };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
-};
+  return authState;
+}
