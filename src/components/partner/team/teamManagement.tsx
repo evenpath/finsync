@@ -1,10 +1,10 @@
-// src/components/partner/TeamManagement.tsx
+// src/components/partner/team/TeamManagement.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/shared/Badge";
 import { Input } from "@/components/ui/input";
 import {
   UserPlus,
@@ -108,12 +108,10 @@ export default function TeamManagement() {
     return () => unsubscribe();
   }, [partnerId, authLoading, toast, selectedMember]);
 
-  const filteredMembers = useMemo(() => 
-    teamMembers.filter(member =>
-      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.phone?.includes(searchTerm)
-    ), [teamMembers, searchTerm]
+  const filteredMembers = teamMembers.filter(member =>
+    member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.phone?.includes(searchTerm)
   );
 
   const formatDate = (dateString: any) => {
@@ -191,22 +189,6 @@ export default function TeamManagement() {
                 </TabsList>
                 <TabsContent value="members">
                   <div className="border-t mt-4 pt-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search team members..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <Button variant="outline" size="sm">
-                        <Filter className="w-4 h-4 mr-2" />
-                        Filter
-                      </Button>
-                    </div>
-                    
                     {isLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
@@ -215,11 +197,9 @@ export default function TeamManagement() {
                     ) : filteredMembers.length === 0 ? (
                       <div className="text-center py-8">
                         <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold">
-                          {searchTerm ? 'No matching team members' : 'No team members found'}
-                        </h3>
+                        <h3 className="text-lg font-semibold">No team members found</h3>
                         <p className="text-muted-foreground mb-4">
-                          {searchTerm ? 'Try adjusting your search terms.' : 'Get started by inviting your first team member.'}
+                          Get started by inviting your first team member.
                         </p>
                       </div>
                     ) : (
@@ -238,16 +218,9 @@ export default function TeamManagement() {
                                     {member.name?.charAt(0).toUpperCase() || '?'}
                                   </span>
                                 </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center justify-between">
-                                    <p className="font-medium">{member.name || 'Unnamed'}</p>
-                                    <Badge variant={member.status === 'active' ? 'default' : 'outline'}>
-                                      {member.status || 'unknown'}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {member.email || member.phone || 'No contact info'}
-                                  </p>
+                                <div>
+                                  <p className="font-medium">{member.name || 'Unnamed'}</p>
+                                  <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
                                 </div>
                               </div>
                           </div>
@@ -283,26 +256,20 @@ export default function TeamManagement() {
                     </div>
                     <div>
                       <p className="font-medium">{selectedMember.name || 'Unnamed'}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {selectedMember.role?.replace('_', ' ')}
-                      </p>
+                      <p className="text-sm text-muted-foreground capitalize">{selectedMember.role?.replace('_', ' ')}</p>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    {selectedMember.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{selectedMember.email}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{selectedMember.email || 'No email'}</span>
+                    </div>
                     
-                    {selectedMember.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{selectedMember.phone}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{selectedMember.phone || 'No phone'}</span>
+                    </div>
                     
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -320,36 +287,17 @@ export default function TeamManagement() {
                         {selectedMember.status || 'unknown'}
                       </Badge>
                     </div>
-
-                    {selectedMember.skills && selectedMember.skills.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Skills</p>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedMember.skills.map((skill, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="pt-4 space-y-2">
                     <Button className="w-full" variant="outline">
-                      <MessageSquare className="w-4 h-4 mr-2" />
+                      <MessageSquare className="w-4 w-4 mr-2" />
                       Send Message
                     </Button>
                     <Button className="w-full" variant="outline">
                       <Send className="w-4 h-4 mr-2" />
                       Edit Details
                     </Button>
-                    {userRole === 'partner_admin' && selectedMember.status === 'active' && (
-                      <Button className="w-full" variant="outline">
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Remove from Team
-                      </Button>
-                    )}
                   </div>
                 </div>
               ) : (

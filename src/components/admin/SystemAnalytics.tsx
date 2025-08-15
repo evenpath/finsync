@@ -1,8 +1,9 @@
+
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Progress } from "../ui/progress";
-import { mockWorkflowTemplates } from "../../lib/mockData";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { mockWorkflowTemplates } from "@/lib/mockData";
 import {
   TrendingUp,
   Activity,
@@ -79,11 +80,11 @@ export default function SystemAnalytics() {
               <div key={template.id} className="flex items-center justify-between p-4 rounded-lg bg-secondary">
                 <div>
                   <p className="font-medium text-foreground">{template.title}</p>
-                  <p className="text-sm text-muted-foreground">{template.totalUses} executions</p>
+                  <p className="text-sm text-muted-foreground">{template.usageCount} executions</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold text-green-600">
-                    {Math.round((template.totalUses / (template.totalUses + Math.floor(Math.random() * 20) )) * 100)}%
+                    {Math.round((template.usageCount / (template.usageCount + Math.floor(Math.random() * 20) )) * 100)}%
                   </p>
                   <p className="text-xs text-muted-foreground">success rate</p>
                 </div>
