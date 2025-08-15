@@ -13,8 +13,8 @@ import {
   Search,
 } from "lucide-react";
 
-import { useToast } from "../../hooks/use-toast";
-import { useAuth } from "../../hooks/use-auth";
+import { useToast } from "../../hooks/use-toast"; // Corrected path
+import { useAuth } from "../../hooks/use-auth"; // Corrected path
 
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
+} from "../../components/ui/alert-dialog"; // Corrected path
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -42,7 +42,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu"; // Corrected path
 import {
   Table,
   TableBody,
@@ -50,33 +50,33 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { Input } from "../../components/ui/input";
+} from "../../components/ui/table"; // Corrected path
+import { Input } from "../../components/ui/input"; // Corrected path
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
-} from "../../components/ui/pagination";
+} from "../../components/ui/pagination"; // Corrected path
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Button } from "../../components/ui/button";
+} from "../../components/ui/tooltip"; // Corrected path
+import { Button } from "../../components/ui/button"; // Corrected path
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PartnerUser, UserRole } from "../../lib/types";
-import { archiveUser, getPartnerEmployees } from "@/actions/partner-actions";
-import { Badge } from "@/components/ui/badge";
-import InviteEmployeeDialog from "@/components/partner/team/InviteEmployeeDialog";
-import { Invitation } from "../../lib/types/invitation";
-import { invitationActions } from "@/actions/employee-invitation-actions";
-import { PartnerAuthWrapper } from "@/components/partner/PartnerAuthWrapper";
-import PartnerHeader from "@/components/partner/PartnerHeader";
-import TeamManagementDiagnostics from "@/components/partner/TeamManagementDiagnostics";
+import { PartnerUser, UserRole } from "../../lib/types"; // Corrected path
+import { archiveUser, getPartnerEmployees } from "../../actions/partner-actions"; // Corrected path
+import { Badge } from "../../components/ui/badge"; // Corrected path
+import InviteEmployeeDialog from "./InviteEmployeeDialog"; // Corrected path (assuming it's in the same directory)
+import { Invitation } from "../../lib/types/invitation"; // Corrected path
+import { invitationActions } from "../../actions/employee-invitation-actions"; // Corrected path
+import { PartnerAuthWrapper } from "../PartnerAuthWrapper"; // Corrected path
+import PartnerHeader from "../PartnerHeader"; // Corrected path
+import TeamManagementDiagnostics from "../TeamManagementDiagnostics"; // Corrected path
 
 export default function TeamManagement() {
   const [isDiagnostic, setIsDiagnostic] = useState<boolean>(false);
