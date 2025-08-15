@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase'; // Corrected path
+import { db } from '../lib/firebase';
 import { switchWorkspaceAction } from '@/actions/workspace-actions';
 import type { 
   MultiWorkspaceAuthState, 
@@ -13,7 +13,7 @@ import type {
   UserWorkspaceLink, 
   FirebaseAuthUser,
   MultiWorkspaceCustomClaims
-} from '../../lib/types';
+} from '../lib/types';
 
 interface MultiWorkspaceFirebaseAuthUser extends FirebaseAuthUser {
   customClaims?: MultiWorkspaceCustomClaims;

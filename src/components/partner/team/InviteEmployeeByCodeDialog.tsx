@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '../../../hooks/use-toast';
 import { UserPlus, Phone, Loader2, Check, Copy, Ticket } from 'lucide-react';
 import { generateEmployeeInvitationCodeAction } from '../../../actions/partner-invitation-management';
-import { useAuth } from '../@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 
 interface InviteEmployeeByCodeDialogProps {
   partnerId: string;

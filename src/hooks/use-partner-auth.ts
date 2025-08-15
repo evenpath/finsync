@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import type { Partner, TeamMember } from '../../lib/types';
+import type { Partner, TeamMember } from '../lib/types';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 

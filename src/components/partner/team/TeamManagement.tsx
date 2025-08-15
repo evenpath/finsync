@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import type { TeamMember } from "../../../lib/types";
 import { useToast } from "../../../hooks/use-toast";
-import { useAuth } from "../@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
