@@ -2,8 +2,8 @@
 // src/scripts/migrate-user-mappings.ts
 'use server';
 
-import { db } from '@/lib/firebase-admin';
-import { createUserMapping } from '@/services/tenant-service';
+import { db } from '../lib/firebase-admin';
+import { createUserMapping } from '../services/tenant-service';
 
 /**
  * Migration script to create user mappings for existing partners.
