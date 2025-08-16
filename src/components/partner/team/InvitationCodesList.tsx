@@ -2,13 +2,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getPartnerInvitationCodesAction, cancelInvitationCodeAction, regenerateInvitationCodeAction } from '@/actions/partner-invitation-management';
-import type { InvitationCodeDisplay } from '@/lib/types/invitation';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getPartnerInvitationCodesAction, revokeInvitationCodeAction } from '../../../../actions/partner-invitation-management';
+import type { InvitationCodeDisplay } from '../../../../lib/types/invitation';
+import { useToast } from '../../../../hooks/use-toast';
+import { Button } from '../../ui/button';
+import { Badge } from '../../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { RefreshCw, X, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -49,20 +49,10 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
     toast({ title: 'Copied to clipboard!', description: code });
   };
   
-  const handleCancel = async (invitationId: string) => {
-      const result = await cancelInvitationCodeAction(invitationId, partnerId);
+  const handleRevoke = async (invitationId: string) => {
+      const result = await revokeInvitationCodeAction(invitationId);
       if(result.success) {
-          toast({title: "Invitation Cancelled", description: result.message});
-          fetchInvitations();
-      } else {
-          toast({variant: "destructive", title: "Error", description: result.message});
-      }
-  }
-  
-  const handleRegenerate = async (invitationId: string) => {
-      const result = await regenerateInvitationCodeAction(invitationId, partnerId);
-       if(result.success) {
-          toast({title: "Invitation Regenerated", description: `New code: ${result.newInvitationCode}`});
+          toast({title: "Invitation Revoked", description: result.message});
           fetchInvitations();
       } else {
           toast({variant: "destructive", title: "Error", description: result.message});
@@ -71,10 +61,10 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
 
   const getStatusBadge = (status: InvitationCodeDisplay['status']) => {
     switch (status) {
-      case 'pending': return <Badge variant="warning">Pending</Badge>;
-      case 'accepted': return <Badge variant="success">Accepted</Badge>;
+      case 'pending': return <Badge variant="secondary">Pending</Badge>;
+      case 'accepted': return <Badge variant="default">Accepted</Badge>;
       case 'expired': return <Badge variant="outline">Expired</Badge>;
-      case 'cancelled': return <Badge variant="destructive">Cancelled</Badge>;
+      case 'revoked': return <Badge variant="destructive">Revoked</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -128,7 +118,7 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
                         <span className="font-mono text-sm">{invite.invitationCode}</span>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(invite.invitationCode)}>
+                                <Button variant="ghost" size="sm" onClick={() => handleCopy(invite.invitationCode)}>
                                     <Copy className="w-3 h-3"/>
                                 </Button>
                             </TooltipTrigger>
@@ -147,19 +137,11 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
                         <div className="flex gap-2 justify-end">
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleRegenerate(invite.id)}>
-                                        <RefreshCw className="w-4 h-4"/>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Regenerate Code</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleCancel(invite.id)}>
+                                    <Button variant="destructive" size="sm" onClick={() => handleRevoke(invite.id)}>
                                         <X className="w-4 h-4"/>
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Cancel Invitation</TooltipContent>
+                                <TooltipContent>Revoke Invitation</TooltipContent>
                             </Tooltip>
                         </div>
                     )}
