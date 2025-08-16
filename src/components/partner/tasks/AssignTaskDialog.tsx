@@ -1,4 +1,3 @@
-
 // src/components/partner/tasks/AssignTaskDialog.tsx
 "use client";
 
@@ -11,26 +10,28 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth.tsx';
+} from '../../ui/dialog';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Label } from '../../ui/label';
+import { Textarea } from '../../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { useToast } from '../../../hooks/use-toast';
+import { useAuth } from '../../../hooks/use-auth';
 import type { Task, TeamMember } from '../../../lib/types';
-import { createTaskAction } from '@/actions/task-actions';
+import { createTaskAction } from '../../../actions/task-actions';
 import { Loader2, ArrowRight, UserCheck } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { db } from '../../../lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 interface AssignTaskDialogProps {
-  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  teamMembers: TeamMember[];
+  partnerId: string;
 }
 
-export default function AssignTaskDialog({ children }: AssignTaskDialogProps) {
-  const [open, setOpen] = useState(false);
+export default function AssignTaskDialog({ isOpen, onClose, teamMembers, partnerId }: AssignTaskDialogProps) {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [taskDetails, setTaskDetails] = useState({
@@ -41,23 +42,8 @@ export default function AssignTaskDialog({ children }: AssignTaskDialogProps) {
     dueDate: '',
   });
   const [assignedTo, setAssignedTo] = useState('');
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const partnerId = user?.customClaims?.partnerId;
-
-  useEffect(() => {
-    if (!partnerId || !open) return;
-
-    const q = query(collection(db, 'teamMembers'), where('partnerId', '==', partnerId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamMember));
-      setTeamMembers(members);
-    });
-
-    return () => unsubscribe();
-  }, [partnerId, open]);
 
   const handleNextStep = () => {
     if (taskDetails.title) {
@@ -102,7 +88,7 @@ export default function AssignTaskDialog({ children }: AssignTaskDialogProps) {
   };
 
   const resetAndClose = () => {
-    setOpen(false);
+    onClose();
     setStep(1);
     setTaskDetails({
       title: '',
@@ -115,8 +101,7 @@ export default function AssignTaskDialog({ children }: AssignTaskDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) resetAndClose(); else setOpen(true) }}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={(isOpen) => { if(!isOpen) resetAndClose(); }}>
       <DialogContent className="sm:max-w-[425px]">
         {step === 1 && (
           <>
