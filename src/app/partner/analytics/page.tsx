@@ -1,4 +1,3 @@
-
 "use client";
 
 import PartnerHeader from "../../../components/partner/PartnerHeader";
@@ -30,8 +29,10 @@ function PartnerAnalyticsPage() {
 
 export default function PartnerAnalyticsProtected() {
   return (
-    <PartnerAuthWrapper>
-      <PartnerAnalyticsPage />
-    </PartnerAuthWrapper>
+    <AuthProvider>
+      <PartnerAuthWrapper>
+        <PartnerAnalyticsPage />
+      </PartnerAuthWrapper>
+    </AuthProvider>
   )
 }
