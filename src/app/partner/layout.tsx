@@ -4,7 +4,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import PartnerSidebar from "../../components/partner/PartnerSidebar";
-import { AuthProvider } from '@/hooks/use-auth.tsx';
+import { useAuth } from '@/hooks/use-auth';
 
 // The main layout for the partner section.
 // It conditionally renders the sidebar based on the current route.
