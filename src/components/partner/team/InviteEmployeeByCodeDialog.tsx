@@ -1,4 +1,3 @@
-
 // src/components/partner/team/InviteEmployeeByCodeDialog.tsx
 "use client";
 
@@ -11,15 +10,15 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+} from '../../ui/dialog';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Label } from '../../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { useToast } from '../../../hooks/use-toast';
 import { UserPlus, Phone, Loader2, Check, Copy, Ticket } from 'lucide-react';
-import { generateEmployeeInvitationCodeAction } from '@/actions/partner-invitation-management';
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { generateEmployeeInvitationCodeAction } from '../../../actions/partner-invitation-management';
+import { useAuth } from '../../../hooks/use-auth';
 
 interface InviteEmployeeByCodeDialogProps {
   partnerId: string;
@@ -157,44 +156,52 @@ export default function InviteEmployeeByCodeDialog({ partnerId, onSuccess }: Inv
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
                 ) : (
-                  <Ticket className="w-4 h-4 mr-2" />
+                  <>
+                    <Ticket className="w-4 h-4 mr-2" />
+                    Generate Code
+                  </>
                 )}
-                Generate Code
               </Button>
             </DialogFooter>
           </form>
         ) : (
-          <div>
-             <DialogHeader>
-              <DialogTitle className='text-green-600 flex items-center gap-2'>
-                <Check className="w-5 h-5"/>
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-green-600">
+                <Check className="w-5 h-5" />
                 Code Generated Successfully!
-                </DialogTitle>
+              </DialogTitle>
               <DialogDescription>
-                Share this code with {name}. It expires in 7 days.
+                Share this code with the employee to join your workspace.
               </DialogDescription>
             </DialogHeader>
-            <div className='my-6'>
-                <div 
-                  className='text-4xl font-mono tracking-widest text-center p-4 border-2 border-dashed rounded-lg bg-secondary cursor-pointer'
-                  onClick={copyToClipboard}
-                  title="Click to copy"
-                >
+            <div className="py-4">
+              <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
+                <div className="flex-1">
+                  <div className="text-sm text-gray-600 mb-1">Invitation Code</div>
+                  <div className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
                     {generatedCode}
+                  </div>
                 </div>
-            </div>
-            <DialogFooter className="sm:justify-between gap-2">
-               <Button variant="outline" onClick={copyToClipboard}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Code
+                <Button variant="outline" size="sm" onClick={copyToClipboard}>
+                  <Copy className="w-4 h-4" />
                 </Button>
-              <Button onClick={() => handleOpenChange(false)}>
-                Done
-              </Button>
+              </div>
+              <div className="mt-4 text-sm text-gray-600">
+                <p><strong>Employee:</strong> {name}</p>
+                <p><strong>Phone:</strong> {phone}</p>
+                <p><strong>Role:</strong> {role}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)}>Done</Button>
             </DialogFooter>
-          </div>
+          </>
         )}
       </DialogContent>
     </Dialog>

@@ -2,12 +2,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getPartnerInvitationCodesAction, revokeInvitationCodeAction } from '../../../../actions/partner-invitation-management';
-import type { InvitationCodeDisplay } from '../../../../lib/types/invitation';
-import { useToast } from '../../../../hooks/use-toast';
+import { getPartnerInvitationCodesAction } from '../../../actions/partner-invitation-management';
+import type { InvitationCodeDisplay } from '../../../lib/types/invitation';
+import { useToast } from '../../../hooks/use-toast';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { RefreshCw, X, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,6 +27,7 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
       const result = await getPartnerInvitationCodesAction(partnerId);
       if (result.success && result.invitations) {
         setInvitations(result.invitations);
+        setError(null);
       } else {
         setError(result.message);
         toast({ variant: 'destructive', title: 'Error', description: result.message });
@@ -46,112 +46,136 @@ export default function InvitationCodesList({ partnerId }: InvitationCodesListPr
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: 'Copied to clipboard!', description: code });
+    toast({ title: 'Copied to clipboard!' });
   };
-  
-  const handleRevoke = async (invitationId: string) => {
-      const result = await revokeInvitationCodeAction(invitationId);
-      if(result.success) {
-          toast({title: "Invitation Revoked", description: result.message});
-          fetchInvitations();
-      } else {
-          toast({variant: "destructive", title: "Error", description: result.message});
-      }
-  }
 
-  const getStatusBadge = (status: InvitationCodeDisplay['status']) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'pending': return <Badge variant="secondary">Pending</Badge>;
-      case 'accepted': return <Badge variant="default">Accepted</Badge>;
-      case 'expired': return <Badge variant="outline">Expired</Badge>;
-      case 'revoked': return <Badge variant="destructive">Revoked</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+      case 'pending': return 'default';
+      case 'accepted': return 'success';
+      case 'expired': return 'destructive';
+      case 'revoked': return 'secondary';
+      default: return 'default';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-40">
-        <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+        <span className="text-muted-foreground">Loading invitations...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-destructive flex items-center gap-2 p-4 bg-destructive/10 rounded-md">
-        <AlertCircle className="w-5 h-5" />
-        <p>{error}</p>
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+        <p className="text-destructive mb-4">{error}</p>
+        <Button variant="outline" onClick={fetchInvitations}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (invitations.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground mb-4">No invitation codes found.</p>
+        <Button variant="outline" onClick={fetchInvitations}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
     );
   }
 
   return (
-    <TooltipProvider>
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Invitee</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Expires</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invitations.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                  No invitations found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              invitations.map((invite) => (
-                <TableRow key={invite.id}>
-                  <TableCell>
-                    <div className="font-medium">{invite.name}</div>
-                    <div className="text-sm text-muted-foreground">{invite.phoneNumber}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{invite.invitationCode}</span>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="sm" onClick={() => handleCopy(invite.invitationCode)}>
-                                    <Copy className="w-3 h-3"/>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Copy code</TooltipContent>
-                        </Tooltip>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(invite.status)}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {formatDistanceToNow(new Date(invite.expiresAt), { addSuffix: true })}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {invite.status === 'pending' && (
-                        <div className="flex gap-2 justify-end">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="destructive" size="sm" onClick={() => handleRevoke(invite.id)}>
-                                        <X className="w-4 h-4"/>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Revoke Invitation</TooltipContent>
-                            </Tooltip>
-                        </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          {invitations.length} invitation{invitations.length !== 1 ? 's' : ''} found
+        </p>
+        <Button variant="outline" size="sm" onClick={fetchInvitations}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
-    </TooltipProvider>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Code</TableHead>
+            <TableHead>Employee</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {invitations.map((invitation) => (
+            <TableRow key={invitation.id}>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <code className="px-2 py-1 bg-muted rounded text-sm font-mono">
+                    {invitation.invitationCode}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopy(invitation.invitationCode)}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div>
+                  <p className="font-medium">{invitation.name}</p>
+                  <p className="text-sm text-muted-foreground">{invitation.phoneNumber}</p>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">
+                  {invitation.role === 'partner_admin' ? 'Admin' : 'Employee'}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant={getStatusBadgeVariant(invitation.status)}>
+                  {invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-muted-foreground">
+                  {formatDistanceToNow(invitation.createdAt, { addSuffix: true })}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-muted-foreground">
+                  {formatDistanceToNow(invitation.expiresAt, { addSuffix: true })}
+                </span>
+              </TableCell>
+              <TableCell>
+                {invitation.status === 'pending' && (
+                  <Button variant="ghost" size="sm">
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+                {invitation.status === 'accepted' && invitation.acceptedAt && (
+                  <span className="text-xs text-muted-foreground">
+                    Accepted {formatDistanceToNow(invitation.acceptedAt, { addSuffix: true })}
+                  </span>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
