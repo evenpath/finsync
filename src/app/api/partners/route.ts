@@ -2,7 +2,7 @@
 // 3. src/app/api/partners/route.ts (new)
 // ============================================================================
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase-admin';
+import { db } from '../../../lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 
 export async function GET() {

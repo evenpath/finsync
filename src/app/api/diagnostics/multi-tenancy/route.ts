@@ -1,6 +1,6 @@
 // src/app/api/diagnostics/multi-tenancy/route.ts
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth } from '../../../../lib/firebase-admin';
 
 export async function GET() {
   try {

@@ -1,7 +1,7 @@
 
 // src/app/api/diagnostics/create-test-tenant/route.ts
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth } from '../../../../lib/firebase-admin';
 
 export async function POST() {
   try {
