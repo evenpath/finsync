@@ -1,9 +1,8 @@
-
 // src/components/employee/EmployeeTasks.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { useAuth } from '../../hooks/use-auth';
 import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import type { Task } from '../../lib/types';
@@ -41,87 +40,109 @@ export default function EmployeeTasks() {
                     // Convert Firestore Timestamps to ISO strings
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
+                    dueDate: data.dueDate?.toDate ? data.dueDate.toDate().toISOString() : null,
                 };
             });
             setTasks(fetchedTasks);
             setIsLoading(false);
         }, (error) => {
-            console.error("Error fetching employee tasks:", error);
+            console.error('Error fetching tasks:', error);
             setIsLoading(false);
         });
 
         return () => unsubscribe();
     }, [partnerId, userId]);
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'completed': return <Badge variant="success">Completed</Badge>;
-            case 'in_progress': return <Badge variant="info">In Progress</Badge>;
-            case 'awaiting_approval': return <Badge variant="warning">In Review</Badge>;
-            case 'assigned':
-            default:
-                return <Badge variant="secondary">To Do</Badge>;
-        }
-    };
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span className="ml-2">Loading your tasks...</span>
+            </div>
+        );
+    }
 
-    const getPriorityBadge = (priority: string) => {
-        switch (priority) {
-            case 'high': return <Badge variant="danger">High</Badge>;
-            case 'medium': return <Badge variant="warning">Medium</Badge>;
-            case 'low':
-            default:
-                return <Badge variant="info">Low</Badge>;
-        }
-    };
+    if (!partnerId) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ListTodo className="w-5 h-5" />
+                        Tasks
+                    </CardTitle>
+                    <CardDescription>
+                        No workspace found. Please contact your admin.
+                    </CardDescription>
+                </CardHeader>
+            </Card>
+        );
+    }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>My Tasks</CardTitle>
-                <CardDescription>All tasks assigned to you in this workspace.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Task</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Priority</TableHead>
-                                <TableHead>Due Date</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ListTodo className="w-5 h-5" />
+                        My Tasks
+                    </CardTitle>
+                    <CardDescription>
+                        Your assigned tasks and their current status
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {tasks.length === 0 ? (
+                        <div className="text-center py-8">
+                            <ListTodo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold">No tasks assigned</h3>
+                            <p className="text-muted-foreground">
+                                You don't have any tasks assigned yet. Check back later or contact your manager.
+                            </p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
-                                        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                                    </TableCell>
+                                    <TableHead>Task</TableHead>
+                                    <TableHead>Workflow</TableHead>
+                                    <TableHead>Priority</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Due Date</TableHead>
                                 </TableRow>
-                            ) : tasks.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                        <ListTodo className="mx-auto h-8 w-8 mb-2" />
-                                        You have no assigned tasks.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                tasks.map((task: Task) => (
+                            </TableHeader>
+                            <TableBody>
+                                {tasks.map((task) => (
                                     <TableRow key={task.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{task.title}</div>
-                                            <div className="text-sm text-muted-foreground">{task.workflow}</div>
+                                        <TableCell className="font-medium">
+                                            {task.title || 'Untitled Task'}
                                         </TableCell>
-                                        <TableCell>{getStatusBadge(task.status)}</TableCell>
-                                        <TableCell>{getPriorityBadge(task.priority)}</TableCell>
-                                        <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
+                                        <TableCell>{task.workflow || 'N/A'}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={
+                                                task.priority === 'high' ? 'destructive' :
+                                                task.priority === 'medium' ? 'default' : 'secondary'
+                                            }>
+                                                {task.priority || 'medium'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={
+                                                task.status === 'completed' ? 'default' :
+                                                task.status === 'in_progress' ? 'secondary' : 'outline'
+                                            }>
+                                                {task.status || 'assigned'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                                        </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }

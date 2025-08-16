@@ -22,7 +22,7 @@ import {
   Wrench,
 } from "lucide-react";
 import InviteAdminModal from "./InviteAdminModal";
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '../../hooks/use-auth';
 import { useToast } from "../../hooks/use-toast";
 import { manageAdminUser } from "../../ai/flows/manage-admin-user-flow";
 import { collection, onSnapshot } from "firebase/firestore";
