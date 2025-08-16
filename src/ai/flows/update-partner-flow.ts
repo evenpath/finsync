@@ -7,9 +7,9 @@
  * - UpdatePartnerOutput - The return type for the updatePartner function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { z } from 'genkit';
-import { db } from '@/lib/firebase-admin';
+import { db } from '../../lib/firebase-admin';
 import type { Partner } from '../../lib/types';
 import * as admin from 'firebase-admin';
 

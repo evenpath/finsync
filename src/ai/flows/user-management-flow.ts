@@ -1,10 +1,10 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { z } from 'genkit';
-import { adminAuth } from '@/lib/firebase-admin';
-import { createUserMapping, validateTenantId } from '@/services/tenant-service';
+import { adminAuth } from '../../lib/firebase-admin';
+import { createUserMapping, validateTenantId } from '../../services/tenant-service';
 import * as admin from 'firebase-admin/auth';
 
 const CreateUserInTenantInputSchema = z.object({
