@@ -3,7 +3,7 @@
 
 import AdminHeader from "../../../components/admin/AdminHeader";
 import UserManagement from "../../../components/admin/UserManagement";
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardContent } from "../../../components/ui/card";
 import { ShieldAlert } from "lucide-react";
 
