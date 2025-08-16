@@ -6,6 +6,7 @@ import PartnerAnalytics from "../../../components/partner/PartnerAnalytics";
 import { Button } from "../../../components/ui/button";
 import { Download } from "lucide-react";
 import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
+import { AuthProvider } from '../../../hooks/use-auth'
 
 function PartnerAnalyticsPage() {
   return (
