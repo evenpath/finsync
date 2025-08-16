@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, createContext, useContext } from 'react';
@@ -6,6 +5,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import type { FirebaseAuthUser, AuthState } from '../lib/types';
 
+// Create the context with a default state
 const AuthContext = createContext<AuthState>({
   user: null,
   loading: true,
@@ -13,6 +13,7 @@ const AuthContext = createContext<AuthState>({
   isAuthenticated: false,
 });
 
+// Create the provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -39,19 +40,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         } catch (error: any) {
           console.error("Error fetching user token with claims:", error);
-          setAuthState({ user: { ...user, customClaims: {} } as FirebaseAuthUser, loading: false, error: "Failed to fetch user roles.", isAuthenticated: true });
+          setAuthState({ 
+            user: { ...user, customClaims: {} } as FirebaseAuthUser, 
+            loading: false, 
+            error: "Failed to fetch user roles.", 
+            isAuthenticated: true 
+          });
         }
       } else {
         setAuthState({ user: null, loading: false, error: null, isAuthenticated: false });
       }
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
 }
 
+// Create the custom hook to use the auth context
 export function useAuth(): AuthState {
   return useContext(AuthContext);
 }
