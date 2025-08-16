@@ -4,7 +4,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from "../../components/admin/AdminSidebar";
-import { useAuth, AuthProvider } from '@/hooks/use-auth.tsx';
+import { useAuth, AuthProvider } from '../../hooks/use-auth';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import { ShieldAlert } from "lucide-react";
