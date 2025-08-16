@@ -1,3 +1,4 @@
+
 // src/components/partner/team/diagnostics/page.tsx
 "use client";
 
