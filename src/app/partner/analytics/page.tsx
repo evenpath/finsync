@@ -1,13 +1,16 @@
 "use client";
 
 import PartnerHeader from "../../../components/partner/PartnerHeader";
-import PartnerAnalytics from "../../../components/partner/PartnerAnalytics";
 import { Button } from "../../../components/ui/button";
 import { Download } from "lucide-react";
-import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
-import { AuthProvider } from '../../../hooks/use-auth'
+import dynamic from "next/dynamic";
 
-function PartnerAnalyticsPage() {
+const PartnerAnalytics = dynamic(
+  () => import("../../../components/partner/PartnerAnalytics"),
+  { ssr: false }
+);
+
+export default function PartnerAnalyticsPage() {
   return (
     <>
       <PartnerHeader
@@ -25,14 +28,4 @@ function PartnerAnalyticsPage() {
       </main>
     </>
   );
-}
-
-export default function PartnerAnalyticsProtected() {
-  return (
-    <AuthProvider>
-      <PartnerAuthWrapper>
-        <PartnerAnalyticsPage />
-      </PartnerAuthWrapper>
-    </AuthProvider>
-  )
 }
