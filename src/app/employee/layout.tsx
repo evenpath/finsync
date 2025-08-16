@@ -3,13 +3,13 @@
 
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import EnhancedWorkspaceSwitcher from "../../components/worker/WorkspaceSwitcher";
-import WorkspaceHeader from "../../components/worker/WorkspaceHeader";
-import { useAuth, AuthProvider } from '../../hooks/use-auth';
-import { Skeleton } from '../../components/ui/skeleton';
+import EnhancedWorkspaceSwitcher from "../components/worker/WorkspaceSwitcher";
+import WorkspaceHeader from "../components/worker/WorkspaceHeader";
+import { useAuth, AuthProvider } from '../hooks/use-auth.tsx';
+import { Skeleton } from '../components/ui/skeleton';
 import { Building2, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 import Link from 'next/link';
 
 function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {

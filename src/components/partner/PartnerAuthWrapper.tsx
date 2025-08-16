@@ -4,7 +4,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
-import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
+import { useMultiWorkspaceAuth } from '../hooks/use-multi-workspace-auth';
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
