@@ -1,3 +1,4 @@
+
 // ============================================================================
 // 3. src/app/api/partners/route.ts (new)
 // ============================================================================
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // Create tenant and partner using existing flow
-    const { createTenant } = await import('@/ai/flows/create-tenant-flow');
+    const { createTenant } = await import('../../../ai/flows/create-tenant-flow');
     
     const result = await createTenant({
       partnerName: name,
@@ -90,4 +91,5 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
+
 
