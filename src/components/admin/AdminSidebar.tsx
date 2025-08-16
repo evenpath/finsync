@@ -1,4 +1,3 @@
-
 // src/components/admin/AdminSidebar.tsx
 "use client";
 
@@ -17,8 +16,8 @@ import {
   Database,
   Wrench,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { Button } from "../ui/button";
+import { useAuth } from '../../hooks/use-auth';
 import { getAuth, signOut } from "firebase/auth";
 
 const menuItems = [
@@ -63,8 +62,8 @@ export default function AdminSidebar() {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold font-headline text-foreground">Socket</h1>
-            <p className="text-sm text-muted-foreground">Admin Control</p>
+            <h1 className="font-bold text-lg">Admin Portal</h1>
+            <p className="text-sm text-muted-foreground">System Management</p>
           </div>
         </div>
       </div>
@@ -72,28 +71,26 @@ export default function AdminSidebar() {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
+            // Hide certain menu items based on user role
             if (item.requiredRole && userRole !== item.requiredRole) {
               return null;
             }
-            
-            const href = getHref(item.href);
-            const isActive = (href === '/admin' && pathname === href) || 
-                             (href !== '/admin' && pathname.startsWith(href));
 
-            const Icon = item.icon;
+            const isActive = pathname === getHref(item.href);
+            const IconComponent = item.icon;
+
             return (
               <li key={item.id}>
-                <Link href={href}>
-                  <div
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer ${
-                      isActive
-                        ? "bg-purple-50 text-purple-700 border border-purple-200"
-                        : "text-muted-foreground hover:bg-secondary"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </div>
+                <Link
+                  href={getHref(item.href)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
                 </Link>
               </li>
             );
@@ -102,20 +99,30 @@ export default function AdminSidebar() {
       </nav>
 
       <div className="p-4 border-t">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-            {(user?.displayName || user?.email || 'A').charAt(0).toUpperCase()}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-bold">
+              {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?'}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {user?.displayName || user?.email}
+            <p className="text-sm font-medium truncate">
+              {user?.displayName || 'Admin User'}
             </p>
-            <p className="text-xs text-muted-foreground">{userRole}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user?.email}
+            </p>
           </div>
-           <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="w-5 h-5" />
-           </Button>
         </div>
+
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          onClick={handleLogout}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
       </div>
     </div>
   );
