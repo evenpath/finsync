@@ -1,6 +1,6 @@
-import AdminHeader from "../../components/admin/AdminHeader";
-import SystemAnalytics from "../../components/admin/SystemAnalytics";
-import { Button } from "../../components/ui/button";
+import AdminHeader from "../../../components/admin/AdminHeader";
+import SystemAnalytics from "../../../components/admin/SystemAnalytics";
+import { Button } from "../../../components/ui/button";
 import { Download } from "lucide-react";
 
 export default function AdminAnalyticsPage() {
