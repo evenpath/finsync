@@ -9,9 +9,9 @@
  * - ManageAdminUserOutput - The return type for the manageAdminUser function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { z } from 'genkit';
-import { adminAuth, db } from '@/lib/firebase-admin';
+import { adminAuth, db } from '../../lib/firebase-admin';
 
 const ManageAdminUserInputSchema = z.object({
   uid: z.string().optional().describe('The UID of the user to manage. Can be omitted for new users.'),

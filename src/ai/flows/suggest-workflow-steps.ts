@@ -11,7 +11,7 @@
  * @function suggestWorkflowSteps - The function to trigger the flow.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai} from '../genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {
   SuggestWorkflowStepsInputSchema,

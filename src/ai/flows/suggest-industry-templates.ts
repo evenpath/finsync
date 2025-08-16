@@ -5,7 +5,7 @@
  * @fileOverview A Genkit flow to suggest high-value workflow templates for a specific industry.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import {
   SuggestIndustryTemplatesInputSchema,
