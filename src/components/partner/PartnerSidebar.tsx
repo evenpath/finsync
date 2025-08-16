@@ -1,4 +1,3 @@
-
 // src/components/partner/PartnerSidebar.tsx
 "use client";
 
@@ -16,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Badge } from "../shared/Badge";
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { useAuth } from '../../hooks/use-auth';
 import { getAuth, signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 
@@ -70,14 +69,16 @@ export default function PartnerSidebar() {
                   <div
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer ${
                       isActive
-                        ? "bg-primary/10 text-primary border border-primary/20"
-                        : "text-muted-foreground hover:bg-secondary"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
                     {item.id === "approvals" && (
-                      <Badge variant="danger" className="ml-auto">3</Badge>
+                      <Badge variant="purple" className="ml-auto">
+                        2
+                      </Badge>
                     )}
                   </div>
                 </Link>
@@ -86,20 +87,32 @@ export default function PartnerSidebar() {
           })}
         </ul>
       </nav>
-      
+
       <div className="p-4 border-t">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
-            {(user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'P').toUpperCase()}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-bold">
+              {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?'}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.displayName || user?.email}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.customClaims?.role?.replace('_', ' ') || 'Partner'}</p>
+            <p className="text-sm font-medium truncate">
+              {user?.displayName || 'Partner User'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user?.email}
+            </p>
           </div>
-           <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="w-5 h-5" />
-           </Button>
         </div>
+
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          onClick={handleLogout}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
       </div>
     </div>
   );

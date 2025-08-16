@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { Plus, Loader2, Trash2 } from 'lucide-react';
 import type { Task, TeamMember } from '../../lib/types';
 import AssignTaskDialog from './tasks/AssignTaskDialog';
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { useAuth } from '../../hooks/use-auth';
 import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -68,28 +68,29 @@ const TaskRow = ({ task, teamMembers, onDelete }: { task: Task & { id: string },
             </TableCell>
             <TableCell>{getStatusBadge(task.status)}</TableCell>
             <TableCell>{getPriorityBadge(task.priority)}</TableCell>
-            <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
-            <TableCell className="text-right">
-                 <AlertDialog>
+            <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</TableCell>
+            <TableCell>
+                <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
+                        <Button variant="outline" size="sm">
+                            <Trash2 className="w-4 h-4" />
+                        </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the task
-                          "{task.title}".
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(task.id)}>Delete</AlertDialogAction>
-                      </AlertDialogFooter>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this task? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(task.id)}>
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
                     </AlertDialogContent>
-                  </AlertDialog>
+                </AlertDialog>
             </TableCell>
         </TableRow>
     );
@@ -99,9 +100,10 @@ export default function TaskBoard() {
     const [tasks, setTasks] = useState<(Task & { id: string })[]>([]);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
     const { user } = useAuth();
-    const partnerId = user?.customClaims?.partnerId;
     const { toast } = useToast();
+    const partnerId = user?.customClaims?.partnerId;
 
     useEffect(() => {
         if (!partnerId) {
@@ -109,99 +111,138 @@ export default function TaskBoard() {
             return;
         }
 
-        const taskQuery = query(collection(db, 'tasks'), where('partnerId', '==', partnerId), orderBy('createdAt', 'desc'));
-        const memberQuery = query(collection(db, 'teamMembers'), where('partnerId', '==', partnerId));
-        
-        const unsubscribeTasks = onSnapshot(taskQuery, (snapshot) => {
-            const fetchedTasks = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    // Convert Firestore Timestamps to ISO strings to make them serializable
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
-                } as Task & { id: string };
-            });
+        // Listen to tasks for this partner
+        const tasksQuery = query(
+            collection(db, 'tasks'),
+            where('partnerId', '==', partnerId),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
+            const fetchedTasks = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as (Task & { id: string })[];
             setTasks(fetchedTasks);
             setIsLoading(false);
         }, (error) => {
-            console.error("Error fetching tasks:", error);
+            console.error('Error fetching tasks:', error);
             setIsLoading(false);
         });
-        
-        const unsubscribeMembers = onSnapshot(memberQuery, (snapshot) => {
-            const fetchedMembers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamMember));
+
+        // Listen to team members for this partner
+        const teamQuery = query(
+            collection(db, 'teamMembers'),
+            where('partnerId', '==', partnerId)
+        );
+
+        const unsubscribeTeam = onSnapshot(teamQuery, (snapshot) => {
+            const fetchedMembers = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as TeamMember[];
             setTeamMembers(fetchedMembers);
+        }, (error) => {
+            console.error('Error fetching team members:', error);
         });
 
         return () => {
             unsubscribeTasks();
-            unsubscribeMembers();
+            unsubscribeTeam();
         };
-
     }, [partnerId]);
-    
+
     const handleDeleteTask = async (taskId: string) => {
-        const result = await deleteTaskAction(taskId);
-        if (result.success) {
+        try {
+            const result = await deleteTaskAction(taskId);
+            if (result.success) {
+                toast({
+                    title: "Task Deleted",
+                    description: "The task has been successfully deleted."
+                });
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Delete Failed",
+                    description: result.message
+                });
+            }
+        } catch (error: any) {
             toast({
-                title: 'Task Deleted',
-                description: result.message,
-            });
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: result.message,
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to delete task. Please try again."
             });
         }
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span className="ml-2">Loading tasks...</span>
+            </div>
+        );
+    }
+
     return (
-        <div className="h-full flex flex-col">
-            <div className="p-1 pb-4 flex items-center justify-between">
-                <div />
-                <AssignTaskDialog>
-                    <Button>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-xl font-semibold">Task Overview</h2>
+                    <p className="text-muted-foreground">Manage and track all tasks across your workflows</p>
+                </div>
+                <Button onClick={() => setIsAssignDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Assign New Task
+                </Button>
+            </div>
+
+            {tasks.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <Plus className="w-12 h-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
+                    <p className="text-muted-foreground mb-4">Get started by assigning your first task to a team member.</p>
+                    <Button onClick={() => setIsAssignDialogOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" />
-                        New Task
+                        Assign First Task
                     </Button>
-                </AssignTaskDialog>
-            </div>
-            <div className="border rounded-lg">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Task</TableHead>
-                            <TableHead>Assignee</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
+                </div>
+            ) : (
+                <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">
-                                    <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-                                </TableCell>
+                                <TableHead>Task & Workflow</TableHead>
+                                <TableHead>Assignee</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Priority</TableHead>
+                                <TableHead>Due Date</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
-                        ) : tasks.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                    No tasks found. Create one to get started.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                           tasks.map(task => (
-                                <TaskRow key={task.id} task={task} teamMembers={teamMembers} onDelete={handleDeleteTask} />
-                           ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                        </TableHeader>
+                        <TableBody>
+                            {tasks.map((task) => (
+                                <TaskRow 
+                                    key={task.id} 
+                                    task={task} 
+                                    teamMembers={teamMembers}
+                                    onDelete={handleDeleteTask}
+                                />
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+
+            <AssignTaskDialog
+                isOpen={isAssignDialogOpen}
+                onClose={() => setIsAssignDialogOpen(false)}
+                teamMembers={teamMembers}
+                partnerId={partnerId || ''}
+            />
         </div>
     );
 }

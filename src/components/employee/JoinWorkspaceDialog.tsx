@@ -1,4 +1,3 @@
-
 // src/components/employee/JoinWorkspaceDialog.tsx
 "use client";
 
@@ -18,7 +17,7 @@ import { Label } from '../ui/label';
 import { useToast } from '../../hooks/use-toast';
 import { Plus, Building2, Check, Loader2 } from 'lucide-react';
 import { acceptWorkspaceInvitationAction } from '../../actions/workspace-actions';
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { useAuth } from '../../hooks/use-auth';
 
 interface JoinWorkspaceDialogProps {
   trigger?: React.ReactNode;
@@ -98,15 +97,17 @@ export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspac
     }
   };
 
+  const defaultTrigger = (
+    <Button variant="outline" className="w-full">
+      <Plus className="w-4 h-4 mr-2" />
+      Join Workspace
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Join Workspace
-          </Button>
-        )}
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleJoinWorkspace}>
@@ -116,25 +117,23 @@ export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspac
               Join Workspace
             </DialogTitle>
             <DialogDescription>
-              Enter the invitation code provided by your organization admin to join their workspace.
+              Enter your invitation code to join a workspace.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="inviteCode">Invitation Code</Label>
+              <Label htmlFor="invite-code">Invitation Code</Label>
               <Input
-                id="inviteCode"
-                type="text"
-                placeholder="ABC123-DEF456 or invitation ID"
+                id="invite-code"
+                placeholder="Enter invitation code"
                 value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                onChange={(e) => setInviteCode(e.target.value)}
                 disabled={isLoading}
-                className="font-mono"
-                required
+                autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                This code was provided by your organization admin via email, SMS, or in person.
+                You should receive this code from your workspace administrator.
               </p>
             </div>
           </div>
