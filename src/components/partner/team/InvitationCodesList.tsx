@@ -2,12 +2,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getPartnerInvitationCodesAction } from '../../../actions/partner-invitation-management';
-import type { InvitationCodeDisplay } from '../../../lib/types/invitation';
-import { useToast } from '../../../hooks/use-toast';
-import { Button } from '../../ui/button';
-import { Badge } from '../../ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
+import { getPartnerInvitationCodesAction } from '../../actions/partner-invitation-management';
+import type { InvitationCodeDisplay } from '../../lib/types/invitation';
+import { useToast } from '../../hooks/use-toast';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { RefreshCw, X, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
