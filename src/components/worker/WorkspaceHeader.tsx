@@ -1,4 +1,3 @@
-
 // src/components/worker/WorkspaceHeader.tsx
 "use client";
 
@@ -13,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '../ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth.tsx';
+import { useAuth } from '../../hooks/use-auth';
 import { Skeleton } from '../ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '../../lib/firebase';
@@ -78,44 +77,35 @@ export default function WorkspaceHeader() {
                      user.email?.charAt(0)?.toUpperCase() || 
                      '?'}
                   </div>
-                  <div className="text-left hidden md:block">
-                    <div className="text-sm font-medium">
-                      {user.displayName || 'User'}
-                    </div>
-                  </div>
+                  <span className="text-sm font-medium">
+                    {user.displayName || user.phoneNumber || user.email}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                
-                <DropdownMenuItem className="flex flex-col items-start p-3">
-                  <div className="font-medium">{user.displayName || 'User'}</div>
-                  {user.phoneNumber && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                      <Phone className="h-3 w-3" />
-                      {user.phoneNumber}
-                    </div>
-                  )}
-                  {user.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                      <Mail className="h-3 w-3" />
-                      {user.email}
-                    </div>
-                  )}
-                </DropdownMenuItem>
-                
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.displayName || 'User'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email || user.phoneNumber}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                
                 <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile Settings
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
                 </DropdownMenuItem>
-                
+                <DropdownMenuItem>
+                  <ListTodo className="mr-2 h-4 w-4" />
+                  <span>My Tasks</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                
-                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
