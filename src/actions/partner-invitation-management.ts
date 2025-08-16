@@ -1,11 +1,10 @@
 // src/actions/partner-invitation-management.ts
 'use server';
 
-import { db } from '@/lib/firebase-admin';
-import type { InvitationCodeDisplay } from '../../lib/types/invitation';
-import { generateInvitationCode as generateCodeService } from '@/services/invitation-code-service';
-import { getPartnerTenantId } from '@/services/tenant-service';
-import { useAuth } from '@/hooks/use-auth';
+import { db } from '../lib/firebase-admin';
+import type { InvitationCodeDisplay } from '../lib/types/invitation';
+import { generateInvitationCode as generateCodeService } from '../services/invitation-code-service';
+import { getPartnerTenantId } from '../services/tenant-service';
 
 /**
  * Get all invitation codes for a partner's workspace
@@ -60,7 +59,6 @@ export async function getPartnerInvitationCodesAction(partnerId: string): Promis
   }
 }
 
-
 /**
  * Generate invitation code for a new employee
  */
@@ -77,79 +75,34 @@ export async function generateEmployeeInvitationCodeAction(data: {
     return { success: false, message: 'Partner tenant not found.' };
   }
 
-  return await generateCodeService({
-    ...data,
-    tenantId: partnerTenant.tenantId,
-  });
-}
-
-
-/**
- * Cancel an invitation code
- */
-export async function cancelInvitationCodeAction(invitationId: string, partnerId: string): Promise<{
-  success: boolean;
-  message: string;
-}> {
-  if (!db) {
-    return {
-      success: false,
-      message: 'Database not available'
-    };
-  }
-
   try {
-    const invitationRef = db.collection('invitationCodes').doc(invitationId);
-    const invitationDoc = await invitationRef.get();
-
-    if (!invitationDoc.exists) {
-      return {
-        success: false,
-        message: 'Invitation not found'
-      };
-    }
-
-    const invitationData = invitationDoc.data();
-
-    // Verify the invitation belongs to this partner
-    if (invitationData?.partnerId !== partnerId) {
-      return {
-        success: false,
-        message: 'You do not have permission to cancel this invitation'
-      };
-    }
-
-    // Can only cancel pending invitations
-    if (invitationData?.status !== 'pending') {
-      return {
-        success: false,
-        message: 'Only pending invitations can be cancelled'
-      };
-    }
-
-    await invitationRef.update({
-      status: 'cancelled',
-      cancelledAt: new Date()
+    const result = await generateCodeService({
+      phoneNumber: data.phoneNumber,
+      name: data.name,
+      partnerId: data.partnerId,
+      tenantId: partnerTenant.tenantId,
+      role: data.role,
+      invitedBy: data.invitedBy
     });
 
-    return {
-      success: true,
-      message: 'Invitation cancelled successfully'
-    };
+    return result;
 
   } catch (error: any) {
-    console.error('Error cancelling invitation code:', error);
+    console.error('Error generating invitation code:', error);
     return {
       success: false,
-      message: `Failed to cancel invitation: ${error.message}`
+      message: `Failed to generate invitation code: ${error.message}`
     };
   }
 }
 
 /**
- * Regenerate invitation code (cancel old, create new)
+ * Regenerate invitation code
  */
-export async function regenerateInvitationCodeAction(invitationId: string, partnerId: string): Promise<{
+export async function regenerateInvitationCodeAction(
+  partnerId: string,
+  invitationId: string
+): Promise<{
   success: boolean;
   message: string;
   newInvitationCode?: string;
@@ -200,7 +153,7 @@ export async function regenerateInvitationCodeAction(invitationId: string, partn
       cancelledAt: new Date()
     });
 
-    // Generate new code (reuse the generateInvitationCode service)
+    // Generate new code
     const newInvitation = await generateCodeService({
       phoneNumber: invitationData.phoneNumber,
       name: invitationData.name,
@@ -233,17 +186,80 @@ export async function regenerateInvitationCodeAction(invitationId: string, partn
 }
 
 /**
+ * Cancel invitation code
+ */
+export async function cancelInvitationCodeAction(
+  partnerId: string,
+  invitationId: string
+): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  if (!db) {
+    return {
+      success: false,
+      message: 'Database not available'
+    };
+  }
+
+  try {
+    const invitationRef = db.collection('invitationCodes').doc(invitationId);
+    const invitationDoc = await invitationRef.get();
+
+    if (!invitationDoc.exists) {
+      return {
+        success: false,
+        message: 'Invitation not found'
+      };
+    }
+
+    const invitationData = invitationDoc.data();
+
+    if (invitationData?.partnerId !== partnerId) {
+      return {
+        success: false,
+        message: 'You do not have permission to cancel this invitation'
+      };
+    }
+
+    if (invitationData?.status !== 'pending') {
+      return {
+        success: false,
+        message: 'Only pending invitations can be cancelled'
+      };
+    }
+
+    await invitationRef.update({
+      status: 'cancelled',
+      cancelledAt: new Date()
+    });
+
+    return {
+      success: true,
+      message: 'Invitation cancelled successfully'
+    };
+
+  } catch (error: any) {
+    console.error('Error cancelling invitation code:', error);
+    return {
+      success: false,
+      message: `Failed to cancel invitation: ${error.message}`
+    };
+  }
+}
+
+/**
  * Get invitation statistics for partner dashboard
  */
 export async function getInvitationStatsAction(partnerId: string): Promise<{
   success: boolean;
   message: string;
   stats?: {
-    totalInvitations: number;
-    pendingInvitations: number;
-    acceptedInvitations: number;
-    expiredInvitations: number;
-    recentInvitations: number; // Last 7 days
+    total: number;
+    pending: number;
+    accepted: number;
+    expired: number;
+    cancelled: number;
   };
 }> {
   if (!db) {
@@ -259,54 +275,44 @@ export async function getInvitationStatsAction(partnerId: string): Promise<{
       .where('partnerId', '==', partnerId)
       .get();
 
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
-    let totalInvitations = 0;
-    let pendingInvitations = 0;
-    let acceptedInvitations = 0;
-    let expiredInvitations = 0;
-    let recentInvitations = 0;
+    const stats = {
+      total: 0,
+      pending: 0,
+      accepted: 0,
+      expired: 0,
+      cancelled: 0
+    };
 
     invitationsQuery.docs.forEach(doc => {
       const data = doc.data();
-      totalInvitations++;
-
+      stats.total++;
       switch (data.status) {
         case 'pending':
-          pendingInvitations++;
+          stats.pending++;
           break;
         case 'accepted':
-          acceptedInvitations++;
+          stats.accepted++;
           break;
         case 'expired':
-          expiredInvitations++;
+          stats.expired++;
           break;
-      }
-
-      // Check if invitation was created in the last 7 days
-      const createdAt = data.invitedAt.toDate();
-      if (createdAt >= sevenDaysAgo) {
-        recentInvitations++;
+        case 'cancelled':
+          stats.cancelled++;
+          break;
       }
     });
 
     return {
       success: true,
-      message: 'Statistics retrieved successfully',
-      stats: {
-        totalInvitations,
-        pendingInvitations,
-        acceptedInvitations,
-        expiredInvitations,
-        recentInvitations
-      }
+      message: 'Stats retrieved successfully',
+      stats
     };
 
   } catch (error: any) {
     console.error('Error getting invitation stats:', error);
     return {
       success: false,
-      message: `Failed to retrieve statistics: ${error.message}`
+      message: `Failed to retrieve stats: ${error.message}`
     };
   }
 }

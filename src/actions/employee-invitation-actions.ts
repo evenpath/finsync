@@ -1,8 +1,8 @@
 // src/actions/employee-invitation-actions.ts
 'use server';
 
-import { getInvitationByCode, acceptInvitationByCode } from '@/services/invitation-code-service';
-import type { InvitationValidationResult, AcceptInvitationCodeOutput } from '../../lib/types/invitation';
+import { getInvitationByCode, acceptInvitationByCode } from '../services/invitation-code-service';
+import type { InvitationValidationResult, AcceptInvitationCodeOutput } from '../lib/types/invitation';
 
 /**
  * Validate invitation code and return details for preview

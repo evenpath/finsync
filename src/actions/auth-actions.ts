@@ -1,33 +1,62 @@
-
 // src/actions/auth-actions.ts
 'use server';
 
-import { getTenantIdForEmail, validateTenantId, type TenantLookupResult } from '@/services/tenant-service';
+import { getPartnerTenantId } from '../services/tenant-service';
 
-/**
- * Server action to get tenant ID for email lookup.
- * This is the proper way to call server functions from client components.
- */
-export async function getTenantForEmailAction(email: string): Promise<TenantLookupResult> {
+export async function getTenantForEmailAction(email: string): Promise<{
+  success: boolean;
+  message: string;
+  tenantId?: string;
+}> {
   try {
-    return await getTenantIdForEmail(email);
+    // Extract domain from email
+    const domain = email.split('@')[1];
+    if (!domain) {
+      return {
+        success: false,
+        message: 'Invalid email format'
+      };
+    }
+
+    // For demo purposes, you might have a domain->partnerId mapping
+    // In production, you'd have a proper domain verification system
+    const result = await getPartnerTenantId(domain);
+    
+    return {
+      success: result.success,
+      message: result.message,
+      tenantId: result.tenantId
+    };
+
   } catch (error: any) {
-    console.error("Error in getTenantForEmailAction:", error);
+    console.error('Error getting tenant for email:', error);
     return {
       success: false,
-      message: "Failed to lookup organization. Please try again."
+      message: 'Failed to verify organization'
     };
   }
 }
 
-/**
- * Server action to validate a tenant ID exists.
- */
-export async function validateTenantAction(tenantId: string): Promise<boolean> {
+export async function validateTenantAction(tenantId: string): Promise<{
+  success: boolean;
+  message: string;
+  isValid?: boolean;
+}> {
   try {
-    return await validateTenantId(tenantId);
+    // Validate tenant exists and is active
+    const result = await getPartnerTenantId(tenantId);
+    
+    return {
+      success: true,
+      message: 'Tenant validation complete',
+      isValid: result.success
+    };
+
   } catch (error: any) {
-    console.error("Error in validateTenantAction:", error);
-    return false;
+    console.error('Error validating tenant:', error);
+    return {
+      success: false,
+      message: 'Failed to validate tenant'
+    };
   }
 }
