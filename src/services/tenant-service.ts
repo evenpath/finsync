@@ -1,6 +1,6 @@
 
 // src/services/tenant-service.ts
-import { db, adminAuth } from '@/lib/firebase-admin';
+import { db, adminAuth } from '../lib/firebase-admin';
 import type { Partner } from '../../lib/types';
 
 export interface TenantLookupResult {

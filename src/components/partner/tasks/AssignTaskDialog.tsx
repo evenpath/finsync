@@ -16,12 +16,12 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { useToast } from '../../../hooks/use-toast';
-import { useAuth } from '../../../hooks/use-auth';
-import type { Task, TeamMember } from '../../../lib/types';
-import { createTaskAction } from '../../../actions/task-actions';
+import { useToast } from '../../hooks/use-toast';
+import { useAuth } from '../../hooks/use-auth';
+import type { Task, TeamMember } from '../../lib/types';
+import { createTaskAction } from '../../actions/task-actions';
 import { Loader2, ArrowRight, UserCheck } from 'lucide-react';
-import { db } from '../../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 interface AssignTaskDialogProps {

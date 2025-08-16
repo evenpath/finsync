@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import {
   Search,
   MoreVertical,
@@ -60,7 +60,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import Image from 'next/image';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '../../hooks/use-mobile';
 
 // Mock Data for Chat
 const mockUser = {

@@ -1,9 +1,9 @@
 // src/services/phone-auth-service.ts
 'use server';
 
-import { db, adminAuth } from '@/lib/firebase-admin';
+import { db, adminAuth } from '../lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import type { UserWorkspaceLink, WorkspaceAccess, TeamMember } from '../../lib/types';
+import type { UserWorkspaceLink, WorkspaceAccess, TeamMember } from '../lib/types';
 import type { UserRecord } from 'firebase-admin/auth';
 
 export interface PhoneAuthResult {
