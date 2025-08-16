@@ -1,7 +1,7 @@
 // src/app/(employee-auth)/layout.tsx
 "use client";
 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, AuthProvider } from '@/hooks/use-auth.tsx';
 export default function EmployeeAuthLayout({
   children,
 }: {
