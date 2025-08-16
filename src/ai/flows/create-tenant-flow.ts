@@ -10,9 +10,9 @@
  * - CreateTenantOutput - The return type for the createTenant function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { z } from 'genkit';
-import { adminAuth, db } from '@/lib/firebase-admin';
+import { adminAuth, db } from '../../lib/firebase-admin';
 import type { Partner } from '../../lib/types';
 import * as admin from 'firebase-admin';
 
