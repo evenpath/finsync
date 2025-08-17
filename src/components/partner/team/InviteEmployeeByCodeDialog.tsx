@@ -1,208 +1,148 @@
-// src/components/partner/team/InviteEmployeeByCodeDialog.tsx
 "use client";
 
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { useToast } from '../../../hooks/use-toast';
-import { UserPlus, Phone, Loader2, Check, Copy, Ticket } from 'lucide-react';
-import { generateEmployeeInvitationCodeAction } from '../../../actions/partner-invitation-management';
-import { useAuth } from '../../../hooks/use-auth';
+import { Loader2, UserPlus } from 'lucide-react';
 
 interface InviteEmployeeByCodeDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
   partnerId: string;
-  onSuccess?: () => void;
 }
 
-export default function InviteEmployeeByCodeDialog({ partnerId, onSuccess }: InviteEmployeeByCodeDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+export default function InviteEmployeeByCodeDialog({
+  isOpen,
+  onClose,
+  partnerId
+}: InviteEmployeeByCodeDialogProps) {
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [role, setRole] = useState<'employee' | 'partner_admin'>('employee');
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [expiresInDays, setExpiresInDays] = useState('7');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  const resetForm = () => {
-    setName('');
-    setPhone('');
-    setRole('employee');
-    setGeneratedCode(null);
-  };
-  
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      resetForm();
-    }
-    setOpen(newOpen);
-  };
-
-  const handleGenerateCode = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!user) {
-      toast({ variant: 'destructive', title: 'You must be logged in.' });
-      return;
-    }
-    
-    setIsLoading(true);
-    setGeneratedCode(null);
+    setIsSubmitting(true);
 
     try {
-      const result = await generateEmployeeInvitationCodeAction({
-        phoneNumber: phone,
-        name: name,
-        partnerId: partnerId,
-        role: role,
-        invitedBy: user.uid,
+      // Mock invitation creation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const mockCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      toast({
+        title: 'Invitation Created',
+        description: `Invitation code ${mockCode} created for ${phoneNumber}. The code expires in ${expiresInDays} days.`
       });
 
-      if (result.success && result.invitationCode) {
-        setGeneratedCode(result.invitationCode);
-        toast({ title: 'Invitation code generated!' });
-        onSuccess?.();
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to generate code',
-          description: result.message,
-        });
-      }
+      // Reset form
+      setPhoneNumber('');
+      setRole('employee');
+      setExpiresInDays('7');
+      onClose();
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        description: 'Failed to create invitation. Please try again.'
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const copyToClipboard = () => {
-    if (generatedCode) {
-      navigator.clipboard.writeText(generatedCode);
-      toast({ title: 'Code copied to clipboard!' });
+  const handleClose = () => {
+    if (!isSubmitting) {
+      setPhoneNumber('');
+      setRole('employee');
+      setExpiresInDays('7');
+      onClose();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite Employee
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        {!generatedCode ? (
-          <form onSubmit={handleGenerateCode}>
-            <DialogHeader>
-              <DialogTitle>Generate Invitation Code</DialogTitle>
-              <DialogDescription>
-                Create a unique code for a new employee to join your workspace.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Employee's Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Jane Doe"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="phone">Employee's Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1234567890"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={(value) => setRole(value as any)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="employee">Employee</SelectItem>
-                    <SelectItem value="partner_admin">Partner Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Invite Team Member
+          </DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number *</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                placeholder="+1 (555) 123-4567"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                The invitation code will be sent to this phone number.
+              </p>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Ticket className="w-4 h-4 mr-2" />
-                    Generate Code
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-green-600">
-                <Check className="w-5 h-5" />
-                Code Generated Successfully!
-              </DialogTitle>
-              <DialogDescription>
-                Share this code with the employee to join your workspace.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <div className="text-sm text-gray-600 mb-1">Invitation Code</div>
-                  <div className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
-                    {generatedCode}
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="mt-4 text-sm text-gray-600">
-                <p><strong>Employee:</strong> {name}</p>
-                <p><strong>Phone:</strong> {phone}</p>
-                <p><strong>Role:</strong> {role}</p>
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select value={role} onValueChange={(value: 'employee' | 'partner_admin') => setRole(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="employee">Employee</SelectItem>
+                  <SelectItem value="partner_admin">Partner Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <DialogFooter>
-              <Button onClick={() => setOpen(false)}>Done</Button>
-            </DialogFooter>
-          </>
-        )}
+
+            <div className="space-y-2">
+              <Label htmlFor="expiresIn">Code Expires In</Label>
+              <Select value={expiresInDays} onValueChange={setExpiresInDays}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select expiration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Day</SelectItem>
+                  <SelectItem value="3">3 Days</SelectItem>
+                  <SelectItem value="7">7 Days</SelectItem>
+                  <SelectItem value="14">14 Days</SelectItem>
+                  <SelectItem value="30">30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !phoneNumber}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Create Invitation
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

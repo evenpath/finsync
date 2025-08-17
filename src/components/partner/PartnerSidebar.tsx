@@ -1,105 +1,73 @@
-// src/components/partner/PartnerSidebar.tsx
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  ListTodo,
-  Briefcase,
-  LogOut,
-} from "lucide-react";
-import { useAuth } from '../../hooks/use-auth';
-import { getAuth, signOut } from 'firebase/auth';
-import { Button } from '../ui/button';
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Users, CheckSquare } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/partner" },
-  { id: "team", label: "Team Management", icon: Users, href: "/partner/team" },
-  { id: "tasks", label: "Task Overview", icon: ListTodo, href: "/partner/tasks" },
+const navigation = [
+  {
+    name: 'Dashboard',
+    href: '/partner',
+    icon: LayoutDashboard,
+  },
+  {
+    name: 'Team Management',
+    href: '/partner/team',
+    icon: Users,
+  },
+  {
+    name: 'Task Overview',
+    href: '/partner/tasks',
+    icon: CheckSquare,
+  },
 ];
 
 export default function PartnerSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const auth = getAuth();
-  const router = useRouter();
-  
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push('/partner/login');
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
 
   return (
-    <div className="w-64 bg-card border-r flex flex-col">
-      <div className="p-6 border-b">
+    <div className="flex flex-col w-64 bg-white border-r border-gray-200">
+      {/* Logo */}
+      <div className="flex items-center px-6 py-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-            <Briefcase className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-4 h-4 bg-white rounded-sm"></div>
           </div>
           <div>
-            <h1 className="text-xl font-bold font-headline text-foreground">Socket</h1>
-            <p className="text-sm text-muted-foreground">Partner Workspace</p>
+            <h1 className="text-lg font-semibold text-gray-900">Socket</h1>
+            <p className="text-sm text-gray-500">Partner Workspace</p>
           </div>
         </div>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
-            const isActive = (item.href === '/partner' && pathname === item.href) || (item.href !== '/partner' && pathname.startsWith(item.href));
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
             const Icon = item.icon;
+            
             return (
-              <li key={item.id}>
-                <Link href={item.href}>
-                  <div
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer ${
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </div>
+              <li key={item.name}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.name}
                 </Link>
               </li>
             );
           })}
         </ul>
       </nav>
-
-      <div className="p-4 border-t">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-bold">
-              {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?'}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {user?.displayName || 'Partner User'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {user?.email}
-            </p>
-          </div>
-        </div>
-
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
-      </div>
     </div>
   );
 }

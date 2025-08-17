@@ -1,367 +1,264 @@
-// src/components/partner/TaskBoard.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState } from 'react';
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Badge } from "../shared/Badge";
+import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Plus, Search, Calendar, User, Clock, CheckSquare, AlertTriangle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
-import {
-  Download,
-  Plus,
-  Search,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Loader2,
-  Trash2,
-  Edit2,
-  Filter,
-  UserCheck,
-  Calendar,
-} from "lucide-react";
-import type { Task, TeamMember } from "../../lib/types";
-import { useToast } from "../../hooks/use-toast";
-import { useMultiWorkspaceAuth } from "../../hooks/use-multi-workspace-auth";
-import { db } from "../../lib/firebase";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
-import { deleteTaskAction } from "../../actions/task-actions";
+import { useToast } from '../../hooks/use-toast';
+import AssignTaskDialog from './tasks/AssignTaskDialog';
 
-interface TaskWithId extends Task {
+// Mock data for tasks
+const mockTasks = [
+  {
+    id: '1',
+    title: 'Client Onboarding Process',
+    description: 'Complete onboarding documentation for new client',
+    assignee: 'john-doe',
+    assigneeName: 'John Doe',
+    status: 'completed',
+    priority: 'high',
+    dueDate: new Date('2024-08-15'),
+    workflow: 'Client Management',
+    createdAt: new Date('2024-08-10')
+  },
+  {
+    id: '2',
+    title: 'Document Review',
+    description: 'Review and approve quarterly financial documents',
+    assignee: 'sarah-johnson',
+    assigneeName: 'Sarah Johnson',
+    status: 'in_progress',
+    priority: 'medium',
+    dueDate: new Date('2024-08-20'),
+    workflow: 'Document Management',
+    createdAt: new Date('2024-08-12')
+  },
+  {
+    id: '3',
+    title: 'Team Training Session',
+    description: 'Conduct weekly team training on new procedures',
+    assignee: 'mike-wilson',
+    assigneeName: 'Mike Wilson',
+    status: 'assigned',
+    priority: 'low',
+    dueDate: new Date('2024-08-25'),
+    workflow: 'Training',
+    createdAt: new Date('2024-08-14')
+  },
+  {
+    id: '4',
+    title: 'System Maintenance',
+    description: 'Perform routine system maintenance and updates',
+    assignee: 'emily-davis',
+    assigneeName: 'Emily Davis',
+    status: 'overdue',
+    priority: 'high',
+    dueDate: new Date('2024-08-16'),
+    workflow: 'IT Operations',
+    createdAt: new Date('2024-08-08')
+  },
+  {
+    id: '5',
+    title: 'Customer Support Tickets',
+    description: 'Resolve pending customer support tickets',
+    assignee: 'john-doe',
+    assigneeName: 'John Doe',
+    status: 'awaiting_approval',
+    priority: 'medium',
+    dueDate: new Date('2024-08-22'),
+    workflow: 'Customer Service',
+    createdAt: new Date('2024-08-16')
+  }
+];
+
+// Mock team members for assignment
+const mockTeamMembers = [
+  { id: 'john-doe', name: 'John Doe', email: 'john.doe@company.com', role: 'employee' },
+  { id: 'sarah-johnson', name: 'Sarah Johnson', email: 'sarah.johnson@company.com', role: 'partner_admin' },
+  { id: 'mike-wilson', name: 'Mike Wilson', email: 'mike.wilson@company.com', role: 'employee' },
+  { id: 'emily-davis', name: 'Emily Davis', email: 'emily.davis@company.com', role: 'employee' }
+];
+
+interface Task {
   id: string;
+  title: string;
+  description: string;
+  assignee: string;
+  assigneeName: string;
+  status: string;
+  priority: string;
+  dueDate: Date;
+  workflow: string;
+  createdAt: Date;
 }
 
-const getStatusBadge = (status: string) => {
-  const statusConfig = {
-    assigned: { color: "blue", label: "Assigned" },
-    in_progress: { color: "yellow", label: "In Progress" },
-    awaiting_approval: { color: "purple", label: "Awaiting Approval" },
-    completed: { color: "green", label: "Completed" }
-  };
-  
-  const config = statusConfig[status as keyof typeof statusConfig] || { color: "gray", label: status };
-  
-  return (
-    <Badge variant="outline" className={`bg-${config.color}-50 text-${config.color}-700 border-${config.color}-200`}>
-      {config.label}
-    </Badge>
-  );
-};
-
-const getPriorityBadge = (priority: string) => {
-  const priorityConfig = {
-    high: { color: "red", label: "High" },
-    medium: { color: "yellow", label: "Medium" },
-    low: { color: "green", label: "Low" }
-  };
-  
-  const config = priorityConfig[priority as keyof typeof priorityConfig] || { color: "gray", label: priority };
-  
-  return (
-    <Badge variant="outline" className={`bg-${config.color}-50 text-${config.color}-700 border-${config.color}-200`}>
-      {config.label}
-    </Badge>
-  );
-};
-
-const TaskRow = ({ task, teamMembers, onDelete }: { 
-  task: TaskWithId; 
-  teamMembers: TeamMember[]; 
-  onDelete: (id: string) => void;
-}) => {
-  const assignee = teamMembers.find(member => member.id === task.assigneeId || member.name === task.assignee);
-  
-  return (
-    <TableRow>
-      <TableCell className="font-medium">{task.title}</TableCell>
-      <TableCell className="max-w-xs">
-        <div className="truncate" title={task.workflow}>
-          {task.workflow}
-        </div>
-      </TableCell>
-      <TableCell>
-        {assignee ? (
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-              {assignee.name?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
-            <span>{assignee.name}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Unassigned</span>
-        )}
-      </TableCell>
-      <TableCell>{getStatusBadge(task.status)}</TableCell>
-      <TableCell>{getPriorityBadge(task.priority)}</TableCell>
-      <TableCell>
-        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
-      </TableCell>
-      <TableCell>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Task</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this task? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => onDelete(task.id)}>
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </TableCell>
-    </TableRow>
-  );
-};
-
 export default function TaskBoard() {
-  const { user, loading: authLoading } = useMultiWorkspaceAuth();
-  const [tasks, setTasks] = useState<TaskWithId[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tasks] = useState<Task[]>(mockTasks);
+  const [teamMembers] = useState(mockTeamMembers);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const partnerId = user?.customClaims?.activePartnerId;
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.assigneeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.workflow.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           task.workflow?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "all" || task.status === statusFilter;
-      const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
-      
-      return matchesSearch && matchesStatus && matchesPriority;
-    });
-  }, [tasks, searchTerm, statusFilter, priorityFilter]);
-
-  useEffect(() => {
-    if (authLoading) {
-      setIsLoading(true);
-      return;
-    }
-
-    if (!partnerId || !db) {
-      setError("Could not identify your organization. Please ensure you are logged in correctly.");
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    // Fetch tasks
-    const tasksQuery = query(
-      collection(db, "tasks"),
-      where("partnerId", "==", partnerId),
-      orderBy("createdAt", "desc")
-    );
-
-    const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
-      const tasksData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-        dueDate: doc.data().dueDate?.toDate?.() || doc.data().dueDate
-      } as TaskWithId));
-      
-      setTasks(tasksData);
-    }, (error) => {
-      console.error("Error fetching tasks:", error);
-      setError("Failed to fetch tasks. Please check your permissions.");
-    });
-
-    // Fetch team members
-    const teamQuery = query(
-      collection(db, "teamMembers"),
-      where("partnerId", "==", partnerId)
-    );
-
-    const unsubscribeTeam = onSnapshot(teamQuery, (snapshot) => {
-      const teamData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as TeamMember));
-      
-      setTeamMembers(teamData);
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching team members:", error);
-      setError("Failed to fetch team members. Please check your permissions.");
-      setIsLoading(false);
-    });
-
-    return () => {
-      unsubscribeTasks();
-      unsubscribeTeam();
-    };
-  }, [partnerId, authLoading]);
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (!partnerId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No organization found"
-      });
-      return;
-    }
-
-    try {
-      const result = await deleteTaskAction(taskId, partnerId);
-      
-      if (result.success) {
-        toast({
-          title: "Task deleted",
-          description: "The task has been removed from your workspace."
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.message
-        });
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete task. Please try again."
-      });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed': return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'in_progress': return <Badge variant="default" className="bg-blue-100 text-blue-800">In Progress</Badge>;
+      case 'awaiting_approval': return <Badge variant="default" className="bg-orange-100 text-orange-800">In Review</Badge>;
+      case 'overdue': return <Badge variant="destructive">Overdue</Badge>;
+      case 'assigned':
+      default: return <Badge variant="secondary">To Do</Badge>;
     }
   };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Unable to load tasks</h3>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'high': return <Badge variant="destructive">High</Badge>;
+      case 'medium': return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Medium</Badge>;
+      case 'low':
+      default: return <Badge variant="secondary">Low</Badge>;
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <span className="ml-2">Loading tasks...</span>
-      </div>
-    );
-  }
+  const getStatusCount = (status: string) => {
+    if (status === 'active') {
+      return tasks.filter(t => ['in_progress', 'assigned'].includes(t.status)).length;
+    }
+    return tasks.filter(t => t.status === status).length;
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    toast({
+      title: "Task deleted",
+      description: "The task has been removed from your workspace."
+    });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Task Overview</h2>
-          <p className="text-muted-foreground">Manage and track all tasks across your workflows</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button onClick={() => setIsAssignDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Assign New Task
-          </Button>
-        </div>
+      {/* Task Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
+                <p className="text-2xl font-bold">{tasks.length}</p>
+              </div>
+              <CheckSquare className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">{getStatusCount('active')}</p>
+              </div>
+              <Clock className="w-8 h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                <p className="text-2xl font-bold">{getStatusCount('completed')}</p>
+              </div>
+              <CheckSquare className="w-8 h-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+                <p className="text-2xl font-bold">{getStatusCount('overdue')}</p>
+              </div>
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Filters */}
+      {/* Task Filters and Actions */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Task Overview ({filteredTasks.length})</CardTitle>
+            <Button onClick={() => setIsAssignDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Assign New Task
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="assigned">Assigned</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md bg-white"
+            >
+              <option value="all">All Status</option>
+              <option value="assigned">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="awaiting_approval">In Review</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
+            </select>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Tasks Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Tasks ({filteredTasks.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
           {filteredTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Clock className="w-8 h-8 text-muted-foreground" />
+            <div className="text-center py-12">
+              <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <Plus className="w-12 h-12 text-gray-400" />
               </div>
               <h3 className="text-lg font-semibold mb-2">No tasks found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== "all" || priorityFilter !== "all" 
-                  ? "Try adjusting your filters to see more tasks."
-                  : "Create your first task to get started with workflow management."
+                {searchTerm || statusFilter !== "all" 
+                  ? "Try adjusting your search or filter criteria."
+                  : "Get started by assigning your first task to a team member."
                 }
               </p>
-              <Button onClick={() => setIsAssignDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Assign New Task
-              </Button>
+              {!searchTerm && statusFilter === "all" && (
+                <Button onClick={() => setIsAssignDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Assign First Task
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Task</TableHead>
-                    <TableHead>Workflow</TableHead>
+                    <TableHead>Task & Workflow</TableHead>
                     <TableHead>Assignee</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Priority</TableHead>
@@ -371,12 +268,35 @@ export default function TaskBoard() {
                 </TableHeader>
                 <TableBody>
                   {filteredTasks.map((task) => (
-                    <TaskRow 
-                      key={task.id} 
-                      task={task} 
-                      teamMembers={teamMembers}
-                      onDelete={handleDeleteTask}
-                    />
+                    <TableRow key={task.id}>
+                      <TableCell>
+                        <div className="font-medium">{task.title}</div>
+                        <div className="text-sm text-muted-foreground">{task.workflow}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-medium">
+                              {task.assigneeName.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="text-sm">{task.assigneeName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(task.status)}</TableCell>
+                      <TableCell>{getPriorityBadge(task.priority)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Calendar className="w-4 h-4" />
+                          {task.dueDate.toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteTask(task.id)}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
@@ -384,6 +304,14 @@ export default function TaskBoard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Assign Task Dialog */}
+      <AssignTaskDialog
+        isOpen={isAssignDialogOpen}
+        onClose={() => setIsAssignDialogOpen(false)}
+        teamMembers={teamMembers}
+        partnerId="mock-partner-id"
+      />
     </div>
   );
 }
