@@ -1,8 +1,8 @@
-// src/app/partner/team/page.tsx
+
 "use client";
 
 import PartnerHeader from "../../../components/partner/PartnerHeader";
-import TeamManagement from "../../../components/partner/TeamManagement";
+import TeamManagement from "../../../components/partner/team/TeamManagement";
 import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerTeamPage() {
