@@ -62,8 +62,10 @@ export default function ChatPage() {
   const filteredChats = mockChats.filter(chat => chat.workspaceId === activeWorkspace.id);
 
   useEffect(() => {
+    // This effect handles redirection.
+    // It waits until the initial loading is done.
     if (!loading && !isAuthenticated) {
-      router.push('/login'); // Redirect to phone login
+      router.push('/login'); // Redirect to phone login page
     }
   }, [loading, isAuthenticated, router]);
   
@@ -74,7 +76,8 @@ export default function ChatPage() {
     }
   }, [isMobile, selectedChat, filteredChats]);
 
-  if (loading || !isAuthenticated) {
+  // Show a loading screen ONLY during the initial auth check.
+  if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
@@ -84,6 +87,12 @@ export default function ChatPage() {
         </div>
       </div>
     );
+  }
+
+  // After loading, if the user is still not authenticated, they will be redirected.
+  // We can show a minimal UI or null while the redirect happens.
+  if (!isAuthenticated) {
+    return null; 
   }
 
   // Mobile layout - show either sidebar or chat interface
