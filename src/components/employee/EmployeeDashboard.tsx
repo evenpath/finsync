@@ -20,7 +20,7 @@ import JoinWorkspaceDialog from './JoinWorkspaceDialog';
 import EmployeeTasks from './EmployeeTasks';
 
 export default function EmployeeDashboard() {
-  const { user, loading, workspaces, currentWorkspace, refreshWorkspaces } = useMultiWorkspaceAuth();
+  const { user, loading, availableWorkspaces, currentWorkspace, refreshWorkspaces } = useMultiWorkspaceAuth();
   const { toast } = useToast();
 
   const handleJoinSuccess = () => {
@@ -45,7 +45,7 @@ export default function EmployeeDashboard() {
   }
 
   // No workspaces - show join workspace flow
-  if (workspaces.length === 0) {
+  if (availableWorkspaces.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
         <div className="w-full max-w-md text-center">
