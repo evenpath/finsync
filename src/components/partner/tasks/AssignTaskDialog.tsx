@@ -1,3 +1,4 @@
+// src/components/partner/tasks/AssignTaskDialog.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -5,17 +6,12 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { useToast } from '../../../hooks/use-toast';
 import { Loader2, Plus } from 'lucide-react';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import type { TeamMember } from '../../../lib/types';
+import { createTaskAction } from '../../../actions/task-actions';
 
 interface AssignTaskDialogProps {
   isOpen: boolean;
@@ -44,44 +40,51 @@ export default function AssignTaskDialog({
     setIsSubmitting(true);
 
     try {
-      // Mock task creation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const assignedMember = teamMembers.find(member => member.id === assignee);
-      
-      toast({
-        title: 'Task Assigned',
-        description: `Task "${title}" has been assigned to ${assignedMember?.name || 'team member'}.`
+      const result = await createTaskAction({
+        title,
+        description,
+        assignee,
+        priority,
+        dueDate,
+        workflow,
+        partnerId,
+        status: 'assigned', // Default status for new tasks
       });
-
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setAssignee('');
-      setPriority('medium');
-      setDueDate('');
-      setWorkflow('');
-      onClose();
+      
+      if(result.success) {
+          const assignedMember = teamMembers.find(member => member.id === assignee);
+          toast({
+            title: 'Task Assigned',
+            description: `Task "${title}" has been assigned to ${assignedMember?.name || 'team member'}.`
+          });
+          resetAndClose();
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to assign task. Please try again.'
+        description: error.message || 'Failed to assign task. Please try again.'
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const resetAndClose = () => {
+    setTitle('');
+    setDescription('');
+    setAssignee('');
+    setPriority('medium');
+    setDueDate('');
+    setWorkflow('');
+    onClose();
+  };
+
   const handleClose = () => {
     if (!isSubmitting) {
-      setTitle('');
-      setDescription('');
-      setAssignee('');
-      setPriority('medium');
-      setDueDate('');
-      setWorkflow('');
-      onClose();
+      resetAndClose();
     }
   };
 
@@ -93,6 +96,9 @@ export default function AssignTaskDialog({
             <Plus className="w-5 h-5" />
             Assign New Task
           </DialogTitle>
+          <DialogDescription>
+            Create and assign a new task to a team member.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
@@ -124,7 +130,7 @@ export default function AssignTaskDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="assignee">Assign To *</Label>
-                <Select value={assignee} onValueChange={setAssignee}>
+                <Select value={assignee} onValueChange={setAssignee} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select team member" />
                   </SelectTrigger>
