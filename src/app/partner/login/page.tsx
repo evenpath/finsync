@@ -1,73 +1,146 @@
-// src/app/partner/page.tsx
+
 "use client";
 
-import PartnerHeader from "../../../components/partner/PartnerHeader";
-import { mockWorkflowTemplates, industries } from "../../../lib/mockData";
-import type { BusinessProfile, WorkflowTemplate } from '../../../lib/types';
-import HybridWorkflowDashboard from "../../../components/partner/HybridWorkflowDashboard";
-import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
+import { useState } from 'react';
+import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import { Button } from "../../../components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { useToast } from "../../../hooks/use-toast";
+import { createTenant } from '../../../ai/flows/create-tenant-flow';
+import { createUserInTenant } from '../../../ai/flows/user-management-flow';
+import { getTenantForEmailAction } from '../../../actions/auth-actions';
 
+export default function PartnerSignupPage() {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+    const { toast } = useToast();
 
-// Mocks for demonstration
-const mockBusinessProfile: BusinessProfile = {
-  id: "bp-1",
-  partnerId: "partner-1",
-  industryId: "d8f8f8f8-f8f8-f8f8-f8f8-f8f8f8f8f8f8",
-  industry: industries[0],
-  businessName: "Sunnyvale Properties",
-  businessSize: 'medium',
-  employeeCount: 45,
-  locationCity: "Sunnyvale",
-  locationState: "CA",
-  locationCountry: "US",
-  painPoints: ["Emergency maintenance calls at all hours", "Tenant rent collection issues"],
-  currentTools: [],
-  goals: ["Improve tenant satisfaction", "Reduce manual admin work"],
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
 
-const mockDeployedWorkflows: any[] = [
-    mockWorkflowTemplates[0],
-    mockWorkflowTemplates[1]
-];
+        try {
+            // Step 1: Check if a user with this email already exists
+            const existingUserCheck = await getTenantForEmailAction(email);
+            if (existingUserCheck.success) {
+                throw new Error("An account with this email already exists. Please log in.");
+            }
 
-const mockRecommendedTemplates: WorkflowTemplate[] = mockWorkflowTemplates.filter(t => t.templateType === 'ready');
+            // Step 2: Create the tenant and partner document.
+            // This flow is now simplified and does not create the user.
+            const tenantResult = await createTenant({ 
+                partnerName: name, 
+                email: email,
+            });
 
-function PartnerDashboardPage() {
-  // In a real app, you would fetch this data
-  const businessProfile = mockBusinessProfile;
-  const deployedWorkflows = mockDeployedWorkflows;
-  const recommendedTemplates = mockRecommendedTemplates;
+            if (!tenantResult.success || !tenantResult.tenantId || !tenantResult.partnerId) {
+                throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
+            }
+            
+            console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
+            
+            // Step 3: Create the admin user for the new tenant.
+            // This flow now reliably handles user creation, claims, and mapping.
+            const userResult = await createUserInTenant({
+                email: email,
+                password: password,
+                tenantId: tenantResult.tenantId,
+                displayName: name,
+                partnerId: tenantResult.partnerId,
+                role: 'partner_admin',
+            });
 
-  // if (!businessProfile) {
-  //   // In a real app, you'd redirect to onboarding if no profile exists.
-  //   // For now, we'll just show a loading state or nothing.
-  //   return <div>Loading...</div>;
-  // }
+            if (!userResult.success) {
+                // In a real app, you might want a rollback mechanism here for the created tenant.
+                throw new Error(userResult.message || "Workspace created, but failed to set up admin user.");
+            }
+            
+            toast({
+                title: "Account Created!",
+                description: "Your organization workspace has been set up. You can now sign in.",
+            });
 
-  return (
-    <>
-      <PartnerHeader
-        title="Dashboard"
-        subtitle="Manage your AI-powered workflows"
-      />
-      <main className="flex-1 overflow-auto p-6">
-        <HybridWorkflowDashboard 
-          businessProfile={businessProfile}
-          deployedWorkflows={deployedWorkflows}
-          recommendedTemplates={recommendedTemplates}
-        />
-      </main>
-    </>
-  );
-}
+            router.push('/partner/login');
 
+        } catch (error: any) {
+            console.error("Signup Error:", error);
+            
+            let errorMessage = "Failed to create account. Please try again.";
+            if (error.message) {
+                errorMessage = error.message;
+            }
 
-export default function PartnerDashboard() {
-  return (
-    <PartnerAuthWrapper>
-      <PartnerDashboardPage />
-    </PartnerAuthWrapper>
-  )
+            toast({
+                variant: "destructive",
+                title: "Signup Failed",
+                description: errorMessage,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card className="w-full max-w-sm">
+            <form onSubmit={handleSignup}>
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Create Partner Account</CardTitle>
+                    <CardDescription>Set up your organization&apos;s workspace</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="name">Organization Name</Label>
+                        <Input 
+                            id="name" 
+                            type="text" 
+                            placeholder="Your Company Name" 
+                            required 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="email">Work Email</Label>
+                        <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="you@company.com" 
+                            required 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input 
+                            id="password" 
+                            type="password" 
+                            required 
+                            minLength={6}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={isLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? 'Creating Account...' : 'Create Organization'}
+                    </Button>
+                    <div className="text-center text-sm text-muted-foreground">
+                        Already have an account?{" "}
+                        <Link href="/partner/login" className="underline">Sign in</Link>
+                    </div>
+                </CardFooter>
+            </form>
+        </Card>
+    );
 }
