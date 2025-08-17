@@ -15,13 +15,23 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
+  // All hooks must be called at the top level, before any conditional returns.
+  const isAuthorized = React.useMemo(() => {
+    if (loading || !isAuthenticated || !user?.customClaims) {
+      return false;
+    }
+    const role = user.customClaims.role;
+    // A Super Admin or partner_admin can see the partner portal.
+    return role === 'Super Admin' || role === 'Admin' || role === 'partner_admin';
+  }, [user, loading, isAuthenticated]);
+  
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/partner/login');
     }
   }, [loading, isAuthenticated, router]);
   
-  // Show a loading skeleton while we verify authentication.
+  // Conditional rendering logic now happens after all hooks have been called.
   if (loading || !isAuthenticated) {
     return (
         <div className="flex-1 flex flex-col h-full">
@@ -35,16 +45,6 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
         </div>
     );
   }
-
-  const isAuthorized = React.useMemo(() => {
-    if (!user?.customClaims) {
-      return false;
-    }
-    const role = user.customClaims.role;
-    // A Super Admin or partner_admin can see the partner portal.
-    return role === 'Super Admin' || role === 'Admin' || role === 'partner_admin';
-  }, [user]);
-
 
   if (!isAuthorized) {
     return (
