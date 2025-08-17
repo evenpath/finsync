@@ -1,7 +1,8 @@
+
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { ArrowRight, Shield, Briefcase, UserCheck } from 'lucide-react';
+import { ArrowRight, Shield, Briefcase, MessageSquare } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -50,18 +51,18 @@ export default function Home() {
           </Card>
         </Link>
         
-        <Link href="/login">
+        <Link href="/chat">
           <Card className="h-full hover:border-primary hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-headline text-2xl">Employee Dashboard</CardTitle>
-              <UserCheck className="h-8 w-8 text-primary" />
+              <CardTitle className="font-headline text-2xl">Chat &amp; Tasks</CardTitle>
+              <MessageSquare className="h-8 w-8 text-primary" />
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-6">
-                Access your assigned tasks, execute workflows step-by-step, and collaborate with your team.
+                Access your assigned tasks, execute workflows, and collaborate with your team via chat.
               </p>
               <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground">
-                Go to Employee Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                Go to Employee App <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>
           </Card>

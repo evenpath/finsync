@@ -1,13 +1,15 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { useIsMobile } from '../../hooks/use-mobile';
+import { useRouter } from 'next/navigation';
 import ChatSidebar from '../../components/chat/ChatSidebar';
 import ChatInterface from '../../components/chat/ChatInterface';
 import WorkspaceSwitcher from '../../components/chat/WorkspaceSwitcher';
 import BottomNavigation from '../../components/navigation/BottomNavigation';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Loader2 } from 'lucide-react';
 
 // Mock data - replace with real data from Firebase/API
 const mockWorkspaces = [
@@ -49,8 +51,9 @@ const mockChats = [
 ];
 
 export default function ChatPage() {
-  const { user } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
+  const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [activeWorkspace, setActiveWorkspace] = useState(mockWorkspaces[0]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,19 +62,25 @@ export default function ChatPage() {
   const filteredChats = mockChats.filter(chat => chat.workspaceId === activeWorkspace.id);
 
   useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/login'); // Redirect to phone login
+    }
+  }, [loading, isAuthenticated, router]);
+  
+  useEffect(() => {
     // Auto-select first chat on desktop if none selected
     if (!isMobile && !selectedChat && filteredChats.length > 0) {
       setSelectedChat(filteredChats[0]);
     }
   }, [isMobile, selectedChat, filteredChats]);
 
-  if (!user) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">Authentication Required</h2>
-          <p className="text-gray-500">Please log in to access chat.</p>
+          <Loader2 className="w-16 h-16 mx-auto mb-4 text-gray-300 animate-spin" />
+          <h2 className="text-xl font-semibold text-gray-600 mb-2">Loading...</h2>
+          <p className="text-gray-500">Authenticating your session.</p>
         </div>
       </div>
     );
