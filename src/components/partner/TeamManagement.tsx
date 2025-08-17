@@ -34,6 +34,7 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import InvitationCodesList from "./team/InvitationCodesList";
 import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
+import { removeTeamMemberAction } from "@/actions/team-actions";
 
 export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
@@ -45,6 +46,7 @@ export default function TeamManagement() {
   const { toast } = useToast();
 
   const partnerId = user?.customClaims?.partnerId;
+  const tenantId = user?.customClaims?.tenantId;
   const userRole = user?.customClaims?.role;
 
   useEffect(() => {
@@ -79,6 +81,14 @@ export default function TeamManagement() {
       
       setTeamMembers(membersData);
       setFirestoreError(null);
+      
+      if (!selectedMember && membersData.length > 0) {
+        setSelectedMember(membersData[0]);
+      } else if(selectedMember){
+        const updatedSelected = membersData.find(m => m.id === selectedMember.id);
+        setSelectedMember(updatedSelected || null);
+      }
+      
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching team members:", error);
@@ -94,13 +104,6 @@ export default function TeamManagement() {
     return () => unsubscribe();
   }, [authLoading, partnerId, toast]);
 
-  useEffect(() => {
-    if (teamMembers.length > 0 && !selectedMember) {
-        const defaultMember = teamMembers.find(u => u.email !== user?.email);
-        setSelectedMember(defaultMember || teamMembers[0]);
-    }
-  }, [teamMembers, selectedMember, user?.email]);
-
   const filteredMembers = useMemo(() => {
     return teamMembers.filter(member => {
       const matchesSearch = member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,6 +112,26 @@ export default function TeamManagement() {
       return matchesSearch;
     });
   }, [teamMembers, searchTerm]);
+
+  const handleRemoveMember = async (userId: string, tenantId: string) => {
+    if (!partnerId) {
+      toast({ variant: "destructive", title: "Error", description: "Partner ID not found." });
+      return;
+    }
+    const result = await removeTeamMemberAction({ partnerId, userIdToRemove: userId, tenantId });
+    if (result.success) {
+      toast({ title: "Success", description: result.message });
+      setSelectedMember(null); // Deselect the removed member
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    if (date.toDate) return date.toDate().toLocaleDateString();
+    return new Date(date).toLocaleDateString();
+  };
 
   if (firestoreError) {
     return (
@@ -250,7 +273,7 @@ export default function TeamManagement() {
                     </div>
                     <div>
                       <h3 className="font-medium">{selectedMember.name || 'Unnamed'}</h3>
-                      <p className="text-sm text-muted-foreground">{selectedMember.role}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{(selectedMember.role || '').replace('_', ' ')}</p>
                     </div>
                   </div>
 
@@ -265,11 +288,11 @@ export default function TeamManagement() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>Joined {selectedMember.joinedDate || 'Unknown'}</span>
+                      <span>Joined {formatDate(selectedMember.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>Last active {selectedMember.lastActive || 'Unknown'}</span>
+                      <span>Last active {selectedMember.lastActive ? new Date(selectedMember.lastActive).toLocaleString() : 'Never'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-muted-foreground" />
@@ -277,32 +300,15 @@ export default function TeamManagement() {
                         {selectedMember.status || 'unknown'}
                       </Badge>
                     </div>
-
-                    {selectedMember.skills && selectedMember.skills.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Skills</p>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedMember.skills.map((skill, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="pt-4 space-y-2">
-                    <Button className="w-full" variant="outline">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Send Message
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      <Send className="w-4 h-4 mr-2" />
-                      Edit Details
-                    </Button>
-                    {userRole === 'partner_admin' && selectedMember.status === 'active' && (
-                      <Button className="w-full" variant="outline">
+                    {userRole === 'partner_admin' && selectedMember.id !== user?.uid && (
+                      <Button
+                        className="w-full"
+                        variant="destructive"
+                        onClick={() => handleRemoveMember(selectedMember.id, selectedMember.tenantId as string)}
+                      >
                         <XCircle className="w-4 h-4 mr-2" />
                         Remove from Team
                       </Button>

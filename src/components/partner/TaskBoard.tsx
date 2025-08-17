@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "../ui/alert-dialog"
 
-const TaskRow = ({ task, teamMembers, onDelete }: { task: Task & { id: string }, teamMembers: TeamMember[], onDelete: (taskId: string) => void }) => {
+const TaskRow = ({ task, teamMembers, onDelete }: { task: Task & { id: string }, teamMembers: TeamMember[], onDelete: (taskId: string, partnerId: string) => void }) => {
     const assignee = teamMembers.find(m => m.id === task.assignee);
 
     const getStatusBadge = (status: string) => {
@@ -72,21 +72,21 @@ const TaskRow = ({ task, teamMembers, onDelete }: { task: Task & { id: string },
             <TableCell>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                            <Trash2 className="w-4 h-4" />
+                        <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4 text-muted-foreground" />
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete this task? This action cannot be undone.
+                                This action cannot be undone. This will permanently delete the task "{task.title}".
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(task.id)}>
-                                Delete
+                            <AlertDialogAction onClick={() => onDelete(task.id, task.partnerId)}>
+                                Delete Task
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -119,10 +119,15 @@ export default function TaskBoard() {
         );
 
         const unsubscribeTasks = onSnapshot(tasksQuery, (snapshot) => {
-            const fetchedTasks = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as (Task & { id: string })[];
+            const fetchedTasks = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+                    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+                }
+            }) as (Task & { id: string })[];
             setTasks(fetchedTasks);
             setIsLoading(false);
         }, (error) => {
@@ -152,9 +157,18 @@ export default function TaskBoard() {
         };
     }, [partnerId]);
 
-    const handleDeleteTask = async (taskId: string) => {
+    const handleDeleteTask = async (taskId: string, taskPartnerId: string) => {
+        if (taskPartnerId !== partnerId) {
+            toast({
+                variant: "destructive",
+                title: "Permission Denied",
+                description: "You can only delete tasks from your own workspace."
+            });
+            return;
+        }
+
         try {
-            const result = await deleteTaskAction(taskId);
+            const result = await deleteTaskAction(taskId, taskPartnerId);
             if (result.success) {
                 toast({
                     title: "Task Deleted",

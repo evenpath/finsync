@@ -5,7 +5,7 @@ import React from "react";
 import { mockAssignedWorkflows } from "../../lib/mockData";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { Badge } from "../shared/Badge";
+import { Badge } from "../ui/badge";
 import {
   Plus,
   Layers,
@@ -36,7 +36,7 @@ export default function WorkflowManagement() {
           <Card key={workflow.id} className="flex flex-col hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between mb-2">
-                <Badge variant="purple">{workflow.category}</Badge>
+                <Badge variant="secondary">{workflow.category}</Badge>
                 <Badge variant={workflow.status === "active" ? "success" : "default"}>
                   {workflow.status}
                 </Badge>
@@ -56,7 +56,7 @@ export default function WorkflowManagement() {
               </div>
               <div className="flex flex-wrap gap-1">
                 {workflow.tags.map((tag) => (
-                  <Badge key={tag} variant="info" className="text-xs">{tag}</Badge>
+                  <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
                 ))}
               </div>
             </CardContent>
