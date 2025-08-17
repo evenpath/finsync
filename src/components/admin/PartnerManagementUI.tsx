@@ -3,17 +3,18 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Partner } from '../../lib/types';
-import PartnerCard from "./PartnerCard";
-import PartnerDetailView from "./PartnerDetailView";
-import { UserPlus, Search, ListFilter, AlertTriangle } from "lucide-react";
+import { UserPlus, Search, ListFilter, AlertTriangle, Edit } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import AddPartnerModal from "./AddPartnerModal";
+import EditPartnerModal from "./EditPartnerModal";
+import PartnerDetailView from "./PartnerDetailView";
 import { Card, CardContent } from '../ui/card';
 import { createTenant } from '../../ai/flows/create-tenant-flow';
 import { createUserInTenant } from '../../ai/flows/user-management-flow';
 import { useToast } from "../../hooks/use-toast";
 import { updatePartner } from '../../ai/flows/update-partner-flow';
+import { deletePartner } from '../../ai/flows/delete-partner-flow';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { getTenantForEmailAction } from '../../actions/auth-actions';
@@ -23,10 +24,29 @@ interface PartnerManagementUIProps {
     error?: string | null;
 }
 
+const PartnerCard = ({ partner, isSelected, onSelect }: { partner: Partner, isSelected: boolean, onSelect: () => void }) => {
+    return (
+        <div
+            onClick={onSelect}
+            className={`p-4 rounded-lg cursor-pointer transition-colors border ${isSelected ? 'bg-secondary border-primary' : 'hover:bg-secondary/50'}`}
+        >
+            <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{partner.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">{partner.email}</p>
+                </div>
+                <Badge variant={partner.status === 'active' ? 'success' : 'warning'}>{partner.status}</Badge>
+            </div>
+        </div>
+    );
+};
+
+
 export default function PartnerManagementUI({ initialPartners = [], error = null }: PartnerManagementUIProps) {
     const [partners, setPartners] = useState<Partner[]>(initialPartners);
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const { toast } = useToast();
@@ -52,6 +72,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                     // Convert timestamps to strings if they exist
                     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
                     updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+                    joinedDate: data.joinedDate?.toDate ? data.joinedDate.toDate().toISOString() : data.joinedDate,
                 } as Partner;
             });
             
@@ -84,7 +105,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
 
         // Cleanup the listener on component unmount
         return () => unsubscribe();
-    }, [toast]); // Removed selectedPartner from dependency array to prevent re-subscribing
+    }, []);
 
     useEffect(() => {
         if (!selectedPartner && partners.length > 0) {
@@ -124,13 +145,11 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
     const handleAddPartner = async (newPartnerData: { name: string; email: string; }) => {
         console.log("Adding new partner:", newPartnerData.name);
         try {
-            // Step 1: Check if a user with this email already exists
             const existingUserCheck = await getTenantForEmailAction(newPartnerData.email);
             if (existingUserCheck.success) {
                 throw new Error("An account with this email already exists. Please use a different email.");
             }
 
-            // Step 2: Create tenant and partner document
             const tenantResult = await createTenant({
                 partnerName: newPartnerData.name,
                 email: newPartnerData.email
@@ -140,10 +159,9 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 throw new Error(tenantResult.message || 'Failed to create workspace.');
             }
 
-            // Step 3: Create the admin user for the new tenant
             const userResult = await createUserInTenant({
                 email: newPartnerData.email,
-                password: Math.random().toString(36).slice(-8), // Generate a random temporary password
+                password: Math.random().toString(36).slice(-8), 
                 tenantId: tenantResult.tenantId,
                 displayName: newPartnerData.name,
                 partnerId: tenantResult.partnerId,
@@ -151,7 +169,6 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
             });
 
             if (!userResult.success) {
-                // In a real app, you might want to roll back tenant creation here.
                 throw new Error(userResult.message || 'Workspace created, but failed to create admin user.');
             }
 
@@ -160,8 +177,6 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 description: `${newPartnerData.name} is set up.`,
             });
              setIsAddModalOpen(false);
-             // The new partner will appear automatically via the onSnapshot listener.
-
         } catch (e) {
             console.error("Error creating partner:", e);
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -170,7 +185,6 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 title: "Error",
                 description: `Could not create partner: ${errorMessage}`,
             });
-            // Do not close the modal on failure so user can correct the data
         }
     };
 
@@ -182,7 +196,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                     title: "Partner Updated", 
                     description: result.message 
                 });
-                // The real-time listener will update the UI automatically.
+                setIsEditModalOpen(false);
             } else {
                 toast({ 
                     variant: "destructive", 
@@ -200,8 +214,27 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
         }
     };
     
-    const handleDeletePartner = () => {
-        setSelectedPartner(null);
+    const handleDeletePartner = async (partnerId: string, tenantId: string) => {
+        try {
+            const result = await deletePartner({ partnerId, tenantId });
+            if (result.success) {
+                toast({
+                    title: "Partner Deleted",
+                    description: result.message,
+                });
+                setIsEditModalOpen(false);
+                setSelectedPartner(null);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            toast({
+                variant: "destructive",
+                title: "Deletion Failed",
+                description: errorMessage,
+            });
+        }
     };
 
     const handleStatusFilterChange = (status: string) => {
@@ -225,7 +258,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 <div className="flex-1 flex overflow-hidden">
                     {/* Partner List */}
                     <div className="w-1/3 border-r overflow-y-auto">
-                        <div className="p-4 border-b">
+                        <div className="p-4 border-b sticky top-0 bg-card z-10">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-semibold">
                                     Partners ({partners.length})
@@ -276,7 +309,7 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                         </div>
 
                         {/* Partner List */}
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-2">
                             {isLoading ? (
                                 <p className="text-center text-muted-foreground p-4">Loading partners...</p>
                             ) : filteredPartners.length === 0 ? (
@@ -297,13 +330,20 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                     </div>
 
                     {/* Partner Detail View */}
-                    <div className="w-2/3 overflow-y-auto">
+                    <div className="w-2/3 overflow-y-auto p-6">
                         {selectedPartner ? (
-                            <PartnerDetailView 
-                                partner={selectedPartner} 
-                                onUpdatePartner={handleUpdatePartner}
-                                onDeletePartner={handleDeletePartner}
-                            />
+                            <>
+                                <div className="flex items-center justify-between mb-4">
+                                     <h2 className="text-xl font-semibold">Partner Details</h2>
+                                     <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                                         <Edit className="w-4 h-4 mr-2" />
+                                         Edit Partner
+                                     </Button>
+                                </div>
+                                <PartnerDetailView 
+                                    partner={selectedPartner} 
+                                />
+                            </>
                         ) : (
                             <div className="flex items-center justify-center h-full">
                                 <div className="text-center text-muted-foreground">
@@ -317,12 +357,22 @@ export default function PartnerManagementUI({ initialPartners = [], error = null
                 </div>
             </div>
 
-            {/* Add Partner Modal */}
+            {/* Modals */}
             <AddPartnerModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onAdd={handleAddPartner}
             />
+            
+            {selectedPartner && (
+                 <EditPartnerModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    partner={selectedPartner}
+                    onSave={handleUpdatePartner}
+                    onDelete={handleDeletePartner}
+                />
+            )}
         </>
     );
 }
