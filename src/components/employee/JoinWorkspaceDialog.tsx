@@ -1,4 +1,3 @@
-// src/components/employee/JoinWorkspaceDialog.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -15,26 +14,62 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '../../hooks/use-toast';
-import { Plus, Building2, Check, Loader2 } from 'lucide-react';
-import { acceptWorkspaceInvitationAction } from '../../actions/workspace-actions';
+import { Plus, Building2, Check, Loader2, Ticket, User, Clock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
+import { validateInvitationCodeAction, joinWorkspaceWithCodeAction } from '../../actions/employee-invitation-actions';
 
 interface JoinWorkspaceDialogProps {
   trigger?: React.ReactNode;
   onSuccess?: () => void;
 }
 
+type InvitationPreview = {
+  partnerName: string;
+  inviterName: string;
+  role: string;
+  expiresAt: string;
+  phoneNumber?: string;
+};
+
 export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspaceDialogProps) {
   const [open, setOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [preview, setPreview] = useState<InvitationPreview | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const handleJoinWorkspace = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleValidateCode = async () => {
+    if (inviteCode.length !== 8) {
+      setError("Please enter a valid 8-character code.");
+      return;
+    }
+
+    setIsValidating(true);
+    setError(null);
+    setPreview(null);
     
-    if (!user?.uid) {
+    try {
+      const result = await validateInvitationCodeAction(inviteCode);
+      if (result.success && result.invitation) {
+        setPreview(result.invitation);
+        setError(null);
+      } else {
+        setError(result.message);
+        setPreview(null);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Failed to validate invitation code');
+      setPreview(null);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleJoinWorkspace = async () => {
+    if (!user?.uid || !user?.phoneNumber) {
       toast({
         variant: "destructive",
         title: "Authentication Error",
@@ -43,41 +78,31 @@ export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspac
       return;
     }
 
-    if (!inviteCode.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Invalid Code",
-        description: "Please enter a valid invitation code."
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      // For invite codes in format: PARTNER_ID-TENANT_ID or actual invitation IDs
-      let invitationId = inviteCode.trim();
-      
-      // If it looks like a partner-tenant code, we'd need to look up the actual invitation
-      // For now, we'll assume it's a direct invitation ID
-      
-      const result = await acceptWorkspaceInvitationAction(invitationId, user.uid);
+      const result = await joinWorkspaceWithCodeAction({
+        invitationCode: inviteCode,
+        phoneNumber: user.phoneNumber,
+        uid: user.uid,
+      });
 
       if (result.success) {
         toast({
-          title: "Workspace Joined",
-          description: result.message
+          title: "Workspace Joined! 🎉",
+          description: `Welcome to ${result.workspace?.partnerName}`
         });
         
         setOpen(false);
-        setInviteCode('');
+        handleReset();
         onSuccess?.();
         
-        // Refresh the page to update workspace context
+        // Refresh to update workspace context
         setTimeout(() => {
           window.location.reload();
         }, 1000);
       } else {
+        setError(result.message);
         toast({
           variant: "destructive",
           title: "Failed to Join",
@@ -87,13 +112,30 @@ export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspac
 
     } catch (error: any) {
       console.error("Error joining workspace:", error);
+      const errorMsg = error.message || "An unexpected error occurred";
+      setError(errorMsg);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred. Please try again."
+        description: errorMsg
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setInviteCode('');
+    setPreview(null);
+    setError(null);
+    setIsValidating(false);
+    setIsLoading(false);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      handleReset();
     }
   };
 
@@ -105,49 +147,116 @@ export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspac
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleJoinWorkspace}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Join Workspace
-            </DialogTitle>
-            <DialogDescription>
-              Enter your invitation code to join a workspace.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="invite-code">Invitation Code</Label>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Ticket className="w-5 h-5 text-primary" />
+            Join Workspace
+          </DialogTitle>
+          <DialogDescription>
+            Enter your 8-character invitation code to join a new workspace.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Code Input */}
+          <div className="space-y-2">
+            <Label htmlFor="invite-code">Invitation Code</Label>
+            <div className="flex gap-2">
               <Input
                 id="invite-code"
-                placeholder="Enter invitation code"
+                placeholder="ABC123DE"
                 value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                disabled={isLoading}
+                onChange={(e) => {
+                  setInviteCode(e.target.value.toUpperCase());
+                  setError(null);
+                  setPreview(null);
+                }}
+                className="font-mono text-center tracking-widest"
+                maxLength={8}
+                disabled={isValidating || isLoading || !!preview}
                 autoFocus
               />
-              <p className="text-xs text-muted-foreground">
-                You should receive this code from your workspace administrator.
-              </p>
+              {!preview && (
+                <Button
+                  onClick={handleValidateCode}
+                  disabled={inviteCode.length !== 8 || isValidating}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isValidating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Check'
+                  )}
+                </Button>
+              )}
             </div>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Invitation Preview */}
+          {preview && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-green-900">{preview.partnerName}</h3>
+                  <p className="text-sm text-green-700">
+                    Invited by {preview.inviterName}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-green-600">
+                    <span className="flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {preview.role}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Expires {new Date(preview.expiresAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Phone number verification warning */}
+              {user?.phoneNumber && preview.phoneNumber && user.phoneNumber !== preview.phoneNumber && (
+                <div className="p-2 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-xs text-yellow-800">
+                    ⚠️ This invitation was sent to {preview.phoneNumber}, but you're signed in as {user.phoneNumber}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
           
-          <DialogFooter>
+          {preview ? (
             <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setOpen(false)}
+              onClick={handleJoinWorkspace} 
               disabled={isLoading}
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading || !inviteCode.trim()}>
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -155,27 +264,42 @@ export default function JoinWorkspaceDialog({ trigger, onSuccess }: JoinWorkspac
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
                   Join Workspace
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </form>
+          ) : (
+            <Button 
+              onClick={handleValidateCode}
+              disabled={inviteCode.length !== 8 || isValidating}
+              variant="secondary"
+            >
+              {isValidating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Validating...
+                </>
+              ) : (
+                'Validate Code'
+              )}
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
 /**
- * Simplified version for use in dropdowns/menus
+ * Simplified MenuItem version for dropdowns
  */
 export function JoinWorkspaceMenuItem({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <JoinWorkspaceDialog
       trigger={
-        <div className="flex items-center gap-2 cursor-pointer">
-          <Plus className="w-4 h-4" />
+        <div className="flex items-center cursor-pointer">
+          <Plus className="w-4 h-4 mr-2" />
           Join Workspace
         </div>
       }

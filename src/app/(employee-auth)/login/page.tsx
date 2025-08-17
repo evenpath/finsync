@@ -74,16 +74,15 @@ export default function EmployeeLoginPage() {
       let title = "Failed to Send OTP";
       let description = error.message || "Please check your phone number and try again.";
       
-      // Provide more specific feedback for common configuration errors
       if (error.code === 'auth/missing-phone-number') {
         description = "Please enter a valid phone number.";
       } else if (error.code === 'auth/invalid-phone-number') {
         description = "The phone number is not valid. Please include the country code (e.g., +1).";
       } else if (error.code === 'auth/too-many-requests') {
         description = "You've tried to send too many OTPs. Please try again later.";
-      } else if (error.code === 'auth/internal-error' || (error.message && (error.message.includes('missing-phone-number') || error.message.includes('auth/configuration-not-found')))) {
+      } else if (error.code === 'auth/internal-error') {
         title = "Firebase Configuration Error";
-        description = "Phone authentication is not enabled. Please go to your Firebase Console -> Authentication -> Sign-in method, and enable the 'Phone' provider.";
+        description = "Phone sign-in is not enabled for this project. Please go to your Firebase Console, select Authentication > Sign-in method, and enable the 'Phone' provider.";
       }
 
       toast({
