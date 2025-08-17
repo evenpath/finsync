@@ -3,9 +3,9 @@
 
 import PartnerHeader from "../../../components/partner/PartnerHeader";
 import PartnerDashboard from "../../../components/partner/PartnerDashboard";
-import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
-function ProtectedPartnerDashboard() {
+// This is the main content of the dashboard page.
+export default function PartnerDashboardPage() {
     return (
         <>
             <PartnerHeader
@@ -17,12 +17,4 @@ function ProtectedPartnerDashboard() {
             </main>
         </>
     );
-}
-
-export default function PartnerDashboardPage() {
-    return (
-        <PartnerAuthWrapper>
-            <ProtectedPartnerDashboard />
-        </PartnerAuthWrapper>
-    )
 }

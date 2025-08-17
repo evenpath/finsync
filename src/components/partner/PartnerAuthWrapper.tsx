@@ -24,24 +24,37 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
   }, [user, loading]);
 
   React.useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        router.push('/partner/login');
-      }
+    if (loading) {
+      return; // Do nothing while loading
+    }
+    if (!isAuthenticated) {
+      router.push('/partner/login');
+    } else if (!isAuthorized) {
+      // If authenticated but not authorized for this section, show an error or redirect.
+      // For now, we will prevent a redirect loop by just not rendering children.
+      // The access denied message will be shown below.
     }
   }, [loading, isAuthenticated, isAuthorized, router]);
 
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex-1 flex flex-col h-full">
-        <header className="bg-card border-b px-6 py-4">
-          <Skeleton className="h-10 w-1/3 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
-        </header>
-        <main className="flex-1 p-6">
-          <Skeleton className="h-96 w-full" />
-        </main>
-      </div>
+       <div className="flex h-screen bg-secondary/30">
+            <div className="w-64 bg-card border-r p-4">
+                <Skeleton className="h-12 w-full mb-6" />
+                <Skeleton className="h-8 w-full mb-2" />
+                <Skeleton className="h-8 w-full mb-2" />
+                <Skeleton className="h-8 w-full" />
+            </div>
+            <div className="flex-1 flex flex-col">
+                 <header className="bg-card border-b px-6 py-4">
+                    <Skeleton className="h-10 w-1/3 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                </header>
+                <main className="flex-1 p-6">
+                    <Skeleton className="h-96 w-full" />
+                </main>
+            </div>
+        </div>
     );
   }
 
