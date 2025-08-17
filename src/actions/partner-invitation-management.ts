@@ -68,7 +68,13 @@ export async function generateEmployeeInvitationCodeAction(data: {
   partnerId: string;
   role: 'employee' | 'partner_admin';
   invitedBy: string;
-}) {
+}): Promise<{
+  success: boolean;
+  message: string;
+  invitationCode?: string;
+  expiresAt?: string;
+  partnerName?: string;
+}> {
   const partnerTenant = await getPartnerTenantId(data.partnerId);
 
   if (!partnerTenant.success || !partnerTenant.tenantId) {

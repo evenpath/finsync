@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -8,27 +8,30 @@ import { Textarea } from '../../ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { useToast } from '../../../hooks/use-toast';
-import { Loader2, Plus, Users } from 'lucide-react';
-import type { TeamMember } from '../../../lib/types';
-import { createTaskAction } from '../../../actions/task-actions';
+import { Loader2, Edit, Users } from 'lucide-react';
+import type { Task, TeamMember } from '../../../lib/types';
+import { updateTaskAction } from '../../../actions/task-actions';
 
-interface AssignTaskDialogProps {
+interface EditTaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  task: Task | null;
   teamMembers: TeamMember[];
   partnerId: string;
 }
 
-export default function AssignTaskDialog({
+export default function EditTaskDialog({
   isOpen,
   onClose,
+  task,
   teamMembers,
   partnerId
-}: AssignTaskDialogProps) {
+}: EditTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [status, setStatus] = useState('assigned');
   const [dueDate, setDueDate] = useState('');
   const [workflow, setWorkflow] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,36 +42,59 @@ export default function AssignTaskDialog({
     member.status === 'active' && member.role === 'employee'
   );
 
+  // Populate form when task changes
+  useEffect(() => {
+    if (task && isOpen) {
+      setTitle(task.title || '');
+      setDescription(task.description || '');
+      setAssignee(task.assignee || '');
+      setPriority(task.priority || 'medium');
+      setStatus(task.status || 'assigned');
+      setWorkflow(task.workflow || '');
+      
+      // Format date for input
+      if (task.dueDate) {
+        const date = new Date(task.dueDate);
+        setDueDate(date.toISOString().split('T')[0]);
+      } else {
+        setDueDate('');
+      }
+    }
+  }, [task, isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!task) return;
+    
     setIsSubmitting(true);
 
     try {
-      const result = await createTaskAction({
+      const result = await updateTaskAction({
+        taskId: task.id,
         title,
         description,
         assignee,
         priority,
+        status,
         dueDate,
         workflow,
         partnerId,
-        status: 'assigned',
       });
       
       if(result.success) {
           const assignedMember = teamMembers.find(member => member.id === assignee);
           toast({
-            title: 'Task Assigned Successfully',
-            description: `"${title}" has been assigned to ${assignedMember?.name || 'team member'}.`
+            title: 'Task Updated Successfully',
+            description: `"${title}" has been updated.`
           });
-          resetAndClose();
+          onClose();
       } else {
         throw new Error(result.message);
       }
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Failed to Assign Task',
+        title: 'Failed to Update Task',
         description: error.message || 'Please try again.'
       });
     } finally {
@@ -76,32 +102,24 @@ export default function AssignTaskDialog({
     }
   };
 
-  const resetAndClose = () => {
-    setTitle('');
-    setDescription('');
-    setAssignee('');
-    setPriority('medium');
-    setDueDate('');
-    setWorkflow('');
-    onClose();
-  };
-
   const handleClose = () => {
     if (!isSubmitting) {
-      resetAndClose();
+      onClose();
     }
   };
+
+  if (!task) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Assign New Task
+            <Edit className="w-5 h-5" />
+            Edit Task
           </DialogTitle>
           <DialogDescription>
-            Create and assign a new task to a team member.
+            Update task details and assignment.
           </DialogDescription>
         </DialogHeader>
         
@@ -163,6 +181,23 @@ export default function AssignTaskDialog({
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="assigned">To Do</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="awaiting_approval">In Review</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="priority">Priority</Label>
                 <Select value={priority} onValueChange={(value: 'low' | 'medium' | 'high') => setPriority(value)}>
                   <SelectTrigger>
@@ -175,9 +210,7 @@ export default function AssignTaskDialog({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dueDate">Due Date</Label>
                 <Input
@@ -186,20 +219,19 @@ export default function AssignTaskDialog({
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
                   disabled={isSubmitting}
-                  min={new Date().toISOString().split('T')[0]} // Prevent past dates
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="workflow">Workflow Category</Label>
-                <Input
-                  id="workflow"
-                  placeholder="e.g., Client Management"
-                  value={workflow}
-                  onChange={(e) => setWorkflow(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="workflow">Workflow Category</Label>
+              <Input
+                id="workflow"
+                placeholder="e.g., Client Management"
+                value={workflow}
+                onChange={(e) => setWorkflow(e.target.value)}
+                disabled={isSubmitting}
+              />
             </div>
           </div>
 
@@ -209,17 +241,17 @@ export default function AssignTaskDialog({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting || !title || !assignee || availableMembers.length === 0}
+              disabled={isSubmitting || !title || !assignee}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Assigning...
+                  Updating...
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Assign Task
+                  <Edit className="w-4 h-4 mr-2" />
+                  Update Task
                 </>
               )}
             </Button>
