@@ -14,14 +14,6 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
   const { user, loading, isAuthenticated, currentWorkspace } = useMultiWorkspaceAuth();
   const router = useRouter();
 
-  const isAuthorized = React.useMemo(() => {
-    if (loading || !user?.customClaims || !currentWorkspace) {
-      return false;
-    }
-    const role = currentWorkspace.role;
-    return role === 'partner_admin' || role === 'employee';
-  }, [user, loading, currentWorkspace]);
-
   React.useEffect(() => {
     if (loading) {
       return; // Do nothing while loading
@@ -31,7 +23,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     }
   }, [loading, isAuthenticated, router]);
 
-  if (loading || !isAuthenticated) {
+  if (loading) {
     return (
        <div className="flex h-screen bg-secondary/30">
             <div className="w-64 bg-card border-r p-4">
@@ -53,7 +45,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     );
   }
 
-  if (!currentWorkspace) {
+  if (isAuthenticated && !currentWorkspace) {
       return (
         <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
         <Card className="w-full max-w-md border-destructive">
@@ -63,7 +55,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
               No Workspace Found
             </CardTitle>
             <CardDescription>
-              Your account isn't associated with an active workspace.
+              Your account is not yet associated with a workspace. Please use an invitation code to join one.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -76,30 +68,11 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
       )
   }
 
-  if (!isAuthorized) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
-        <Card className="w-full max-w-md border-destructive">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle />
-              Access Denied
-            </CardTitle>
-            <CardDescription>
-              Your account role ({user?.customClaims?.role || 'user'}) does not
-              have permission to access the partner dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/login">
-              <Button variant="outline">Go to Employee Dashboard</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // If authenticated and we have a workspace, show the content.
+  if (isAuthenticated && currentWorkspace) {
+      return <>{children}</>;
   }
-
-  // If authenticated and authorized, show the content.
-  return <>{children}</>;
+  
+  // This will be shown briefly during redirect.
+  return null;
 }

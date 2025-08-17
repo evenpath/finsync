@@ -1527,7 +1527,7 @@ export interface WorkspaceAccess {
   permissions: string[];
   status: 'active' | 'invited' | 'suspended';
   partnerName: string;
-  partnerAvatar?: string;
+  partnerAvatar?: string | null;
 }
 
 // Enhanced FirebaseAuthUser with multi-workspace support
