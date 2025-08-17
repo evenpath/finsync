@@ -1,115 +1,120 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Plus, Search, Calendar, User, Clock, CheckSquare, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Calendar, User, Clock, CheckSquare, AlertTriangle, Loader2, ListTodo } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { useToast } from '../../hooks/use-toast';
+import { useAuth } from '../../hooks/use-auth';
+import { db } from '../../lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import type { Task } from '../../lib/types';
 import AssignTaskDialog from './tasks/AssignTaskDialog';
 
-// Mock data for tasks
-const mockTasks = [
-  {
-    id: '1',
-    title: 'Client Onboarding Process',
-    description: 'Complete onboarding documentation for new client',
-    assignee: 'john-doe',
-    assigneeName: 'John Doe',
-    status: 'completed',
-    priority: 'high',
-    dueDate: new Date('2024-08-15'),
-    workflow: 'Client Management',
-    createdAt: new Date('2024-08-10')
-  },
-  {
-    id: '2',
-    title: 'Document Review',
-    description: 'Review and approve quarterly financial documents',
-    assignee: 'sarah-johnson',
-    assigneeName: 'Sarah Johnson',
-    status: 'in_progress',
-    priority: 'medium',
-    dueDate: new Date('2024-08-20'),
-    workflow: 'Document Management',
-    createdAt: new Date('2024-08-12')
-  },
-  {
-    id: '3',
-    title: 'Team Training Session',
-    description: 'Conduct weekly team training on new procedures',
-    assignee: 'mike-wilson',
-    assigneeName: 'Mike Wilson',
-    status: 'assigned',
-    priority: 'low',
-    dueDate: new Date('2024-08-25'),
-    workflow: 'Training',
-    createdAt: new Date('2024-08-14')
-  },
-  {
-    id: '4',
-    title: 'System Maintenance',
-    description: 'Perform routine system maintenance and updates',
-    assignee: 'emily-davis',
-    assigneeName: 'Emily Davis',
-    status: 'overdue',
-    priority: 'high',
-    dueDate: new Date('2024-08-16'),
-    workflow: 'IT Operations',
-    createdAt: new Date('2024-08-08')
-  },
-  {
-    id: '5',
-    title: 'Customer Support Tickets',
-    description: 'Resolve pending customer support tickets',
-    assignee: 'john-doe',
-    assigneeName: 'John Doe',
-    status: 'awaiting_approval',
-    priority: 'medium',
-    dueDate: new Date('2024-08-22'),
-    workflow: 'Customer Service',
-    createdAt: new Date('2024-08-16')
-  }
-];
-
-// Mock team members for assignment
-const mockTeamMembers = [
-  { id: 'john-doe', name: 'John Doe', email: 'john.doe@company.com', role: 'employee' },
-  { id: 'sarah-johnson', name: 'Sarah Johnson', email: 'sarah.johnson@company.com', role: 'partner_admin' },
-  { id: 'mike-wilson', name: 'Mike Wilson', email: 'mike.wilson@company.com', role: 'employee' },
-  { id: 'emily-davis', name: 'Emily Davis', email: 'emily.davis@company.com', role: 'employee' }
-];
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  assignee: string;
-  assigneeName: string;
-  status: string;
-  priority: string;
-  dueDate: Date;
-  workflow: string;
-  createdAt: Date;
-}
-
 export default function TaskBoard() {
-  const [tasks] = useState<Task[]>(mockTasks);
-  const [teamMembers] = useState(mockTeamMembers);
+  const { user, loading: authLoading } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.assigneeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.workflow.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || task.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Get partner info from user's custom claims
+  const partnerId = user?.customClaims?.partnerId;
+  const tenantId = user?.customClaims?.tenantId;
+  const userRole = user?.customClaims?.role;
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesSearch = task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           task.workflow?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [tasks, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    if (authLoading) {
+      setIsLoading(true);
+      return;
+    }
+
+    if (!partnerId || !db) {
+      console.log('Debug - Missing data:');
+      console.log('- partnerId:', partnerId);
+      console.log('- user:', user?.email);
+      console.log('- customClaims:', user?.customClaims);
+      
+      setFirestoreError(
+        `Could not identify your organization. Please ensure you are logged in correctly.
+        
+        Debug info:
+        - Partner ID: ${partnerId || 'missing'}
+        - User: ${user?.email || 'not found'}
+        - Role: ${user?.customClaims?.role || 'none'}`
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('Fetching tasks for partner:', partnerId);
+    setIsLoading(true);
+    setFirestoreError(null);
+    
+    const tasksRef = collection(db, "tasks");
+    const q = query(
+      tasksRef,
+      where("partnerId", "==", partnerId),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(`Found ${snapshot.docs.length} tasks`);
+      const tasksData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Convert Firestore Timestamps to proper dates
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : null,
+          dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : null,
+        } as Task;
+      });
+      
+      setTasks(tasksData);
+      setFirestoreError(null);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching tasks:", error);
+      console.log("Error details:", {
+        code: error.code,
+        message: error.message,
+        partnerId,
+        userClaims: user?.customClaims
+      });
+      
+      let errorMessage = `Failed to fetch tasks: ${error.message}`;
+      if (error.message.includes('permission-denied') || error.message.includes('insufficient permissions')) {
+        errorMessage = `Access denied to tasks. This might be due to:
+        - Firestore security rules rejecting the query
+        - Missing or incorrect partnerId in your user claims
+        - The partnerId (${partnerId}) doesn't match your permissions
+        
+        Please contact support if this persists.`;
+      }
+      setFirestoreError(errorMessage);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [partnerId, authLoading, user]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -139,11 +144,58 @@ export default function TaskBoard() {
   };
 
   const handleDeleteTask = (taskId: string) => {
+    // TODO: Implement actual task deletion
     toast({
       title: "Task deleted",
       description: "The task has been removed from your workspace."
     });
   };
+
+  if (firestoreError) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-destructive">Database Connection Error</h3>
+          <pre className="text-sm text-muted-foreground mb-4 max-w-2xl mx-auto text-left bg-muted p-4 rounded whitespace-pre-wrap">
+            {firestoreError}
+          </pre>
+          <Button onClick={() => window.location.reload()}>
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    <div className="h-8 bg-gray-200 rounded w-12"></div>
+                  </div>
+                  <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading tasks...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -203,10 +255,12 @@ export default function TaskBoard() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Task Overview ({filteredTasks.length})</CardTitle>
-            <Button onClick={() => setIsAssignDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Assign New Task
-            </Button>
+            {userRole === 'partner_admin' && (
+              <Button onClick={() => setIsAssignDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Assign New Task
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -237,16 +291,18 @@ export default function TaskBoard() {
           {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <Plus className="w-12 h-12 text-gray-400" />
+                <ListTodo className="w-12 h-12 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">No tasks found</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {tasks.length === 0 ? "No tasks yet" : "No tasks found"}
+              </h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== "all" 
                   ? "Try adjusting your search or filter criteria."
                   : "Get started by assigning your first task to a team member."
                 }
               </p>
-              {!searchTerm && statusFilter === "all" && (
+              {!searchTerm && statusFilter === "all" && userRole === 'partner_admin' && (
                 <Button onClick={() => setIsAssignDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Assign First Task
@@ -263,7 +319,7 @@ export default function TaskBoard() {
                     <TableHead>Status</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Due Date</TableHead>
-                    <TableHead>Actions</TableHead>
+                    {userRole === 'partner_admin' && <TableHead>Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -272,30 +328,45 @@ export default function TaskBoard() {
                       <TableCell>
                         <div className="font-medium">{task.title}</div>
                         <div className="text-sm text-muted-foreground">{task.workflow}</div>
+                        {task.description && (
+                          <div className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
+                            {task.description}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                             <span className="text-xs font-medium">
-                              {task.assigneeName.charAt(0)}
+                              {task.assignee ? 'A' : '?'}
                             </span>
                           </div>
-                          <span className="text-sm">{task.assigneeName}</span>
+                          <span className="text-sm">{task.assignee || 'Unassigned'}</span>
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(task.status)}</TableCell>
                       <TableCell>{getPriorityBadge(task.priority)}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Calendar className="w-4 h-4" />
-                          {task.dueDate.toLocaleDateString()}
-                        </div>
+                        {task.dueDate ? (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="w-4 h-4" />
+                            {new Date(task.dueDate).toLocaleDateString()}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No due date</span>
+                        )}
                       </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteTask(task.id)}>
-                          Delete
-                        </Button>
-                      </TableCell>
+                      {userRole === 'partner_admin' && (
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDeleteTask(task.id)}
+                          >
+                            Delete
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -306,12 +377,14 @@ export default function TaskBoard() {
       </Card>
 
       {/* Assign Task Dialog */}
-      <AssignTaskDialog
-        isOpen={isAssignDialogOpen}
-        onClose={() => setIsAssignDialogOpen(false)}
-        teamMembers={teamMembers}
-        partnerId="mock-partner-id"
-      />
+      {isAssignDialogOpen && (
+        <AssignTaskDialog
+          isOpen={isAssignDialogOpen}
+          onClose={() => setIsAssignDialogOpen(false)}
+          teamMembers={[]} // TODO: Pass real team members
+          partnerId={partnerId!}
+        />
+      )}
     </div>
   );
 }

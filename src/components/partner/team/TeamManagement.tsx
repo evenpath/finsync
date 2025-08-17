@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -23,7 +22,7 @@ import {
 } from "lucide-react";
 import type { TeamMember } from "../../../lib/types";
 import { useToast } from "../../../hooks/use-toast";
-import { useMultiWorkspaceAuth } from "../../../hooks/use-multi-workspace-auth";
+import { useAuth } from "../../../hooks/use-auth";
 import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import InviteEmployeeDialog from "./InviteEmployeeDialog";
@@ -36,7 +35,7 @@ import {
 } from "../../ui/dropdown-menu";
 
 export default function TeamManagement() {
-  const { user, loading: authLoading, currentWorkspace } = useMultiWorkspaceAuth();
+  const { user, loading: authLoading } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,9 +44,10 @@ export default function TeamManagement() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const { toast } = useToast();
 
-  const partnerId = currentWorkspace?.partnerId;
-  const userRole = currentWorkspace?.role;
-  const tenantId = currentWorkspace?.tenantId;
+  // Get partner info from user's custom claims
+  const partnerId = user?.customClaims?.partnerId;
+  const tenantId = user?.customClaims?.tenantId;
+  const userRole = user?.customClaims?.role;
 
   const filteredMembers = useMemo(() => {
     if (!searchTerm) return teamMembers;
@@ -65,11 +65,24 @@ export default function TeamManagement() {
     }
 
     if (!partnerId || !db) {
-      setFirestoreError("Could not identify your organization. Please ensure you are logged in correctly and have been assigned to a partner organization.");
+      console.log('Debug - Missing data:');
+      console.log('- partnerId:', partnerId);
+      console.log('- user:', user?.email);
+      console.log('- customClaims:', user?.customClaims);
+      
+      setFirestoreError(
+        `Could not identify your organization. Please ensure you are logged in correctly and have been assigned to a partner organization.
+        
+        Debug info:
+        - Partner ID: ${partnerId || 'missing'}
+        - User: ${user?.email || 'not found'}
+        - Role: ${user?.customClaims?.role || 'none'}`
+      );
       setIsLoading(false);
       return;
     }
 
+    console.log('Fetching team members for partner:', partnerId);
     setIsLoading(true);
     setFirestoreError(null);
     
@@ -80,6 +93,7 @@ export default function TeamManagement() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(`Found ${snapshot.docs.length} team members`);
       const membersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -92,16 +106,28 @@ export default function TeamManagement() {
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching team members:", error);
-      let errorMessage = `Failed to fetch team members: ${error.message}.`;
+      console.log("Error details:", {
+        code: error.code,
+        message: error.message,
+        partnerId,
+        userClaims: user?.customClaims
+      });
+      
+      let errorMessage = `Failed to fetch team members: ${error.message}`;
       if (error.message.includes('permission-denied') || error.message.includes('insufficient permissions')) {
-        errorMessage = "Failed to fetch team members due to missing permissions. Please check Firestore security rules.";
+        errorMessage = `Access denied to team members. This might be due to:
+        - Firestore security rules rejecting the query
+        - Missing or incorrect partnerId in your user claims
+        - The partnerId (${partnerId}) doesn't match your permissions
+        
+        Please contact support if this persists.`;
       }
       setFirestoreError(errorMessage);
       setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, [partnerId, authLoading]);
+  }, [partnerId, authLoading, user]);
   
   const handleRemoveMember = async (userIdToRemove: string) => {
     if (!partnerId || !tenantId) {
@@ -147,7 +173,9 @@ export default function TeamManagement() {
         <CardContent className="p-6 text-center">
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-bold text-destructive">Database Connection Error</h3>
-            <p className="text-muted-foreground mb-4 max-w-md mx-auto">{firestoreError}</p>
+            <pre className="text-sm text-muted-foreground mb-4 max-w-2xl mx-auto text-left bg-muted p-4 rounded whitespace-pre-wrap">
+              {firestoreError}
+            </pre>
             <Button onClick={() => window.location.reload()}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
@@ -191,35 +219,51 @@ export default function TeamManagement() {
                  {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+                    <span className="text-sm text-muted-foreground">Loading team members...</span>
                   </div>
                 ) : filteredMembers.length > 0 ? filteredMembers.map((member) => (
                   <div
                     key={member.id}
                     className={`p-3 rounded-lg cursor-pointer flex items-center justify-between hover:bg-muted/50 transition-colors ${
-                      selectedMember?.id === member.id ? 'bg-muted' : ''
+                      selectedMember?.id === member.id ? 'bg-primary/10 border border-primary/20' : 'border border-transparent'
                     }`}
                     onClick={() => setSelectedMember(member)}
                   >
                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                         {member.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <div>
-                        <h4 className="font-medium text-foreground">{member.name || 'Unknown User'}</h4>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                        <h4 className="font-medium text-sm">{member.name}</h4>
+                        <div className="flex items-center gap-1 mt-1">
+                          {getRoleBadge(member.role)}
+                          {getStatusBadge(member.status)}
+                        </div>
                       </div>
                     </div>
-                     <ChevronRight className="w-4 h-4 text-muted-foreground"/>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </div>
                 )) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>No members found.</p>
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No team members found</p>
+                    {userRole === 'partner_admin' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => setIsInviteOpen(true)}
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Invite First Member
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
             </div>
             <div className="md:col-span-2">
-                {selectedMember ? (
+              {selectedMember ? (
                    <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -234,52 +278,80 @@ export default function TeamManagement() {
                                     </div>
                                 </div>
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    <span>Edit Permissions</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                  onClick={() => handleRemoveMember(selectedMember.id!)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  <span>Remove Member</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            {userRole === 'partner_admin' && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                      <Shield className="mr-2 h-4 w-4" />
+                                      <span>Edit Permissions</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                    onClick={() => handleRemoveMember(selectedMember.id!)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Remove Member</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /> {selectedMember.email}</div>
-                            <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /> {selectedMember.phone || "Not provided"}</div>
-                            <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-muted-foreground" /> Last active: {selectedMember.lastActive ? new Date(selectedMember.lastActive).toLocaleDateString() : 'Never'}</div>
-                            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> Joined: {selectedMember.createdAt ? new Date(selectedMember.createdAt).toLocaleDateString() : 'N/A'}</div>
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-muted-foreground" /> 
+                              {selectedMember.email || 'No email provided'}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-muted-foreground" /> 
+                              {selectedMember.phone || "Not provided"}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-muted-foreground" /> 
+                              Last active: {selectedMember.lastActive ? 
+                                new Date(selectedMember.lastActive).toLocaleDateString() : 'Never'}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-muted-foreground" /> 
+                              Joined: {selectedMember.joinedDate ? 
+                                new Date(selectedMember.joinedDate).toLocaleDateString() : 'Unknown'}
+                            </div>
                         </div>
-                   </div>
-                ) : (
-                   <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                        <div>
-                            <Users className="h-16 w-16 mx-auto mb-4"/>
-                            <h3 className="text-lg font-semibold">Select a team member</h3>
-                            <p>Select a member from the list to view their details.</p>
+                        <div className="bg-muted/30 p-4 rounded-lg">
+                            <h4 className="font-semibold mb-2">Performance</h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>Tasks Completed: <span className="font-bold">{selectedMember.tasksCompleted || 0}</span></div>
+                                <div>Avg. Completion Time: <span className="font-bold">{selectedMember.avgCompletionTime || 'N/A'}</span></div>
+                            </div>
                         </div>
-                   </div>
-                )}
+                    </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                    <div>
+                        <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                        <h3 className="text-lg font-semibold mb-2">Select a Team Member</h3>
+                        <p>Choose a member from the list to view their details and manage their access.</p>
+                    </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
-      
-      <InviteEmployeeDialog 
-        isOpen={isInviteOpen} 
-        onClose={() => setIsInviteOpen(false)}
-      />
+
+      {/* Invite Dialog */}
+      {isInviteOpen && (
+        <InviteEmployeeDialog
+          isOpen={isInviteOpen}
+          onClose={() => setIsInviteOpen(false)}
+          partnerId={partnerId!}
+          tenantId={tenantId!}
+        />
+      )}
     </>
   );
 }

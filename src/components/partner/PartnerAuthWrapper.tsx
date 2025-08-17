@@ -1,19 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
-import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
+import { useAuth } from '../../hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
-import { AlertCircle, LogOut, Settings, RefreshCw } from 'lucide-react';
+import { AlertCircle, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import { getAuth, signOut } from 'firebase/auth';
 import { useToast } from '../../hooks/use-toast';
-import { repairPartnerWorkspaceAction } from '../../actions/repair-partner-workspace';
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated, currentWorkspace, availableWorkspaces, refreshWorkspaces } = useMultiWorkspaceAuth();
-  const [isRepairing, setIsRepairing] = useState(false);
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
   const auth = getAuth();
   const { toast } = useToast();
@@ -37,66 +35,17 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
       }
   };
 
-  const handleRepairWorkspace = async () => {
-    if (!user?.email) {
-      toast({ variant: "destructive", title: "User email not found" });
-      return;
-    }
-
-    setIsRepairing(true);
-    try {
-      console.log('Starting workspace repair for:', user.email);
-      const result = await repairPartnerWorkspaceAction(user.email);
-      
-      if (result.success) {
-        toast({ 
-          title: "Workspace Restored!", 
-          description: result.message,
-          duration: 3000
-        });
-        
-        // Force page reload to get fresh data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        toast({ 
-          variant: "destructive", 
-          title: "Repair Failed", 
-          description: result.message 
-        });
-      }
-    } catch (error: any) {
-      console.error('Repair error:', error);
-      toast({ 
-        variant: "destructive", 
-        title: "Repair Failed", 
-        description: "An unexpected error occurred" 
-      });
-    } finally {
-      setIsRepairing(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      await refreshWorkspaces();
-      toast({ title: "Refreshed" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Refresh failed" });
-    }
-  };
-
   // Debug logging
   React.useEffect(() => {
     if (user && !loading) {
       console.log('🔍 PartnerAuthWrapper Debug:');
       console.log('- User:', user.email, user.uid);
       console.log('- Custom Claims:', user.customClaims);
-      console.log('- Available Workspaces:', availableWorkspaces.length);
-      console.log('- Current Workspace:', currentWorkspace);
+      console.log('- Partner ID:', user.customClaims?.partnerId);
+      console.log('- Tenant ID:', user.customClaims?.tenantId);
+      console.log('- Role:', user.customClaims?.role);
     }
-  }, [user, availableWorkspaces, currentWorkspace, loading]);
+  }, [user, loading]);
 
   if (loading) {
     return (
@@ -120,52 +69,39 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     );
   }
 
-  if (isAuthenticated && !currentWorkspace) {
+  if (isAuthenticated && !user?.customClaims?.partnerId) {
       return (
         <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle />
-                Workspace Access Missing
+                Profile Setup Incomplete
               </CardTitle>
               <CardDescription>
-                You're signed in as a partner admin, but your workspace access needs to be restored. 
-                This can happen with accounts created before the latest updates.
+                Your account is missing partner organization data. Please contact support to complete your setup.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col space-y-3">
-              <Button 
-                onClick={handleRepairWorkspace} 
-                disabled={isRepairing}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Settings className="w-4 h-4 mr-2"/>
-                {isRepairing ? 'Restoring Access...' : 'Restore Workspace Access'}
+              <div className="text-xs text-muted-foreground p-3 bg-muted rounded">
+                <strong>Debug Info:</strong><br/>
+                User ID: {user?.uid}<br/>
+                Email: {user?.email}<br/>
+                Role: {user?.customClaims?.role || 'none'}<br/>
+                Partner ID: {user?.customClaims?.partnerId || 'missing'}
+              </div>
+              <Button onClick={handleSignOut} variant="outline">
+                <LogOut className="w-4 h-4 mr-2"/>
+                Sign Out
               </Button>
-              
-              <div className="text-xs text-muted-foreground text-center">
-                This will restore access to your organization's workspace
-              </div>
-              
-              <div className="border-t pt-3 space-y-2">
-                <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full">
-                  <RefreshCw className="w-4 h-4 mr-2"/>
-                  Refresh
-                </Button>
-                <Button onClick={handleSignOut} variant="outline" size="sm" className="w-full">
-                  <LogOut className="w-4 h-4 mr-2"/>
-                  Sign Out
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>
       )
   }
 
-  if (isAuthenticated && currentWorkspace) {
-      const userRole = currentWorkspace?.role;
+  if (isAuthenticated && user?.customClaims?.partnerId) {
+      const userRole = user.customClaims?.role;
       if (userRole !== 'partner_admin' && userRole !== 'employee') {
           return (
              <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
