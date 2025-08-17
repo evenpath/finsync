@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import type { TeamMember } from "../../lib/types";
 import { useToast } from "../../hooks/use-toast";
-import { useAuth } from '../../hooks/use-auth';
+import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
 import { db } from "../../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
@@ -37,7 +37,7 @@ import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
 import { removeTeamMemberAction } from "@/actions/team-actions";
 
 export default function TeamManagement() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, currentWorkspace } = useMultiWorkspaceAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,9 +45,8 @@ export default function TeamManagement() {
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const partnerId = user?.customClaims?.partnerId;
-  const tenantId = user?.customClaims?.tenantId;
-  const userRole = user?.customClaims?.role;
+  const partnerId = currentWorkspace?.partnerId;
+  const userRole = currentWorkspace?.role;
 
   useEffect(() => {
     if (authLoading) {
