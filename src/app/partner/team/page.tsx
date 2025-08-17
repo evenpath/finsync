@@ -1,5 +1,4 @@
-
-
+// src/app/partner/team/page.tsx
 "use client";
 
 import PartnerHeader from "../../../components/partner/PartnerHeader";
@@ -8,7 +7,7 @@ import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 
 function PartnerTeamPage() {
   return (
-    <PartnerAuthWrapper>
+    <>
       <PartnerHeader
         title="Team Management"
         subtitle="Manage your team members, roles, and permissions."
@@ -16,8 +15,14 @@ function PartnerTeamPage() {
       <main className="flex-1 overflow-auto p-6">
         <TeamManagement />
       </main>
-    </PartnerAuthWrapper>
+    </>
   );
 }
 
-export default PartnerTeamPage;
+export default function PartnerTeamProtected() {
+  return (
+    <PartnerAuthWrapper>
+      <PartnerTeamPage />
+    </PartnerAuthWrapper>
+  );
+}

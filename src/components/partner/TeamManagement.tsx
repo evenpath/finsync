@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Badge } from "../ui/badge";
+import { Badge } from "../shared/Badge";
 import { Input } from "../ui/input";
 import {
   UserPlus,
@@ -27,17 +27,16 @@ import {
 } from "lucide-react";
 import type { TeamMember } from "../../lib/types";
 import { useToast } from "../../hooks/use-toast";
-import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
+import { useAuth } from "../../hooks/use-auth";
 import { db } from "../../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import InvitationCodesList from "./team/InvitationCodesList";
 import InviteEmployeeByCodeDialog from "./team/InviteEmployeeByCodeDialog";
-import { removeTeamMemberAction } from "@/actions/team-actions";
 
 export default function TeamManagement() {
-  const { user, loading: authLoading, currentWorkspace } = useMultiWorkspaceAuth();
+  const { user, loading: authLoading } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,8 +44,8 @@ export default function TeamManagement() {
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const partnerId = currentWorkspace?.partnerId;
-  const userRole = currentWorkspace?.role;
+  const partnerId = user?.customClaims?.partnerId;
+  const userRole = user?.customClaims?.role;
 
   useEffect(() => {
     if (authLoading) {
@@ -75,61 +74,64 @@ export default function TeamManagement() {
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-        lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive
+        lastActive: doc.data().lastActive?.toDate?.() || doc.data().lastActive,
       } as TeamMember));
       
       setTeamMembers(membersData);
-      setFirestoreError(null);
       
       if (!selectedMember && membersData.length > 0) {
         setSelectedMember(membersData[0]);
-      } else if(selectedMember){
-        const updatedSelected = membersData.find(m => m.id === selectedMember.id);
-        setSelectedMember(updatedSelected || null);
+      } else if (selectedMember) {
+        const updatedSelectedMember = membersData.find(m => m.id === selectedMember.id);
+        setSelectedMember(updatedSelectedMember || null);
       }
       
       setIsLoading(false);
     }, (error) => {
-      console.error("Error fetching team members:", error);
-      let errorMessage = `Failed to fetch team members: ${error.message}`;
-      if (error.message.includes('permission-denied') || error.message.includes('insufficient permissions')) {
-        errorMessage = "Failed to fetch team members due to missing permissions. Please visit the Diagnostics page to review your project's IAM role configuration.";
+      console.error("Firestore error fetching team members:", error);
+      let errorMessage = "Could not fetch team members.";
+      if (error.code === 'permission-denied') {
+        errorMessage = "Permission denied. Check your Firestore security rules and custom claims. Your account may not have permission to view team members for this partner.";
+      } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
+        errorMessage = "Database index missing. Please check the Firebase console to create the required indexes for the 'teamMembers' collection.";
       }
       setFirestoreError(errorMessage);
-      toast({ variant: "destructive", title: "Permission Error", description: errorMessage, duration: 10000 });
       setIsLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Database Error",
+        description: errorMessage,
+        duration: 9000
+      });
     });
 
     return () => unsubscribe();
-  }, [authLoading, partnerId, toast]);
+  }, [partnerId, authLoading, toast, selectedMember]);
 
   const filteredMembers = useMemo(() => {
-    return teamMembers.filter(member => {
-      const matchesSearch = member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          member.phone?.includes(searchTerm);
-      return matchesSearch;
-    });
+    return teamMembers.filter(member =>
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.phone?.includes(searchTerm)
+    );
   }, [teamMembers, searchTerm]);
 
-  const handleRemoveMember = async (userId: string, tenantId: string) => {
-    if (!partnerId) {
-      toast({ variant: "destructive", title: "Error", description: "Partner ID not found." });
-      return;
-    }
-    const result = await removeTeamMemberAction({ partnerId, userIdToRemove: userId, tenantId });
-    if (result.success) {
-      toast({ title: "Success", description: result.message });
-      setSelectedMember(null); // Deselect the removed member
-    } else {
-      toast({ variant: "destructive", title: "Error", description: result.message });
+  const formatDate = (dateString: any) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+      return 'Invalid Date';
     }
   };
 
-  const formatDate = (date: any) => {
-    if (!date) return 'N/A';
-    if (date.toDate) return date.toDate().toLocaleDateString();
-    return new Date(date).toLocaleDateString();
+  const formatTime = (timeString: any) => {
+    if (!timeString || timeString === 'Never') return 'Never';
+     try {
+      return new Date(timeString).toLocaleString();
+    } catch (e) {
+      return 'Invalid Time';
+    }
   };
 
   if (firestoreError) {
@@ -203,44 +205,28 @@ export default function TeamManagement() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                          <Input
-                            placeholder="Search members..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9"
-                          />
-                        </div>
-                        <div className="divide-y">
-                          {filteredMembers.map((member) => (
-                            <div
-                              key={member.id}
-                              className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
-                                selectedMember?.id === member.id ? 'bg-muted' : ''
-                              }`}
-                              onClick={() => setSelectedMember(member)}
-                            >
-                               <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <span className="text-sm font-medium text-primary">
-                                      {member.name?.charAt(0).toUpperCase() || '?'}
-                                    </span>
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="font-medium">{member.name || 'Unnamed'}</p>
-                                    <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant={member.status === 'active' ? 'default' : 'outline'}>
-                                      {member.status || 'unknown'}
-                                    </Badge>
-                                  </div>
+                      <div className="divide-y">
+                        {filteredMembers.map((member) => (
+                          <div
+                            key={member.id}
+                            className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedMember?.id === member.id ? 'bg-muted' : ''
+                            }`}
+                            onClick={() => setSelectedMember(member)}
+                          >
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-sm font-medium text-primary">
+                                    {member.name?.charAt(0).toUpperCase() || '?'}
+                                  </span>
                                 </div>
-                            </div>
-                          ))}
-                        </div>
+                                <div>
+                                  <p className="font-medium">{member.name || 'Unnamed'}</p>
+                                  <p className="text-sm text-muted-foreground">{member.email || member.phone}</p>
+                                </div>
+                              </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -271,30 +257,34 @@ export default function TeamManagement() {
                       </span>
                     </div>
                     <div>
-                      <h3 className="font-medium">{selectedMember.name || 'Unnamed'}</h3>
-                      <p className="text-sm text-muted-foreground capitalize">{(selectedMember.role || '').replace('_', ' ')}</p>
+                      <p className="font-medium">{selectedMember.name || 'Unnamed'}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{selectedMember.role?.replace('_', ' ')}</p>
                     </div>
                   </div>
 
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedMember.email || 'No email'}</span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedMember.phone || 'No phone'}</span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>Joined {formatDate(selectedMember.createdAt)}</span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>Last active {selectedMember.lastActive ? new Date(selectedMember.lastActive).toLocaleString() : 'Never'}</span>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>Last active {formatTime(selectedMember.lastActive)}</span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-muted-foreground" />
+                      <Shield className="h-4 w-4 text-muted-foreground" />
                       <Badge variant={selectedMember.status === 'active' ? 'default' : 'outline'}>
                         {selectedMember.status || 'unknown'}
                       </Badge>
@@ -302,16 +292,14 @@ export default function TeamManagement() {
                   </div>
 
                   <div className="pt-4 space-y-2">
-                    {userRole === 'partner_admin' && selectedMember.id !== user?.uid && (
-                      <Button
-                        className="w-full"
-                        variant="destructive"
-                        onClick={() => handleRemoveMember(selectedMember.id, selectedMember.tenantId as string)}
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Remove from Team
-                      </Button>
-                    )}
+                    <Button className="w-full" variant="outline">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Send Message
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Send className="w-4 h-4 mr-2" />
+                      Edit Details
+                    </Button>
                   </div>
                 </div>
               ) : (
