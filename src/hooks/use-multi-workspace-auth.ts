@@ -1,10 +1,11 @@
-// src/hooks/use-multi-workspace-auth.ts
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './use-auth';
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import { getAuth, getIdTokenResult } from 'firebase/auth';
+import { app } from '../lib/firebase';
 import type { 
   MultiWorkspaceAuthState, 
   WorkspaceAccess, 
@@ -12,7 +13,6 @@ import type {
   FirebaseAuthUser,
   MultiWorkspaceCustomClaims
 } from '../lib/types';
-import { getAuth, getIdTokenResult } from 'firebase/auth';
 
 interface MultiWorkspaceFirebaseAuthUser extends FirebaseAuthUser {
   customClaims?: MultiWorkspaceCustomClaims;
@@ -29,9 +29,13 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
   const refreshUserClaims = useCallback(async () => {
     const currentUser = getAuth(app).currentUser;
     if (currentUser) {
-      // Force refresh the token to get latest claims
-      const tokenResult = await getIdTokenResult(currentUser, true);
-      return tokenResult.claims as MultiWorkspaceCustomClaims;
+      try {
+        const tokenResult = await getIdTokenResult(currentUser, true);
+        return tokenResult.claims as MultiWorkspaceCustomClaims;
+      } catch (error) {
+        console.error('Error refreshing user claims:', error);
+        return null;
+      }
     }
     return null;
   }, []);
@@ -53,7 +57,6 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
             lastSwitchedAt: serverTimestamp()
         }, { merge: true });
 
-        // After successfully updating context, force a token refresh and reload
         await refreshUserClaims();
         window.location.reload();
         return true;
@@ -62,7 +65,6 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
         return false;
     }
   }, [user?.uid, availableWorkspaces, refreshUserClaims]);
-
 
   const hasAccessToPartner = useCallback((partnerId: string): boolean => {
     return availableWorkspaces.some(w => w.partnerId === partnerId && w.status === 'active');
@@ -105,7 +107,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
         
         const claims = user.customClaims;
         const activePartnerId = claims?.activePartnerId || claims?.partnerId;
-        
+
         let activeWorkspace = null;
         if (activePartnerId) {
             activeWorkspace = uniqueWorkspaces.find(w => w.partnerId === activePartnerId) || null;
