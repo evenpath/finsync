@@ -161,7 +161,7 @@ export default function EmployeeLoginPage() {
           break;
         case 'auth/internal-error':
           title = "Configuration Error";
-          description = "Phone authentication is not properly configured. Please check:\n1. Phone provider is enabled in Firebase Console\n2. Your domain is authorized\n3. App Check is configured correctly";
+          description = "Phone authentication is not properly configured. Please check your Firebase Console and ensure Phone Number sign-in is enabled for your project.";
           break;
         case 'auth/app-not-authorized':
           title = "App Not Authorized";
