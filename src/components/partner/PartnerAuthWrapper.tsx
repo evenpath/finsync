@@ -4,14 +4,14 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
-import { useAuth } from '../../hooks/use-auth';
+import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {

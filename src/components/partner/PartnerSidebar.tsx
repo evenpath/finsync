@@ -6,27 +6,18 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  Settings,
   ListTodo,
-  CheckCircle,
-  TrendingUp,
   Briefcase,
-  Zap,
   LogOut,
 } from "lucide-react";
-import { Badge } from "../shared/Badge";
 import { useAuth } from '../../hooks/use-auth';
 import { getAuth, signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/partner" },
-  { id: "workflows", label: "My Workflows", icon: Zap, href: "/partner/workflows" },
   { id: "team", label: "Team Management", icon: Users, href: "/partner/team" },
   { id: "tasks", label: "Task Overview", icon: ListTodo, href: "/partner/tasks" },
-  { id: "approvals", label: "Pending Approvals", icon: CheckCircle, href: "/partner/approvals" },
-  { id: "analytics", label: "Analytics", icon: TrendingUp, href: "/partner/analytics" },
-  { id: "settings", label: "Workspace Settings", icon: Settings, href: "/partner/settings" },
 ];
 
 export default function PartnerSidebar() {
@@ -75,11 +66,6 @@ export default function PartnerSidebar() {
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
-                    {item.id === "approvals" && (
-                      <Badge variant="purple" className="ml-auto">
-                        2
-                      </Badge>
-                    )}
                   </div>
                 </Link>
               </li>
