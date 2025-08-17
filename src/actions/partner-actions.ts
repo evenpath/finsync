@@ -11,7 +11,7 @@ import type { PhoneAuthResult } from '../services/phone-auth-service';
 
 export async function inviteEmployeeAction(data: {
   email?: string;
-  phone?: string;
+  phone: string;
   name: string;
   partnerId: string;
   role?: 'employee' | 'partner_admin';
@@ -29,9 +29,8 @@ export async function inviteEmployeeAction(data: {
 
     let userResult: PhoneAuthResult;
 
-    // Use phone-based creation if phone number is provided
-    if (data.phone) {
-      userResult = await createEmployeeWithPhone({
+    // Use phone-based creation
+    userResult = await createEmployeeWithPhone({
         phoneNumber: data.phone,
         displayName: data.name,
         email: data.email,
@@ -40,13 +39,6 @@ export async function inviteEmployeeAction(data: {
         role: data.role || 'employee',
         invitedBy: 'system' // In production, this would be the actual inviter's ID
       });
-    } else {
-        // In the future, you could add email-based creation here using a similar pattern.
-        return {
-            success: false,
-            message: "Phone number is required to invite an employee."
-        };
-    }
     
     if (userResult.success && userResult.userId) {
       // TeamMember document creation is now handled within createEmployeeWithPhone

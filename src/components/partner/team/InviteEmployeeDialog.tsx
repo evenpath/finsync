@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '../../../hooks/use-toast';
 import { Loader2, UserPlus } from 'lucide-react';
 import { inviteEmployeeAction } from '../../../actions/partner-actions';
-import { useAuth } from '../../../hooks/use-auth';
+import { useMultiWorkspaceAuth } from '../../../hooks/use-multi-workspace-auth';
 
 interface InviteEmployeeDialogProps {
   isOpen: boolean;
@@ -27,8 +27,8 @@ export default function InviteEmployeeDialog({
   const [role, setRole] = useState<'employee' | 'partner_admin'>('employee');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
-  const partnerId = user?.customClaims?.activePartnerId;
+  const { currentWorkspace } = useMultiWorkspaceAuth();
+  const partnerId = currentWorkspace?.partnerId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

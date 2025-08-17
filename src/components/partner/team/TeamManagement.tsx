@@ -1,4 +1,4 @@
-// src/components/partner/team/TeamManagement.tsx
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -15,22 +15,18 @@ import {
   Clock,
   AlertTriangle,
   RefreshCw,
-  Ticket,
   ChevronRight,
-  Shield,
   Trash2,
   MoreVertical,
   Calendar,
+  Shield
 } from "lucide-react";
 import type { TeamMember } from "../../../lib/types";
 import { useToast } from "../../../hooks/use-toast";
-import { db } from "../../../lib/firebase";
-import { collection, onSnapshot, query, where, orderBy, doc, deleteDoc, updateDoc } from "firebase/firestore";
-import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { useMultiWorkspaceAuth } from "../../../hooks/use-multi-workspace-auth";
-import InvitationCodesList from "./InvitationCodesList";
-import InviteEmployeeByCodeDialog from './InviteEmployeeByCodeDialog';
+import { db } from "../../../lib/firebase";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import InviteEmployeeDialog from "./InviteEmployeeDialog";
 import { removeTeamMemberAction } from "../../../actions/team-actions";
 import {
   DropdownMenu,
@@ -96,7 +92,7 @@ export default function TeamManagement() {
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching team members:", error);
-      let errorMessage = `Failed to fetch team members: ${error.message}`;
+      let errorMessage = `Failed to fetch team members: ${error.message}.`;
       if (error.message.includes('permission-denied') || error.message.includes('insufficient permissions')) {
         errorMessage = "Failed to fetch team members due to missing permissions. Please check Firestore security rules.";
       }
@@ -106,7 +102,7 @@ export default function TeamManagement() {
 
     return () => unsubscribe();
   }, [partnerId, authLoading]);
-
+  
   const handleRemoveMember = async (userIdToRemove: string) => {
     if (!partnerId || !tenantId) {
       toast({
@@ -128,11 +124,10 @@ export default function TeamManagement() {
     }
   };
 
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return <Badge variant="success">Active</Badge>;
-      case 'invited': return <Badge variant="warning">Invited</Badge>;
+      case 'active': return <Badge variant="success" className="bg-green-100 text-green-800">Active</Badge>;
+      case 'invited': return <Badge variant="warning" className="bg-yellow-100 text-yellow-800">Invited</Badge>;
       case 'suspended': return <Badge variant="destructive">Suspended</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;
     }
@@ -168,10 +163,10 @@ export default function TeamManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold font-headline">
-              Team Management
+              Team Members ({teamMembers.length})
             </CardTitle>
             <div className="flex items-center gap-2">
-              {partnerId && userRole === 'partner_admin' && (
+              {userRole === 'partner_admin' && (
                 <Button onClick={() => setIsInviteOpen(true)}>
                   <UserPlus className="w-4 h-4 mr-2" />
                   Invite Member
@@ -181,134 +176,110 @@ export default function TeamManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="members">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="members">
-                <Users className="w-4 h-4 mr-2" />
-                Team Members ({teamMembers.length})
-              </TabsTrigger>
-              <TabsTrigger value="invitations">
-                <Ticket className="w-4 h-4 mr-2" />
-                Invitations
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="members" className="mt-4">
-               {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 border-r pr-6">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search members..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
-                    <span className="text-muted-foreground">Loading team members...</span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-1 border-r pr-6">
-                      <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                        <Input
-                          placeholder="Search members..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-9"
-                        />
+                ) : filteredMembers.length > 0 ? filteredMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className={`p-3 rounded-lg cursor-pointer flex items-center justify-between hover:bg-muted/50 transition-colors ${
+                      selectedMember?.id === member.id ? 'bg-muted' : ''
+                    }`}
+                    onClick={() => setSelectedMember(member)}
+                  >
+                    <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {member.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
-                      <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                        {filteredMembers.length > 0 ? filteredMembers.map((member) => (
-                          <div
-                            key={member.id}
-                            className={`p-3 rounded-lg cursor-pointer flex items-center justify-between hover:bg-muted/50 transition-colors ${
-                              selectedMember?.id === member.id ? 'bg-muted/80' : ''
-                            }`}
-                            onClick={() => setSelectedMember(member)}
-                          >
-                            <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                {member.name?.charAt(0)?.toUpperCase() || 'U'}
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-foreground">{member.name || 'Unknown User'}</h4>
-                                <p className="text-sm text-muted-foreground">{member.email}</p>
-                              </div>
-                            </div>
-                             <ChevronRight className="w-4 h-4 text-muted-foreground"/>
-                          </div>
-                        )) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <p>No members found.</p>
-                          </div>
-                        )}
+                      <div>
+                        <h4 className="font-medium text-foreground">{member.name || 'Unknown User'}</h4>
+                        <p className="text-sm text-muted-foreground">{member.email}</p>
                       </div>
                     </div>
-
-                    <div className="md:col-span-2">
-                        {selectedMember ? (
-                           <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
-                                            {selectedMember.name?.charAt(0)?.toUpperCase() || 'U'}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold">{selectedMember.name}</h3>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                {getRoleBadge(selectedMember.role)}
-                                                {getStatusBadge(selectedMember.status)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                          <MoreVertical className="w-4 h-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>
-                                            <Shield className="mr-2 h-4 w-4" />
-                                            <span>Edit Permissions</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                          onClick={() => handleRemoveMember(selectedMember.id!)}
-                                        >
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          <span>Remove Member</span>
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /> {selectedMember.email}</div>
-                                    <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /> {selectedMember.phone || "Not provided"}</div>
-                                    <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-muted-foreground" /> Last active: {selectedMember.lastActive ? new Date(selectedMember.lastActive).toLocaleDateString() : 'Never'}</div>
-                                    <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> Joined: {selectedMember.createdAt ? new Date(selectedMember.createdAt).toLocaleDateString() : 'N/A'}</div>
-                                </div>
-                           </div>
-                        ) : (
-                           <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                                <div>
-                                    <Users className="h-16 w-16 mx-auto mb-4"/>
-                                    <h3 className="text-lg font-semibold">Select a team member</h3>
-                                    <p>Select a member from the list to view their details.</p>
-                                </div>
-                           </div>
-                        )}
-                    </div>
+                     <ChevronRight className="w-4 h-4 text-muted-foreground"/>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No members found.</p>
                   </div>
                 )}
-            </TabsContent>
-            <TabsContent value="invitations" className="mt-4">
-              {partnerId && <InvitationCodesList partnerId={partnerId} />}
-            </TabsContent>
-          </Tabs>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+                {selectedMember ? (
+                   <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
+                                    {selectedMember.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold">{selectedMember.name}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {getRoleBadge(selectedMember.role)}
+                                        {getStatusBadge(selectedMember.status)}
+                                    </div>
+                                </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    <span>Edit Permissions</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                  onClick={() => handleRemoveMember(selectedMember.id!)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Remove Member</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /> {selectedMember.email}</div>
+                            <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /> {selectedMember.phone || "Not provided"}</div>
+                            <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-muted-foreground" /> Last active: {selectedMember.lastActive ? new Date(selectedMember.lastActive).toLocaleDateString() : 'Never'}</div>
+                            <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> Joined: {selectedMember.createdAt ? new Date(selectedMember.createdAt).toLocaleDateString() : 'N/A'}</div>
+                        </div>
+                   </div>
+                ) : (
+                   <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                        <div>
+                            <Users className="h-16 w-16 mx-auto mb-4"/>
+                            <h3 className="text-lg font-semibold">Select a team member</h3>
+                            <p>Select a member from the list to view their details.</p>
+                        </div>
+                   </div>
+                )}
+            </div>
+          </div>
         </CardContent>
       </Card>
-      {partnerId && 
-        <InviteEmployeeByCodeDialog 
-          isOpen={isInviteOpen} 
-          onClose={() => setIsInviteOpen(false)}
-          partnerId={partnerId}
-        />
-      }
+      
+      <InviteEmployeeDialog 
+        isOpen={isInviteOpen} 
+        onClose={() => setIsInviteOpen(false)}
+      />
     </>
   );
 }

@@ -872,13 +872,17 @@ export interface APIUsageStats {
 // ============================================================================
 
 export interface Task {
-  id: number;
+  id: string;
   title: string;
+  description?: string;
   workflow: string;
   priority: 'high' | 'medium' | 'low';
   status: 'assigned' | 'in_progress' | 'awaiting_approval' | 'completed';
   dueDate?: string;
   assignee?: string;
+  partnerId: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface TeamMember {
@@ -902,7 +906,7 @@ export interface TeamMember {
   invitedBy?: string;
   invitedAt?: Date;
   joinedDate?: string;
-  lastActive?: string;
+  lastActive?: string | Date;
   avatar: string;
   tasksCompleted: number;
   avgCompletionTime: string;
@@ -1571,3 +1575,11 @@ export interface MultiWorkspaceAuthState extends AuthState {
   isPartnerAdminFor: (partnerId: string) => boolean;
   canModifyPartner: (partnerId: string) => boolean;
 }
+
+export type PhoneAuthResult = {
+    success: boolean;
+    message: string;
+    userId?: string;
+    workspaces?: WorkspaceAccess[];
+    hasMultipleWorkspaces?: boolean;
+};
