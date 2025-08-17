@@ -11,6 +11,7 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult }
 import { app } from '../../../lib/firebase';
 import { Phone, KeyRound, Building2, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { handlePhoneAuthAction } from '../../../actions/employee-phone-actions';
 
 declare global {
   interface Window {
@@ -30,11 +31,9 @@ export default function EmployeeLoginPage() {
   const auth = getAuth(app);
 
   useEffect(() => {
-    // Initialize reCAPTCHA
     initializeRecaptcha();
     
     return () => {
-      // Cleanup on unmount
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
         window.recaptchaVerifier = undefined;
@@ -44,12 +43,10 @@ export default function EmployeeLoginPage() {
 
   const initializeRecaptcha = () => {
     try {
-      // Clear any existing verifier
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
       }
 
-      // Create new reCAPTCHA verifier
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible',
         callback: (response: any) => {
@@ -57,37 +54,22 @@ export default function EmployeeLoginPage() {
           setRecaptchaError(null);
         },
         'expired-callback': () => {
-          console.log("reCAPTCHA expired");
           setRecaptchaError("reCAPTCHA expired. Please try again.");
         },
         'error-callback': (error: any) => {
-          console.error("reCAPTCHA error:", error);
           setRecaptchaError("reCAPTCHA failed. Please refresh and try again.");
         }
       });
-
-      console.log("reCAPTCHA verifier initialized");
     } catch (error: any) {
-      console.error("Error initializing reCAPTCHA:", error);
       setRecaptchaError("Failed to initialize reCAPTCHA. Please refresh the page.");
     }
   };
 
   const formatPhoneNumber = (phone: string): string => {
-    // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
-    
-    // Add country code if not present
-    if (cleaned.startsWith('1') && cleaned.length === 11) {
-      return `+${cleaned}`;
-    } else if (cleaned.length === 10) {
-      return `+1${cleaned}`;
-    } else if (cleaned.startsWith('1')) {
-      return `+${cleaned}`;
-    } else if (!phone.startsWith('+')) {
-      return `+${cleaned}`;
-    }
-    
+    if (cleaned.startsWith('1') && cleaned.length === 11) return `+${cleaned}`;
+    if (cleaned.length === 10) return `+1${cleaned}`;
+    if (!phone.startsWith('+')) return `+${cleaned}`;
     return phone;
   };
 
@@ -102,150 +84,86 @@ export default function EmployeeLoginPage() {
     setRecaptchaError(null);
 
     try {
-      // Clear any tenant ID for employee login
       auth.tenantId = null;
-
-      // Format and validate phone number
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      
       if (!validatePhoneNumber(formattedPhone)) {
         throw new Error("Please enter a valid phone number with country code (e.g., +1234567890)");
       }
 
-      // Ensure reCAPTCHA is ready
       if (!window.recaptchaVerifier) {
-        console.log("Reinitializing reCAPTCHA...");
         initializeRecaptcha();
-        
-        // Wait a moment for initialization
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-
       if (!window.recaptchaVerifier) {
-        throw new Error("reCAPTCHA not initialized. Please refresh the page and try again.");
+        throw new Error("reCAPTCHA not initialized. Please refresh and try again.");
       }
 
-      console.log("Attempting to send OTP to:", formattedPhone);
-      
-      // Send OTP
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
-      
       window.confirmationResult = confirmationResult;
       setOtpSent(true);
-      setPhoneNumber(formattedPhone); // Update to formatted version
-      
-      toast({ 
-        title: "OTP Sent! 📱", 
-        description: "Please check your phone for the verification code." 
-      });
-
+      setPhoneNumber(formattedPhone);
+      toast({ title: "OTP Sent! 📱", description: "Please check your phone for the verification code." });
     } catch (error: any) {
-      console.error("Error sending OTP:", error);
-      
-      let title = "Failed to Send OTP";
-      let description = "Please try again.";
-      
-      // Handle specific Firebase errors
-      switch (error.code) {
-        case 'auth/invalid-phone-number':
-          description = "Invalid phone number. Please include the country code (e.g., +1234567890).";
-          break;
-        case 'auth/missing-phone-number':
-          description = "Please enter a phone number.";
-          break;
-        case 'auth/quota-exceeded':
-          description = "SMS quota exceeded. Please try again later.";
-          break;
-        case 'auth/too-many-requests':
-          description = "Too many requests. Please wait a few minutes and try again.";
-          break;
-        case 'auth/internal-error':
-          title = "Configuration Error";
-          description = "Phone authentication is not properly configured. Please check your Firebase Console and ensure Phone Number sign-in is enabled for your project.";
-          break;
-        case 'auth/app-not-authorized':
-          title = "App Not Authorized";
-          description = "This app is not authorized to use Firebase Authentication. Please check your Firebase configuration.";
-          break;
-        case 'auth/captcha-check-failed':
-          description = "reCAPTCHA verification failed. Please try again.";
-          setRecaptchaError("reCAPTCHA failed. Reinitializing...");
-          // Reinitialize reCAPTCHA
-          setTimeout(() => {
-            initializeRecaptcha();
-          }, 1000);
-          break;
-        default:
-          if (error.message.includes('reCAPTCHA')) {
-            description = "reCAPTCHA verification failed. Please refresh the page and try again.";
-            setRecaptchaError(error.message);
-          } else {
-            description = error.message || "An unexpected error occurred.";
-          }
-          break;
-      }
-
-      toast({
-        variant: "destructive",
-        title: title,
-        description: description,
-        duration: 8000
-      });
-
+      handleAuthError(error);
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const handleAuthError = (error: any) => {
+    let title = "Failed to Send OTP";
+    let description = "Please try again.";
+    
+    switch (error.code) {
+      case 'auth/invalid-phone-number':
+        description = "Invalid phone number format. Please include the country code (e.g., +1234567890).";
+        break;
+      case 'auth/too-many-requests':
+        description = "Too many requests. Please wait a moment and try again.";
+        break;
+      case 'auth/internal-error':
+        title = "Configuration Error";
+        description = "Phone authentication is not enabled for this project. Please contact your administrator.";
+        break;
+      case 'auth/captcha-check-failed':
+        description = "reCAPTCHA verification failed. Please try again.";
+        setRecaptchaError("reCAPTCHA failed. Reinitializing...");
+        setTimeout(() => initializeRecaptcha(), 1000);
+        break;
+      default:
+        description = error.message || "An unexpected error occurred.";
+        break;
+    }
+    toast({ variant: "destructive", title: title, description: description, duration: 8000 });
+  };
+
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      if (!window.confirmationResult) {
-        throw new Error("No confirmation result found. Please request a new OTP.");
-      }
+      if (!window.confirmationResult) throw new Error("No confirmation result found.");
+      if (otp.length !== 6) throw new Error("Please enter the complete 6-digit code.");
 
-      if (otp.length !== 6) {
-        throw new Error("Please enter the complete 6-digit verification code.");
+      const userCredential = await window.confirmationResult.confirm(otp);
+      const user = userCredential.user;
+      
+      const setupResult = await handlePhoneAuthAction(user.phoneNumber!, user.uid);
+      if(!setupResult.success) {
+        throw new Error(setupResult.message);
       }
       
-      console.log("Verifying OTP:", otp);
-      await window.confirmationResult.confirm(otp);
-      
-      toast({ 
-        title: "Login Successful! ✅", 
-        description: "Redirecting to your dashboard..." 
-      });
-      
-      // Redirect to employee dashboard
+      toast({ title: "Login Successful! ✅", description: "Redirecting to your dashboard..." });
       router.push('/employee');
-
     } catch (error: any) {
-      console.error("Error verifying OTP:", error);
-      
       let description = "Please check the code and try again.";
-      
-      switch (error.code) {
-        case 'auth/invalid-verification-code':
-          description = "Invalid verification code. Please check the 6-digit code from your SMS.";
-          break;
-        case 'auth/code-expired':
-          description = "Verification code has expired. Please request a new one.";
-          break;
-        case 'auth/session-expired':
-          description = "Session expired. Please start over by requesting a new OTP.";
-          break;
-        default:
-          description = error.message || "Verification failed. Please try again.";
-          break;
+      if(error.code === 'auth/invalid-verification-code') {
+        description = "Invalid verification code. Please check the 6-digit code from your SMS.";
+      } else if (error.code === 'auth/code-expired') {
+        description = "Verification code has expired. Please request a new one.";
       }
-
-      toast({
-        variant: "destructive",
-        title: "Verification Failed",
-        description: description
-      });
+      toast({ variant: "destructive", title: "Verification Failed", description });
     } finally {
       setIsLoading(false);
     }
@@ -255,33 +173,18 @@ export default function EmployeeLoginPage() {
     setOtpSent(false);
     setOtp('');
     setRecaptchaError(null);
-    
-    // Reinitialize reCAPTCHA for fresh start
-    setTimeout(() => {
-      initializeRecaptcha();
-    }, 500);
+    setTimeout(() => initializeRecaptcha(), 500);
   };
-
-  const handleRefreshRecaptcha = () => {
-    setRecaptchaError(null);
-    initializeRecaptcha();
-    toast({
-      title: "reCAPTCHA Refreshed",
-      description: "Please try sending the OTP again."
-    });
-  };
-
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="w-full max-w-md space-y-6">
-        {/* Back to Home */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>
         </div>
-
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
@@ -296,24 +199,9 @@ export default function EmployeeLoginPage() {
             </CardDescription>
           </CardHeader>
 
-          {/* reCAPTCHA Error Alert */}
           {recaptchaError && (
             <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm text-red-800">{recaptchaError}</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleRefreshRecaptcha}
-                    className="mt-2"
-                  >
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Refresh reCAPTCHA
-                  </Button>
-                </div>
-              </div>
+                <p className="text-sm text-red-800">{recaptchaError}</p>
             </div>
           )}
 
@@ -324,32 +212,13 @@ export default function EmployeeLoginPage() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      placeholder="+1 (555) 123-4567"
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-10"
-                      required
-                      disabled={isLoading}
-                    />
+                    <Input id="phone" placeholder="+1 (555) 123-4567" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="pl-10" required disabled={isLoading} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Include your country code (e.g., +1 for US/Canada)
-                  </p>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-3">
                 <Button type="submit" className="w-full" disabled={isLoading || !!recaptchaError}>
-                  {isLoading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Sending OTP...
-                    </>
-                  ) : (
-                    "Send Verification Code"
-                  )}
+                  {isLoading ? 'Sending OTP...' : "Send Verification Code"}
                 </Button>
                 <div className="text-center text-sm text-muted-foreground">
                   Don't have an account?{' '}
@@ -366,61 +235,23 @@ export default function EmployeeLoginPage() {
                   <Label htmlFor="otp">Verification Code</Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="otp"
-                      placeholder="123456"
-                      type="text"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className="pl-10 text-center text-lg tracking-widest"
-                      maxLength={6}
-                      required
-                      disabled={isLoading}
-                      autoFocus
-                    />
+                    <Input id="otp" placeholder="123456" type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} className="pl-10 text-center text-lg tracking-widest" maxLength={6} required disabled={isLoading} autoFocus />
                   </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Sent to {phoneNumber}
-                  </p>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-2">
                 <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
-                  {isLoading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify & Login"
-                  )}
+                  {isLoading ? 'Verifying...' : "Verify & Login"}
                 </Button>
                 <Button type="button" variant="outline" onClick={handleRetry} className="w-full" disabled={isLoading}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Phone Number
+                  Back
                 </Button>
               </CardFooter>
             </form>
           )}
         </Card>
-
-        {/* Help Section */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center space-y-2">
-              <h4 className="font-semibold text-sm">Having trouble?</h4>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>• Make sure you have a stable internet connection</p>
-                <p>• Check that your phone number includes the country code</p>
-                <p>• SMS delivery may take up to 2 minutes</p>
-                <p>• Contact your workspace admin if issues persist</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-      
-      {/* reCAPTCHA container - must be visible */}
       <div id="recaptcha-container"></div>
     </div>
   );

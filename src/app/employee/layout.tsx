@@ -26,7 +26,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-secondary/30">
         <div className="w-20 bg-gray-100 border-r flex flex-col items-center py-4 gap-4 h-full">
-            <Skeleton className="w-12 h-12 rounded-lg" />
+            <Skeleton className="h-12 w-12 rounded-lg" />
             <Skeleton className="w-12 h-12 rounded-full" />
         </div>
         <div className="flex-1 flex flex-col">
