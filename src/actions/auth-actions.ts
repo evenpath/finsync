@@ -1,7 +1,7 @@
 // src/actions/auth-actions.ts
 'use server';
 
-import { getPartnerTenantId } from '../services/tenant-service';
+import { getTenantIdForEmail } from '../services/tenant-service';
 
 export async function getTenantForEmailAction(email: string): Promise<{
   success: boolean;
@@ -9,18 +9,15 @@ export async function getTenantForEmailAction(email: string): Promise<{
   tenantId?: string;
 }> {
   try {
-    // Extract domain from email
-    const domain = email.split('@')[1];
-    if (!domain) {
+    if (!email) {
       return {
         success: false,
-        message: 'Invalid email format'
+        message: 'Email address is required.'
       };
     }
 
-    // For demo purposes, you might have a domain->partnerId mapping
-    // In production, you'd have a proper domain verification system
-    const result = await getPartnerTenantId(domain);
+    // Use the correct service function to look up the tenant by the user's full email.
+    const result = await getTenantIdForEmail(email);
     
     return {
       success: result.success,
@@ -43,13 +40,15 @@ export async function validateTenantAction(tenantId: string): Promise<{
   isValid?: boolean;
 }> {
   try {
-    // Validate tenant exists and is active
-    const result = await getPartnerTenantId(tenantId);
+    // This function is not used in the current flow, but keeping it for potential future use.
+    // A direct tenant validation might be better here instead of partner lookup.
+    const { validateTenantId } = await import('../services/tenant-service');
+    const isValid = await validateTenantId(tenantId);
     
     return {
       success: true,
       message: 'Tenant validation complete',
-      isValid: result.success
+      isValid: isValid
     };
 
   } catch (error: any) {
