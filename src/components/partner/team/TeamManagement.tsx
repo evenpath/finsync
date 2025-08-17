@@ -5,6 +5,7 @@ import { Button } from "../../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { Badge } from "../../ui/badge";
 import { Input } from "../../ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import {
   UserPlus,
   Search,
@@ -18,14 +19,14 @@ import {
   Trash2,
   MoreVertical,
   Calendar,
-  Shield
+  Shield,
+  QrCode
 } from "lucide-react";
 import type { TeamMember } from "../../../lib/types";
 import { useToast } from "../../../hooks/use-toast";
 import { useAuth } from "../../../hooks/use-auth";
 import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import InviteEmployeeDialog from "./InviteEmployeeDialog";
 import { removeTeamMemberAction } from "../../../actions/team-actions";
 import {
   DropdownMenu,
@@ -33,6 +34,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
+import GenerateInviteCodeDialog from "./GenerateInviteCodeDialog";
+import InvitationManagement from "./InvitationManagement";
 
 export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
@@ -41,7 +44,8 @@ export default function TeamManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteRefreshTrigger, setInviteRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
   // Get partner info from user's custom claims
@@ -65,13 +69,8 @@ export default function TeamManagement() {
     }
 
     if (!partnerId || !db) {
-      console.log('Debug - Missing data:');
-      console.log('- partnerId:', partnerId);
-      console.log('- user:', user?.email);
-      console.log('- customClaims:', user?.customClaims);
-      
       setFirestoreError(
-        `Could not identify your organization. Please ensure you are logged in correctly and have been assigned to a partner organization.
+        `Could not identify your organization. Please ensure you are logged in correctly.
         
         Debug info:
         - Partner ID: ${partnerId || 'missing'}
@@ -106,23 +105,7 @@ export default function TeamManagement() {
       setIsLoading(false);
     }, (error) => {
       console.error("Error fetching team members:", error);
-      console.log("Error details:", {
-        code: error.code,
-        message: error.message,
-        partnerId,
-        userClaims: user?.customClaims
-      });
-      
-      let errorMessage = `Failed to fetch team members: ${error.message}`;
-      if (error.message.includes('permission-denied') || error.message.includes('insufficient permissions')) {
-        errorMessage = `Access denied to team members. This might be due to:
-        - Firestore security rules rejecting the query
-        - Missing or incorrect partnerId in your user claims
-        - The partnerId (${partnerId}) doesn't match your permissions
-        
-        Please contact support if this persists.`;
-      }
-      setFirestoreError(errorMessage);
+      setFirestoreError(`Access denied to team members: ${error.message}`);
       setIsLoading(false);
     });
 
@@ -148,6 +131,10 @@ export default function TeamManagement() {
     } else {
       toast({ variant: "destructive", title: "Error", description: result.message });
     }
+  };
+
+  const handleInviteGenerated = () => {
+    setInviteRefreshTrigger(prev => prev + 1);
   };
 
   const getStatusBadge = (status: string) => {
@@ -187,171 +174,190 @@ export default function TeamManagement() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold font-headline">
+      <Tabs defaultValue="members" className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="members" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
               Team Members ({teamMembers.length})
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {userRole === 'partner_admin' && (
-                <Button onClick={() => setIsInviteOpen(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Invite Member
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1 border-r pr-6">
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search members..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                 {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
-                    <span className="text-sm text-muted-foreground">Loading team members...</span>
+            </TabsTrigger>
+            <TabsTrigger value="invitations" className="flex items-center gap-2">
+              <QrCode className="w-4 h-4" />
+              Invitations
+            </TabsTrigger>
+          </TabsList>
+          
+          {userRole === 'partner_admin' && (
+            <Button onClick={() => setIsInviteDialogOpen(true)}>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Generate Invite Code
+            </Button>
+          )}
+        </div>
+
+        <TabsContent value="members">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold font-headline">
+                Active Team Members ({teamMembers.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1 border-r pr-6">
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Search members..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
                   </div>
-                ) : filteredMembers.length > 0 ? filteredMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className={`p-3 rounded-lg cursor-pointer flex items-center justify-between hover:bg-muted/50 transition-colors ${
-                      selectedMember?.id === member.id ? 'bg-primary/10 border border-primary/20' : 'border border-transparent'
-                    }`}
-                    onClick={() => setSelectedMember(member)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                        {member.name?.charAt(0)?.toUpperCase() || 'U'}
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                     {isLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
+                        <span className="text-sm text-muted-foreground">Loading team members...</span>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-sm">{member.name}</h4>
-                        <div className="flex items-center gap-1 mt-1">
-                          {getRoleBadge(member.role)}
-                          {getStatusBadge(member.status)}
-                        </div>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                )) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No team members found</p>
-                    {userRole === 'partner_admin' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => setIsInviteOpen(true)}
+                    ) : filteredMembers.length > 0 ? filteredMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className={`p-3 rounded-lg cursor-pointer flex items-center justify-between hover:bg-muted/50 transition-colors ${
+                          selectedMember?.id === member.id ? 'bg-primary/10 border border-primary/20' : 'border border-transparent'
+                        }`}
+                        onClick={() => setSelectedMember(member)}
                       >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Invite First Member
-                      </Button>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                            {member.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-sm">{member.name}</h4>
+                            <div className="flex items-center gap-1 mt-1">
+                              {getRoleBadge(member.role)}
+                              {getStatusBadge(member.status)}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    )) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No team members found</p>
+                        {userRole === 'partner_admin' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => setIsInviteDialogOpen(true)}
+                          >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Generate First Invite
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
-            <div className="md:col-span-2">
-              {selectedMember ? (
-                   <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
-                                    {selectedMember.name?.charAt(0)?.toUpperCase() || 'U'}
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold">{selectedMember.name}</h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        {getRoleBadge(selectedMember.role)}
-                                        {getStatusBadge(selectedMember.status)}
+                </div>
+                <div className="md:col-span-2">
+                  {selectedMember ? (
+                       <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold">
+                                        {selectedMember.name?.charAt(0)?.toUpperCase() || 'U'}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold">{selectedMember.name}</h3>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {getRoleBadge(selectedMember.role)}
+                                            {getStatusBadge(selectedMember.status)}
+                                        </div>
                                     </div>
                                 </div>
+                                {userRole === 'partner_admin' && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem>
+                                          <Shield className="mr-2 h-4 w-4" />
+                                          <span>Edit Permissions</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                        onClick={() => handleRemoveMember(selectedMember.id!)}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Remove Member</span>
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
                             </div>
-                            {userRole === 'partner_admin' && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreVertical className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>
-                                      <Shield className="mr-2 h-4 w-4" />
-                                      <span>Edit Permissions</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    onClick={() => handleRemoveMember(selectedMember.id!)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Remove Member</span>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-muted-foreground" /> 
-                              {selectedMember.email || 'No email provided'}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-muted-foreground" /> 
-                              {selectedMember.phone || "Not provided"}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-muted-foreground" /> 
-                              Last active: {selectedMember.lastActive ? 
-                                new Date(selectedMember.lastActive).toLocaleDateString() : 'Never'}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-muted-foreground" /> 
-                              Joined: {selectedMember.joinedDate ? 
-                                new Date(selectedMember.joinedDate).toLocaleDateString() : 'Unknown'}
-                            </div>
-                        </div>
-                        <div className="bg-muted/30 p-4 rounded-lg">
-                            <h4 className="font-semibold mb-2">Performance</h4>
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>Tasks Completed: <span className="font-bold">{selectedMember.tasksCompleted || 0}</span></div>
-                                <div>Avg. Completion Time: <span className="font-bold">{selectedMember.avgCompletionTime || 'N/A'}</span></div>
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-4 h-4 text-muted-foreground" /> 
+                                  {selectedMember.email || 'No email provided'}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4 text-muted-foreground" /> 
+                                  {selectedMember.phone || "Not provided"}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-4 h-4 text-muted-foreground" /> 
+                                  Last active: {selectedMember.lastActive ? 
+                                    new Date(selectedMember.lastActive).toLocaleDateString() : 'Never'}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="w-4 h-4 text-muted-foreground" /> 
+                                  Joined: {selectedMember.joinedDate ? 
+                                    new Date(selectedMember.joinedDate).toLocaleDateString() : 'Unknown'}
+                                </div>
+                            </div>
+                            <div className="bg-muted/30 p-4 rounded-lg">
+                                <h4 className="font-semibold mb-2">Performance</h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>Tasks Completed: <span className="font-bold">{selectedMember.tasksCompleted || 0}</span></div>
+                                    <div>Avg. Completion Time: <span className="font-bold">{selectedMember.avgCompletionTime || 'N/A'}</span></div>
+                                </div>
                             </div>
                         </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                        <div>
+                            <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                            <h3 className="text-lg font-semibold mb-2">Select a Team Member</h3>
+                            <p>Choose a member from the list to view their details and manage their access.</p>
+                        </div>
                     </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                    <div>
-                        <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                        <h3 className="text-lg font-semibold mb-2">Select a Team Member</h3>
-                        <p>Choose a member from the list to view their details and manage their access.</p>
-                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Invite Dialog */}
-      {isInviteOpen && (
-        <InviteEmployeeDialog
-          isOpen={isInviteOpen}
-          onClose={() => setIsInviteOpen(false)}
-          partnerId={partnerId!}
-          tenantId={tenantId!}
-        />
-      )}
+        <TabsContent value="invitations">
+          <InvitationManagement 
+            partnerId={partnerId!} 
+            refreshTrigger={inviteRefreshTrigger}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Generate Invite Code Dialog */}
+      <GenerateInviteCodeDialog
+        isOpen={isInviteDialogOpen}
+        onClose={() => setIsInviteDialogOpen(false)}
+        partnerId={partnerId!}
+        onInviteGenerated={handleInviteGenerated}
+      />
     </>
   );
 }
