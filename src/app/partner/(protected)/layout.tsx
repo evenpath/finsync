@@ -1,9 +1,9 @@
 // src/app/partner/(protected)/layout.tsx
-// This is a new layout for protected partner pages (e.g., dashboard, settings).
 "use client";
 
 import PartnerSidebar from "../../../components/partner/PartnerSidebar";
 import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
+import { AuthProvider } from '../../../hooks/use-auth';
 
 export default function ProtectedPartnerLayout({
   children,
@@ -11,13 +11,15 @@ export default function ProtectedPartnerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <PartnerAuthWrapper>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        <PartnerSidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {children}
+    <AuthProvider>
+        <PartnerAuthWrapper>
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+            <PartnerSidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+            {children}
+            </div>
         </div>
-      </div>
-    </PartnerAuthWrapper>
+        </PartnerAuthWrapper>
+    </AuthProvider>
   );
 }

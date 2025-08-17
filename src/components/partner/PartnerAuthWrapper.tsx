@@ -4,33 +4,25 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
-import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
+import { useAuth } from '../../hooks/use-auth'; // Changed to useAuth
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
+import { AlertCircle } from 'lucide-react';
+import { Button } from '../ui/button';
+import Link from 'next/link';
+
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useMultiWorkspaceAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const isAuthorized = React.useMemo(() => {
-    if (loading || !isAuthenticated || !user?.customClaims) {
-      return false;
-    }
-    const role = user.customClaims.role;
-    // A Super Admin or partner_admin can see the partner portal.
-    return role === 'Super Admin' || role === 'Admin' || role === 'partner_admin';
-  }, [user, loading, isAuthenticated]);
-
   React.useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        router.push('/partner/login');
-      } else if (user?.customClaims?.role === 'employee') {
-        // Redirect employees to their specific dashboard
-        router.push('/employee');
-      }
+    if (!loading && !isAuthenticated) {
+      router.push('/partner/login');
     }
-  }, [loading, isAuthenticated, isAuthorized, router, user]);
-
-  if (loading || !isAuthenticated || !isAuthorized) {
+  }, [loading, isAuthenticated, router]);
+  
+  // Show a loading skeleton while we verify authentication.
+  if (loading || !isAuthenticated) {
     return (
         <div className="flex-1 flex flex-col h-full">
             <header className="bg-card border-b px-6 py-4">
@@ -40,6 +32,39 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
             <main className="flex-1 p-6">
                 <Skeleton className="h-96 w-full" />
             </main>
+        </div>
+    );
+  }
+
+  const isAuthorized = React.useMemo(() => {
+    if (!user?.customClaims) {
+      return false;
+    }
+    const role = user.customClaims.role;
+    // A Super Admin or partner_admin can see the partner portal.
+    return role === 'Super Admin' || role === 'Admin' || role === 'partner_admin';
+  }, [user]);
+
+
+  if (!isAuthorized) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
+            <Card className="w-full max-w-md border-destructive">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertCircle />
+                        Access Denied
+                    </CardTitle>
+                    <CardDescription>
+                        Your account role ({user?.customClaims?.role || 'user'}) does not have permission to access the partner dashboard.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Link href="/employee">
+                        <Button variant="outline">Go to Employee Dashboard</Button>
+                    </Link>
+                </CardContent>
+            </Card>
         </div>
     );
   }

@@ -16,19 +16,17 @@ export default function PartnerRootPage() {
         // Not authenticated, redirect to login
         router.replace('/partner/login');
       } else {
-        // Authenticated, check role and redirect appropriately
+        // Authenticated, check role and redirect to the main protected page
         const role = user?.customClaims?.role;
         if (role === 'employee') {
-          // This should ideally not happen due to the auth wrapper, but as a fallback
           router.replace('/employee');
         } else if (role === 'Super Admin' || role === 'Admin' || role === 'partner_admin') {
-          // The main dashboard content is now in (protected)/page.tsx, so we don't need to redirect.
-          // This page acts as a loading/redirect handler if accessed directly.
-          // In the new structure, this page is inside the protected group as page.tsx
-          // Let's assume we want to keep a root page that redirects for safety.
-          router.replace('/partner/dashboard'); // Keeping this redirect as a logical step
+          // The main page for the partner section is now at the root of the protected group.
+          // This page's purpose is to redirect to the correct place.
+          // Since this page is at /partner, and the protected page is also at /partner,
+          // the layout will handle showing the correct content. No redirect needed here if authorized.
         } else {
-          // If role is undefined or not a partner, send to login.
+          // Fallback if role is not recognized
           router.replace('/partner/login');
         }
       }

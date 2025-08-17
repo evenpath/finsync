@@ -33,7 +33,6 @@ export default function PartnerSignupPage() {
             }
 
             // Step 2: Create the tenant and partner document.
-            // This flow is now simplified and does not create the user.
             const tenantResult = await createTenant({ 
                 partnerName: name, 
                 email: email,
@@ -43,10 +42,7 @@ export default function PartnerSignupPage() {
                 throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
             }
             
-            console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
-            
             // Step 3: Create the admin user for the new tenant.
-            // This flow now reliably handles user creation, claims, and mapping.
             const userResult = await createUserInTenant({
                 email: email,
                 password: password,
@@ -57,7 +53,6 @@ export default function PartnerSignupPage() {
             });
 
             if (!userResult.success) {
-                // In a real app, you might want a rollback mechanism here for the created tenant.
                 throw new Error(userResult.message || "Workspace created, but failed to set up admin user.");
             }
             
