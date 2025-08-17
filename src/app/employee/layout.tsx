@@ -2,12 +2,10 @@
 "use client";
 
 import React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import EnhancedWorkspaceSwitcher from "../../components/worker/WorkspaceSwitcher";
-import WorkspaceHeader from "../../components/worker/WorkspaceHeader";
+import { useRouter } from 'next/navigation';
 import { useAuth, AuthProvider } from '../../hooks/use-auth';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Building2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import Link from 'next/link';
@@ -74,17 +72,7 @@ function EmployeeAuthWrapper({ children }: { children: React.ReactNode }) {
       );
   }
   
-  return (
-    <div className="flex h-screen bg-secondary/30">
-      <EnhancedWorkspaceSwitcher />
-      <div className="flex flex-1 flex-col">
-        <WorkspaceHeader />
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 }
 
 export default function EmployeeLayout({
