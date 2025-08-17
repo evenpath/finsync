@@ -20,6 +20,7 @@ import {
   Shield,
   Trash2,
   MoreVertical,
+  Calendar,
 } from "lucide-react";
 import type { TeamMember } from "../../../lib/types";
 import { useToast } from "../../../hooks/use-toast";
@@ -27,7 +28,7 @@ import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
-import { useAuth } from "../../../hooks/use-auth";
+import { useMultiWorkspaceAuth } from "../../../hooks/use-multi-workspace-auth";
 import InvitationCodesList from "./InvitationCodesList";
 import InviteEmployeeByCodeDialog from './InviteEmployeeByCodeDialog';
 import { removeTeamMemberAction } from "../../../actions/team-actions";
@@ -39,7 +40,7 @@ import {
 } from "../../ui/dropdown-menu";
 
 export default function TeamManagement() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, currentWorkspace } = useMultiWorkspaceAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,9 +49,9 @@ export default function TeamManagement() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const { toast } = useToast();
 
-  const partnerId = user?.customClaims?.activePartnerId;
-  const userRole = user?.customClaims?.role;
-  const tenantId = user?.customClaims?.activeTenantId;
+  const partnerId = currentWorkspace?.partnerId;
+  const userRole = currentWorkspace?.role;
+  const tenantId = currentWorkspace?.tenantId;
 
   const filteredMembers = useMemo(() => {
     if (!searchTerm) return teamMembers;
@@ -150,7 +151,7 @@ export default function TeamManagement() {
       <Card>
         <CardContent className="p-6 text-center">
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Database Connection Error</h3>
+            <h3 className="text-lg font-bold text-destructive">Database Connection Error</h3>
             <p className="text-muted-foreground mb-4 max-w-md mx-auto">{firestoreError}</p>
             <Button onClick={() => window.location.reload()}>
               <RefreshCw className="w-4 h-4 mr-2" />
