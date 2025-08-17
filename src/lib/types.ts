@@ -78,7 +78,7 @@ export interface UserWorkspaceLink {
   invitedAt?: FirebaseTimestamp;
   tenantId: string;
   partnerName: string;
-  partnerAvatar?: string;
+  partnerAvatar: string | null;
 }
 
 export interface UserPreferences {

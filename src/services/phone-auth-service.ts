@@ -104,7 +104,7 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
       permissions: link.permissions,
       status: link.status,
       partnerName: link.partnerName,
-      partnerAvatar: link.partnerAvatar
+      partnerAvatar: link.partnerAvatar || undefined
     }));
 
     // Update Firebase Auth custom claims
@@ -203,7 +203,7 @@ export async function createEmployeeWithPhone(input: {
     const partnerName = partnerDoc.exists ? partnerDoc.data()?.name : 'Unknown Organization';
 
     // 4. Create the UserWorkspaceLink to add the user to the team
-    const workspaceLinkData: Omit<UserWorkspaceLink, 'id'> = {
+    const workspaceLinkData: UserWorkspaceLink = {
       userId: userRecord.uid,
       partnerId: input.partnerId,
       tenantId: input.tenantId,
@@ -215,14 +215,13 @@ export async function createEmployeeWithPhone(input: {
       invitedAt: FieldValue.serverTimestamp() as any,
       partnerName: partnerName,
       partnerAvatar: null,
-      lastAccessedAt: FieldValue.serverTimestamp() as any
     };
-    await workspaceLinkRef.set(workspaceLinkData);
+    await workspaceLinkRef.set(workspaceLinkData, { merge: true });
     console.log(`Created workspace link for UID ${userRecord.uid} to partner ${input.partnerId}`);
 
     // 5. Create or update the TeamMember document
     const teamMemberRef = db.collection('teamMembers').doc(userRecord.uid);
-    const teamMemberData: Omit<TeamMember, 'id' | 'createdAt'> = {
+    const teamMemberData: Partial<TeamMember> = {
         userId: userRecord.uid,
         partnerId: input.partnerId,
         tenantId: input.tenantId,
@@ -234,12 +233,10 @@ export async function createEmployeeWithPhone(input: {
         avatar: `https://placehold.co/40x40.png?text=${input.displayName.charAt(0)}`,
         joinedDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
-        tasksCompleted: 0,
-        avgCompletionTime: '-',
-        skills: [],
+        createdAt: FieldValue.serverTimestamp(),
     };
     // Use set with merge to create if not exists, or update if user has a profile from another team.
-    await teamMemberRef.set({ ...teamMemberData, createdAt: FieldValue.serverTimestamp() }, { merge: true });
+    await teamMemberRef.set(teamMemberData, { merge: true });
     console.log(`Created/updated team member document for UID ${userRecord.uid}`);
     
     // In a multi-workspace context, we would add the new workspace to the user's claims
