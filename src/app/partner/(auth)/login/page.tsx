@@ -28,22 +28,36 @@ export default function PartnerLoginPage() {
     let tenantId: string | null = null;
 
     try {
+      console.log('Partner Login: Starting login process for', email);
+      
       // 1. Find the tenant ID for the user's email
       const tenantLookup = await getTenantForEmailAction(email);
+      console.log('Partner Login: Tenant lookup result', tenantLookup);
       
       if (!tenantLookup.success || !tenantLookup.tenantId) {
         throw new Error(tenantLookup.message || "Your organization could not be found.");
       }
       
       tenantId = tenantLookup.tenantId;
+      console.log('Partner Login: Using tenant ID', tenantId);
 
-      // 2. Set the tenant ID on the global auth object for this specific sign-in
+      // 2. Set the tenant ID on the auth instance
       auth.tenantId = tenantId;
       
       // 3. Sign in the user within their tenant
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Partner Login: User signed in successfully', userCredential.user.uid);
+      
+      // 4. Wait a moment for custom claims to be available
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 5. Get the latest token with claims
+      const tokenResult = await userCredential.user.getIdTokenResult(true);
+      console.log('Partner Login: User custom claims', tokenResult.claims);
       
       toast({ title: "Login Successful", description: "Redirecting to your workspace..." });
+      
+      // 6. Redirect to partner dashboard
       router.push('/partner');
 
     } catch (error: any) {
@@ -64,7 +78,7 @@ export default function PartnerLoginPage() {
         description: errorMessage,
       });
     } finally {
-        // 4. IMPORTANT: Always reset the tenantId after the operation
+        // Always reset the tenantId
         auth.tenantId = null;
         setIsLoading(false);
     }

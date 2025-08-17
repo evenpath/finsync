@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './use-auth';
-import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { getAuth, getIdTokenResult } from 'firebase/auth';
 import { app } from '../lib/firebase';
@@ -45,7 +45,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
 
     const workspace = availableWorkspaces.find(w => w.partnerId === partnerId);
     if (!workspace) {
-        console.error(`Switch failed: Workspace with partnerId ${partnerId} not found in available workspaces.`);
+        console.error(`Switch failed: Workspace with partnerId ${partnerId} not found`);
         return false;
     }
 
@@ -79,6 +79,34 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     }
 
     setWorkspaceLoading(true);
+    
+    // First try to get workspaces from custom claims
+    const claims = user.customClaims as MultiWorkspaceCustomClaims;
+    if (claims?.workspaces && claims.workspaces.length > 0) {
+      console.log('Loading workspaces from custom claims:', claims.workspaces);
+      
+      const workspacesFromClaims: WorkspaceAccess[] = claims.workspaces.map(ws => ({
+        partnerId: ws.partnerId,
+        tenantId: ws.tenantId,
+        role: ws.role,
+        permissions: ws.permissions || [],
+        status: ws.status as 'active' | 'invited' | 'suspended',
+        partnerName: ws.partnerName || 'Workspace',
+        partnerAvatar: ws.partnerAvatar || null,
+      }));
+      
+      setAvailableWorkspaces(workspacesFromClaims);
+      
+      // Set current workspace
+      const activePartnerId = claims.activePartnerId || claims.partnerId;
+      const currentWs = workspacesFromClaims.find(w => w.partnerId === activePartnerId) || workspacesFromClaims[0];
+      setCurrentWorkspace(currentWs);
+      setWorkspaceLoading(false);
+      return () => {};
+    }
+
+    // Fallback: Query userWorkspaceLinks collection
+    console.log('Loading workspaces from userWorkspaceLinks collection for user:', user.uid);
     const workspacesQuery = query(
         collection(db, 'userWorkspaceLinks'),
         where('userId', '==', user.uid),
@@ -86,8 +114,11 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
     );
 
     const unsubscribe = onSnapshot(workspacesQuery, (snapshot) => {
+        console.log(`Found ${snapshot.docs.length} workspace links for user ${user.uid}`);
+        
         const fetchedWorkspaces: WorkspaceAccess[] = snapshot.docs.map(doc => {
             const data = doc.data() as UserWorkspaceLink;
+            console.log('Workspace link data:', data);
             return {
                 partnerId: data.partnerId,
                 tenantId: data.tenantId,
@@ -105,9 +136,8 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
 
         setAvailableWorkspaces(uniqueWorkspaces);
         
-        const claims = user.customClaims;
+        // Set current workspace
         const activePartnerId = claims?.activePartnerId || claims?.partnerId;
-
         let activeWorkspace = null;
         if (activePartnerId) {
             activeWorkspace = uniqueWorkspaces.find(w => w.partnerId === activePartnerId) || null;

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '../genkit';
@@ -7,8 +6,7 @@ import { adminAuth, db } from '../../lib/firebase-admin';
 import { createUserMapping, validateTenantId } from '../../services/tenant-service';
 import * as admin from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { UserWorkspaceLink, TeamMember, WorkspaceAccess } from '@/lib/types';
-
+import type { UserWorkspaceLink, TeamMember } from '@/lib/types';
 
 const CreateUserInTenantInputSchema = z.object({
   email: z.string().email().optional().describe('The email address of the new user. Required if phone number is not provided.'),
@@ -42,14 +40,14 @@ const createUserInTenantFlow = ai.defineFlow(
     if (!adminAuth || !db) {
       return {
         success: false,
-        message: "Firebase Admin SDK is not initialized. Cannot create user. Ensure your service account environment variables are set correctly on the server.",
+        message: "Firebase Admin SDK is not initialized. Cannot create user.",
       };
     }
     
     if (!input.partnerId) {
         return {
             success: false,
-            message: "Internal Error: Partner ID was not provided to the user creation flow. Cannot create user mapping."
+            message: "Partner ID is required to create user."
         };
     }
 
@@ -79,7 +77,7 @@ const createUserInTenantFlow = ai.defineFlow(
 
       if (input.email) {
         userToCreate.email = input.email;
-        userToCreate.emailVerified = true; // For partner admins, let's auto-verify
+        userToCreate.emailVerified = true;
       }
       if (input.phone) {
         userToCreate.phoneNumber = input.phone;
@@ -88,10 +86,11 @@ const createUserInTenantFlow = ai.defineFlow(
       const userRecord = await tenantAuth.createUser(userToCreate);
       console.log(`Successfully created user in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
       
+      // Get partner name
       const partnerDoc = await db.collection('partners').doc(input.partnerId).get();
       const partnerName = partnerDoc.data()?.name || 'Partner Workspace';
 
-      // Step 2: Create the UserWorkspaceLink document - THIS IS THE CRITICAL STEP
+      // Step 2: Create the UserWorkspaceLink document - CRITICAL
       const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${userRecord.uid}_${input.partnerId}`);
       const workspaceLinkData: UserWorkspaceLink = {
         userId: userRecord.uid,
@@ -107,8 +106,7 @@ const createUserInTenantFlow = ai.defineFlow(
       await workspaceLinkRef.set(workspaceLinkData, { merge: true });
       console.log(`Successfully created userWorkspaceLink for ${userRecord.uid} in partner ${input.partnerId}.`);
 
-
-      // Step 3: Set custom claims for the newly created user
+      // Step 3: Set custom claims with complete workspace info
       const claims: any = {
         role: input.role,
         partnerId: input.partnerId,
@@ -122,16 +120,39 @@ const createUserInTenantFlow = ai.defineFlow(
             role: input.role,
             status: 'active',
             partnerName: partnerName,
+            permissions: []
         }]
       };
       await tenantAuth.setCustomUserClaims(userRecord.uid, claims);
       console.log(`Successfully set claims for user ${userRecord.uid}:`, claims);
 
-      // Step 4: Create user mappings for quick tenant lookup during login
+      // Step 4: Create TeamMember document
+      const teamMemberRef = db.collection('teamMembers').doc(userRecord.uid);
+      const teamMemberData: Partial<TeamMember> = {
+        userId: userRecord.uid,
+        partnerId: input.partnerId,
+        tenantId: input.tenantId,
+        name: input.displayName || 'User',
+        email: input.email || userRecord.email || '',
+        phone: input.phone || '',
+        role: input.role,
+        status: 'active',
+        avatar: `https://placehold.co/40x40.png?text=${(input.displayName || 'U').charAt(0)}`,
+        joinedDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        tasksCompleted: 0,
+        avgCompletionTime: '-',
+        skills: [],
+        createdAt: FieldValue.serverTimestamp() as any,
+      };
+      await teamMemberRef.set(teamMemberData, { merge: true });
+      console.log(`Created team member document for ${userRecord.uid}`);
+
+      // Step 5: Create user mappings for login lookup
       if (input.email) {
           const mappingResult = await createUserMapping(input.email, input.tenantId, input.partnerId);
           if (!mappingResult.success) {
-              console.warn(`CRITICAL: Failed to create email mapping for ${input.email}.`, mappingResult.message);
+              console.warn(`Failed to create email mapping for ${input.email}:`, mappingResult.message);
           } else {
               console.log(`Successfully created email mapping for ${input.email}`);
           }
@@ -140,58 +161,23 @@ const createUserInTenantFlow = ai.defineFlow(
       if (input.phone) {
           const mappingResult = await createUserMapping(input.phone, input.tenantId, input.partnerId);
           if (!mappingResult.success) {
-              console.warn(`CRITICAL: Failed to create phone mapping for ${input.phone}.`, mappingResult.message);
+              console.warn(`Failed to create phone mapping for ${input.phone}:`, mappingResult.message);
           } else {
               console.log(`Successfully created phone mapping for ${input.phone}`);
           }
       }
 
-      // Step 5: Create the TeamMember document
-      const teamMemberRef = db.collection('teamMembers').doc(userRecord.uid);
-      const teamMemberData: Partial<TeamMember> = {
-          userId: userRecord.uid,
-          partnerId: input.partnerId,
-          tenantId: input.tenantId,
-          name: input.displayName || 'Unnamed User',
-          email: input.email || '',
-          phone: input.phone || '',
-          role: input.role,
-          status: 'active',
-          avatar: `https://placehold.co/40x40.png?text=${(input.displayName || 'U').charAt(0)}`,
-          joinedDate: new Date().toISOString(),
-          lastActive: new Date().toISOString(),
-          createdAt: FieldValue.serverTimestamp(),
-      };
-      await teamMemberRef.set(teamMemberData, { merge: true });
-      console.log(`Successfully created teamMember document for ${userRecord.uid}.`);
-
-
       return {
         success: true,
         userId: userRecord.uid,
-        message: `Successfully created user ${input.displayName} in tenant ${input.tenantId}.`,
+        message: "User created successfully with workspace access."
       };
 
     } catch (error: any) {
       console.error("Error creating user in tenant:", error);
-      
-      let errorMessage = `Failed to create user: ${error.message}`;
-      
-      if (error.code === 'auth/email-already-exists') {
-        errorMessage = "An account with this email already exists in your organization.";
-      } else if (error.code === 'auth/phone-number-already-exists') {
-        errorMessage = "An account with this phone number already exists in your organization.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Please provide a valid email address.";
-      } else if (error.code === 'auth/invalid-phone-number') {
-        errorMessage = "Please provide a valid phone number in E.164 format (e.g., +15551234567).";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password should be at least 6 characters long.";
-      }
-      
       return {
         success: false,
-        message: errorMessage,
+        message: `Failed to create user: ${error.message}`
       };
     }
   }
