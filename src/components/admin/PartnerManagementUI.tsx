@@ -10,6 +10,7 @@ import AddPartnerModal from "./AddPartnerModal";
 import EditPartnerModal from "./EditPartnerModal";
 import PartnerDetailView from "./PartnerDetailView";
 import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { createTenant } from '../../ai/flows/create-tenant-flow';
 import { createUserInTenant } from '../../ai/flows/user-management-flow';
 import { useToast } from "../../hooks/use-toast";
