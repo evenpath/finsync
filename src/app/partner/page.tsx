@@ -1,75 +1,47 @@
-
-
 // src/app/partner/page.tsx
 "use client";
 
-import PartnerHeader from "../../components/partner/PartnerHeader";
-import { mockWorkflowTemplates, industries } from "../../lib/mockData";
-import type { BusinessProfile, WorkflowTemplate } from '../../lib/types';
-import HybridWorkflowDashboard from "../../components/partner/HybridWorkflowDashboard";
-import PartnerAuthWrapper from "../../components/partner/PartnerAuthWrapper";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../hooks/use-auth';
+import { Skeleton } from '../../components/ui/skeleton';
 
+export default function PartnerRootPage() {
+  const { user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
 
-// Mocks for demonstration
-const mockBusinessProfile: BusinessProfile = {
-  id: "bp-1",
-  partnerId: "partner-1",
-  industryId: "d8f8f8f8-f8f8-f8f8-f8f8-f8f8f8f8f8f8",
-  industry: industries[0],
-  businessName: "Sunnyvale Properties",
-  businessSize: 'medium',
-  employeeCount: 45,
-  locationCity: "Sunnyvale",
-  locationState: "CA",
-  locationCountry: "US",
-  painPoints: ["Emergency maintenance calls at all hours", "Tenant rent collection issues"],
-  currentTools: [],
-  goals: ["Improve tenant satisfaction", "Reduce manual admin work"],
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
+  useEffect(() => {
+    if (!loading) {
+      if (!isAuthenticated) {
+        // Not authenticated, redirect to login
+        router.replace('/partner/login');
+      } else {
+        // Authenticated, check role and redirect appropriately
+        const role = user?.customClaims?.role;
+        if (role === 'employee') {
+          // This should ideally not happen due to the auth wrapper, but as a fallback
+          router.replace('/employee');
+        } else if (role === 'Super Admin' || role === 'Admin' || role === 'partner_admin') {
+          // The main dashboard content is now in (protected)/page.tsx, so we don't need to redirect.
+          // This page acts as a loading/redirect handler if accessed directly.
+          // In the new structure, this page is inside the protected group as page.tsx
+          // Let's assume we want to keep a root page that redirects for safety.
+          router.replace('/partner/dashboard'); // Keeping this redirect as a logical step
+        } else {
+          // If role is undefined or not a partner, send to login.
+          router.replace('/partner/login');
+        }
+      }
+    }
+  }, [loading, isAuthenticated, user, router]);
 
-const mockDeployedWorkflows: any[] = [
-    mockWorkflowTemplates[0],
-    mockWorkflowTemplates[1]
-];
-
-const mockRecommendedTemplates: WorkflowTemplate[] = mockWorkflowTemplates.filter(t => t.templateType === 'ready');
-
-function PartnerDashboardPage() {
-  // In a real app, you would fetch this data
-  const businessProfile = mockBusinessProfile;
-  const deployedWorkflows = mockDeployedWorkflows;
-  const recommendedTemplates = mockRecommendedTemplates;
-
-  // if (!businessProfile) {
-  //   // In a real app, you'd redirect to onboarding if no profile exists.
-  //   // For now, we'll just show a loading state or nothing.
-  //   return <div>Loading...</div>;
-  // }
-
+  // This is a transitional page, showing a loading state is appropriate.
   return (
-    <>
-      <PartnerHeader
-        title="Dashboard"
-        subtitle="Manage your AI-powered workflows"
-      />
-      <main className="flex-1 overflow-auto p-6">
-        <HybridWorkflowDashboard 
-          businessProfile={businessProfile}
-          deployedWorkflows={deployedWorkflows}
-          recommendedTemplates={recommendedTemplates}
-        />
-      </main>
-    </>
+    <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-6 w-6 rounded-full animate-pulse" />
+        <p className="text-muted-foreground">Loading Workspace...</p>
+      </div>
+    </div>
   );
-}
-
-
-export default function PartnerDashboard() {
-  return (
-    <PartnerAuthWrapper>
-      <PartnerDashboardPage />
-    </PartnerAuthWrapper>
-  )
 }

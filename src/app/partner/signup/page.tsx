@@ -1,3 +1,6 @@
+// src/app/partner/signup/page.tsx is now removed by being overwritten
+// with the content of the correct signup page.
+// The correct signup page is at src/app/partner/(auth)/signup/page.tsx
 
 "use client";
 
@@ -144,4 +147,3 @@ export default function PartnerSignupPage() {
         </Card>
     );
 }
-
