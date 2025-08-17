@@ -4,24 +4,23 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
-import { useAuth } from '../../hooks/use-auth';
+import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, currentWorkspace } = useMultiWorkspaceAuth();
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {
-    if (loading || !user?.customClaims) {
+    if (loading || !user?.customClaims || !currentWorkspace) {
       return false;
     }
-    const role = user.customClaims.role;
-    // A user is authorized if they have a role that should be in the partner portal.
+    const role = currentWorkspace.role;
     return role === 'partner_admin' || role === 'employee';
-  }, [user, loading]);
+  }, [user, loading, currentWorkspace]);
 
   React.useEffect(() => {
     if (loading) {
@@ -29,12 +28,8 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     }
     if (!isAuthenticated) {
       router.push('/partner/login');
-    } else if (!isAuthorized) {
-      // If authenticated but not authorized for this section, show an error or redirect.
-      // For now, we will prevent a redirect loop by just not rendering children.
-      // The access denied message will be shown below.
     }
-  }, [loading, isAuthenticated, isAuthorized, router]);
+  }, [loading, isAuthenticated, router]);
 
   if (loading || !isAuthenticated) {
     return (
@@ -56,6 +51,29 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
             </div>
         </div>
     );
+  }
+
+  if (!currentWorkspace) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
+        <Card className="w-full max-w-md border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle />
+              No Workspace Found
+            </CardTitle>
+            <CardDescription>
+              Your account isn't associated with an active workspace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/employee/join">
+              <Button variant="outline">Join a Workspace</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+      )
   }
 
   if (!isAuthorized) {
