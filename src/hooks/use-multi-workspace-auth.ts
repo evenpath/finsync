@@ -1,3 +1,4 @@
+// src/hooks/use-multi-workspace-auth.ts
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -80,30 +81,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
 
     setWorkspaceLoading(true);
     
-    // First try to get workspaces from custom claims
     const claims = user.customClaims as MultiWorkspaceCustomClaims;
-    if (claims?.workspaces && claims.workspaces.length > 0) {
-      console.log('Loading workspaces from custom claims:', claims.workspaces);
-      
-      const workspacesFromClaims: WorkspaceAccess[] = claims.workspaces.map(ws => ({
-        partnerId: ws.partnerId,
-        tenantId: ws.tenantId,
-        role: ws.role,
-        permissions: ws.permissions || [],
-        status: ws.status as 'active' | 'invited' | 'suspended',
-        partnerName: ws.partnerName || 'Workspace',
-        partnerAvatar: ws.partnerAvatar || null,
-      }));
-      
-      setAvailableWorkspaces(workspacesFromClaims);
-      
-      // Set current workspace
-      const activePartnerId = claims.activePartnerId || claims.partnerId;
-      const currentWs = workspacesFromClaims.find(w => w.partnerId === activePartnerId) || workspacesFromClaims[0];
-      setCurrentWorkspace(currentWs);
-      setWorkspaceLoading(false);
-      return () => {};
-    }
 
     // Fallback: Query userWorkspaceLinks collection
     console.log('Loading workspaces from userWorkspaceLinks collection for user:', user.uid);
@@ -118,7 +96,6 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
         
         const fetchedWorkspaces: WorkspaceAccess[] = snapshot.docs.map(doc => {
             const data = doc.data() as UserWorkspaceLink;
-            console.log('Workspace link data:', data);
             return {
                 partnerId: data.partnerId,
                 tenantId: data.tenantId,
@@ -130,6 +107,7 @@ export function useMultiWorkspaceAuth(): MultiWorkspaceAuthState {
             };
         });
 
+        // Ensure unique workspaces by partnerId to prevent duplicate key errors
         const uniqueWorkspaces = fetchedWorkspaces.filter((ws, index, self) =>
             index === self.findIndex((w) => w.partnerId === ws.partnerId)
         );
