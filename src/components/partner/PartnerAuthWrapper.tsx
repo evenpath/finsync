@@ -1,3 +1,4 @@
+// src/components/partner/PartnerAuthWrapper.tsx
 "use client";
 
 import React from 'react';
@@ -14,22 +15,18 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
   const router = useRouter();
 
   const isAuthorized = React.useMemo(() => {
-    if (loading || !isAuthenticated || !user?.customClaims) {
+    if (loading || !user?.customClaims) {
       return false;
     }
     const role = user.customClaims.role;
-    // A Super Admin or partner_admin can see the partner portal.
-    return role === 'Super Admin' || role === 'Admin' || role === 'partner_admin';
-  }, [user, loading, isAuthenticated]);
+    // A user is authorized if they have a role that should be in the partner portal.
+    return role === 'partner_admin' || role === 'employee';
+  }, [user, loading]);
 
   React.useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/partner/login');
-      } else if (!isAuthorized) {
-        // If the user is authenticated but not authorized for the partner portal,
-        // redirect them to the employee dashboard.
-        router.push('/employee');
       }
     }
   }, [loading, isAuthenticated, isAuthorized, router]);
@@ -63,7 +60,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/employee">
+            <Link href="/login">
               <Button variant="outline">Go to Employee Dashboard</Button>
             </Link>
           </CardContent>
@@ -72,5 +69,6 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     );
   }
 
+  // If authenticated and authorized, show the content.
   return <>{children}</>;
 }
