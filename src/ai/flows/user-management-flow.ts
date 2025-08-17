@@ -7,7 +7,7 @@ import { adminAuth, db } from '../../lib/firebase-admin';
 import { createUserMapping, validateTenantId } from '../../services/tenant-service';
 import * as admin from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { UserWorkspaceLink, TeamMember } from '@/lib/types';
+import type { UserWorkspaceLink, TeamMember, WorkspaceAccess } from '@/lib/types';
 
 
 const CreateUserInTenantInputSchema = z.object({
@@ -87,19 +87,47 @@ const createUserInTenantFlow = ai.defineFlow(
 
       const userRecord = await tenantAuth.createUser(userToCreate);
       console.log(`Successfully created user in tenant ${input.tenantId} with UID: ${userRecord.uid}`);
+      
+      const partnerDoc = await db.collection('partners').doc(input.partnerId).get();
+      const partnerName = partnerDoc.data()?.name || 'Partner Workspace';
 
-      // Step 2: Set custom claims for the newly created user
-      const claims = {
+      // Step 2: Create the UserWorkspaceLink document - THIS IS THE CRITICAL STEP
+      const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${userRecord.uid}_${input.partnerId}`);
+      const workspaceLinkData: UserWorkspaceLink = {
+        userId: userRecord.uid,
+        partnerId: input.partnerId,
+        tenantId: input.tenantId,
+        role: input.role,
+        status: 'active',
+        permissions: [],
+        joinedAt: FieldValue.serverTimestamp() as any,
+        partnerName: partnerName,
+        partnerAvatar: null,
+      };
+      await workspaceLinkRef.set(workspaceLinkData, { merge: true });
+      console.log(`Successfully created userWorkspaceLink for ${userRecord.uid} in partner ${input.partnerId}.`);
+
+
+      // Step 3: Set custom claims for the newly created user
+      const claims: any = {
         role: input.role,
         partnerId: input.partnerId,
         tenantId: input.tenantId,
         activePartnerId: input.partnerId,
         activeTenantId: input.tenantId,
+        partnerIds: [input.partnerId],
+        workspaces: [{
+            partnerId: input.partnerId,
+            tenantId: input.tenantId,
+            role: input.role,
+            status: 'active',
+            partnerName: partnerName,
+        }]
       };
       await tenantAuth.setCustomUserClaims(userRecord.uid, claims);
       console.log(`Successfully set claims for user ${userRecord.uid}:`, claims);
 
-      // Step 3: Create user mappings for quick tenant lookup during login
+      // Step 4: Create user mappings for quick tenant lookup during login
       if (input.email) {
           const mappingResult = await createUserMapping(input.email, input.tenantId, input.partnerId);
           if (!mappingResult.success) {
@@ -117,26 +145,6 @@ const createUserInTenantFlow = ai.defineFlow(
               console.log(`Successfully created phone mapping for ${input.phone}`);
           }
       }
-      
-      // Step 4: Create the UserWorkspaceLink document
-      const partnerDoc = await db.collection('partners').doc(input.partnerId).get();
-      const partnerName = partnerDoc.data()?.name || 'Partner Workspace';
-
-      const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${userRecord.uid}_${input.partnerId}`);
-      const workspaceLinkData: UserWorkspaceLink = {
-        userId: userRecord.uid,
-        partnerId: input.partnerId,
-        tenantId: input.tenantId,
-        role: input.role,
-        status: 'active',
-        permissions: [],
-        joinedAt: FieldValue.serverTimestamp() as any,
-        partnerName: partnerName,
-        partnerAvatar: null,
-      };
-      await workspaceLinkRef.set(workspaceLinkData, { merge: true });
-      console.log(`Successfully created userWorkspaceLink for ${userRecord.uid} in partner ${input.partnerId}.`);
-
 
       // Step 5: Create the TeamMember document
       const teamMemberRef = db.collection('teamMembers').doc(userRecord.uid);

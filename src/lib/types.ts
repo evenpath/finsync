@@ -68,15 +68,16 @@ export interface UserProfile {
 }
 
 export interface UserWorkspaceLink {
+  id?: string;
   userId: string;
   partnerId: string;
+  tenantId: string;
   role: 'partner_admin' | 'employee';
   status: 'active' | 'invited' | 'suspended';
   permissions: string[];
   joinedAt: FirebaseTimestamp;
   invitedBy?: string;
   invitedAt?: FirebaseTimestamp;
-  tenantId: string;
   partnerName: string;
   partnerAvatar: string | null;
 }
