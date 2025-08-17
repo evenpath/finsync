@@ -26,38 +26,40 @@ export default function PartnerSignupPage() {
         setIsLoading(true);
 
         try {
-            // Step 1: Check if a user with this email already exists
+            // Step 1: Check if a user with this email already exists in any tenant.
+            // This prevents creating duplicate users across the system.
             const existingUserCheck = await getTenantForEmailAction(email);
-            if (existingUserCheck.success) {
+            if (existingUserCheck.success && existingUserCheck.tenantId) {
                 throw new Error("An account with this email already exists. Please log in.");
             }
 
-            // Step 2: Create the tenant and partner document.
-            // This flow is now simplified and does not create the user.
-            const tenantResult = await createTenant({ 
-                partnerName: name, 
+            // Step 2: Create the tenant for the new partner organization.
+            const tenantResult = await createTenant({
+                partnerName: name,
                 email: email,
             });
 
             if (!tenantResult.success || !tenantResult.tenantId || !tenantResult.partnerId) {
+                // If tenant creation fails, stop the process.
                 throw new Error(tenantResult.message || "Failed to create a new partner workspace.");
             }
             
             console.log(`New tenant created: ${tenantResult.tenantId} for partner ${tenantResult.partnerId}`);
             
-            // Step 3: Create the admin user for the new tenant.
-            // This flow now reliably handles user creation, claims, and mapping.
+            // Step 3: Create the primary admin user for the new tenant.
+            // This flow is responsible for creating the auth user, the teamMember doc, AND the userWorkspaceLinks doc.
             const userResult = await createUserInTenant({
                 email: email,
                 password: password,
                 tenantId: tenantResult.tenantId,
-                displayName: name,
-                partnerId: tenantResult.partnerId,
+                displayName: name, // Use the organization name as the initial display name for the admin
+                partnerId: tenantResult.partnerId, // Pass the newly created partnerId
                 role: 'partner_admin',
             });
 
             if (!userResult.success) {
-                // In a real app, you might want a rollback mechanism here for the created tenant.
+                // In a real-world scenario, you might want a rollback mechanism here for the created tenant.
+                // For now, we'll show an error.
                 throw new Error(userResult.message || "Workspace created, but failed to set up admin user.");
             }
             
@@ -71,6 +73,7 @@ export default function PartnerSignupPage() {
         } catch (error: any) {
             console.error("Signup Error:", error);
             
+            // Ensure a user-friendly message is shown.
             let errorMessage = "Failed to create account. Please try again.";
             if (error.message) {
                 errorMessage = error.message;
