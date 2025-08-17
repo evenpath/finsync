@@ -80,12 +80,11 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
     }
 
     // Get user's workspace access using admin SDK
-    const workspacesQuery = db.collection('userWorkspaceLinks')
+    const workspacesQuery = await db.collection('userWorkspaceLinks')
       .where('userId', '==', uid)
-      .where('status', 'in', ['active', 'invited']);
+      .where('status', 'in', ['active', 'invited']).get();
     
-    const workspacesSnapshot = await workspacesQuery.get();
-    const workspaceLinks = workspacesSnapshot.docs.map(doc => ({
+    const workspaceLinks = workspacesQuery.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as UserWorkspaceLink[];

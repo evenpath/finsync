@@ -4,7 +4,7 @@
 import { db, adminAuth } from '../lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { CodeBasedInvitation, CreateInvitationCodeOutput, AcceptInvitationCodeOutput } from '../lib/types/invitation';
-import type { TeamMember } from '../lib/types';
+import type { TeamMember, UserWorkspaceLink, WorkspaceAccess } from '../lib/types';
 import type { UserRecord } from 'firebase-admin/auth';
 
 
@@ -214,24 +214,23 @@ export async function acceptInvitationByCode(input: {
     }
 
     // Create user workspace link
-    const workspaceLinkRef = db.collection('userWorkspaceLinks').doc();
-    const workspaceLink = {
-      id: workspaceLinkRef.id,
+    const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${input.uid}_${invitation.partnerId}`);
+    const workspaceLink: UserWorkspaceLink = {
       userId: input.uid,
       partnerId: invitation.partnerId,
       tenantId: invitation.tenantId,
       role: invitation.role,
       status: 'active',
       permissions: [],
-      joinedAt: FieldValue.serverTimestamp(),
+      joinedAt: FieldValue.serverTimestamp() as any,
       invitedBy: invitation.invitedBy,
       invitedAt: invitation.invitedAt,
-      lastAccessedAt: FieldValue.serverTimestamp(),
+      lastAccessedAt: FieldValue.serverTimestamp() as any,
       partnerName: invitation.partnerName,
       partnerAvatar: null
     };
 
-    await workspaceLinkRef.set(workspaceLink);
+    await workspaceLinkRef.set(workspaceLink, { merge: true });
     
     // Create Team Member document
     const userRecord = await adminAuth.getUser(input.uid);
@@ -259,12 +258,24 @@ export async function acceptInvitationByCode(input: {
     const currentUser = await adminAuth.getUser(input.uid);
     const currentClaims = currentUser.customClaims || {};
     
+    const newWorkspaceAccess: WorkspaceAccess = {
+        partnerId: invitation.partnerId,
+        tenantId: invitation.tenantId,
+        role: invitation.role,
+        permissions: [],
+        status: 'active',
+        partnerName: invitation.partnerName,
+        partnerAvatar: undefined,
+    };
+    const updatedWorkspaces = [...(currentClaims.workspaces || []), newWorkspaceAccess];
+
     const updatedClaims = {
       ...currentClaims,
       role: invitation.role,
       partnerId: invitation.partnerId,
       tenantId: invitation.tenantId,
       partnerIds: [...(currentClaims.partnerIds || []), invitation.partnerId],
+      workspaces: updatedWorkspaces,
       activePartnerId: invitation.partnerId,
       activeTenantId: invitation.tenantId
     };
