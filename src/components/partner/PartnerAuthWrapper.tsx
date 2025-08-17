@@ -1,4 +1,3 @@
-// src/components/partner/PartnerAuthWrapper.tsx
 "use client";
 
 import React from 'react';
@@ -14,7 +13,7 @@ import { useToast } from '../../hooks/use-toast';
 import JoinWorkspaceDialog from '../employee/JoinWorkspaceDialog';
 
 export default function PartnerAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAuthenticated, currentWorkspace, refreshWorkspaces } = useMultiWorkspaceAuth();
+  const { user, loading, isAuthenticated, currentWorkspace, availableWorkspaces, refreshWorkspaces } = useMultiWorkspaceAuth();
   const router = useRouter();
   const auth = getAuth();
   const { toast } = useToast();
@@ -60,7 +59,7 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
     );
   }
 
-  if (isAuthenticated && !currentWorkspace) {
+  if (isAuthenticated && !currentWorkspace && availableWorkspaces.length === 0) {
       return (
         <div className="flex h-screen w-full items-center justify-center p-4 bg-secondary/30">
           <Card className="w-full max-w-md">
@@ -112,6 +111,29 @@ export default function PartnerAuthWrapper({ children }: { children: React.React
           )
       }
       return <>{children}</>;
+  }
+  
+  // If user is authenticated but still loading workspaces, show loading
+  if (isAuthenticated && !currentWorkspace) {
+    return (
+       <div className="flex h-screen bg-secondary/30">
+            <div className="w-64 bg-card border-r p-4">
+                <Skeleton className="h-12 w-full mb-6" />
+                <Skeleton className="h-8 w-full mb-2" />
+                <Skeleton className="h-8 w-full mb-2" />
+                <Skeleton className="h-8 w-full" />
+            </div>
+            <div className="flex-1 flex flex-col">
+                 <header className="bg-card border-b px-6 py-4">
+                    <Skeleton className="h-10 w-1/3 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                </header>
+                <main className="flex-1 p-6">
+                    <Skeleton className="h-96 w-full" />
+                </main>
+            </div>
+        </div>
+    );
   }
   
   // This will be shown briefly during redirect.
