@@ -165,10 +165,11 @@ export default function ChatSidebar({
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {filteredChats.length === 0 ? (
-          <div className="p-4 text-center">
+          <div className="p-4 text-center h-full flex flex-col items-center justify-center">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              {searchTerm ? 'No conversations found' : 'No messages yet'}
+            <p className="font-medium text-foreground">No Conversations Yet</p>
+            <p className="text-sm text-muted-foreground">
+              {searchTerm ? 'No conversations found' : 'Start a new conversation to get started'}
             </p>
             {!searchTerm && (
               <Button variant="outline" className="mt-3">
