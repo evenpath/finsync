@@ -1,3 +1,4 @@
+// src/components/navigation/BottomNavigation.tsx
 "use client";
 
 import React from 'react';
@@ -17,23 +18,23 @@ export default function BottomNavigation({ userRole = 'employee' }: BottomNaviga
     switch (userRole) {
       case 'employee':
         return [
-          { name: 'Home', href: '/worker', icon: Home },
-          { name: 'Tasks', href: '/worker/tasks', icon: CheckSquare },
-          { name: 'Chat', href: '/chat', icon: MessageSquare },
-          { name: 'Profile', href: '/worker/profile', icon: Settings }
+          { name: 'Home', href: '/employee', icon: Home },
+          { name: 'Tasks', href: '/employee/tasks', icon: CheckSquare },
+          { name: 'Chat', href: '/employee/chat', icon: MessageSquare },
+          { name: 'Profile', href: '/employee/profile', icon: Settings }
         ];
       case 'partner_admin':
         return [
           { name: 'Dashboard', href: '/partner', icon: Home },
           { name: 'Tasks', href: '/partner/tasks', icon: CheckSquare },
-          { name: 'Chat', href: '/chat', icon: MessageSquare },
+          { name: 'Chat', href: '/employee/chat', icon: MessageSquare },
           { name: 'Team', href: '/partner/team', icon: Users }
         ];
       case 'admin':
         return [
           { name: 'Overview', href: '/admin', icon: Home },
           { name: 'Partners', href: '/admin/partners', icon: Users },
-          { name: 'Chat', href: '/chat', icon: MessageSquare },
+          { name: 'Chat', href: '/employee/chat', icon: MessageSquare },
           { name: 'Settings', href: '/admin/settings', icon: Settings }
         ];
       default:

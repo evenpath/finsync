@@ -1,3 +1,4 @@
+// src/components/chat/TaskAssignmentModal.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -87,7 +88,7 @@ export default function TaskAssignmentModal({
         priority,
         dueDate,
         workflow: workflow ? workflows.find(w => w.id === workflow)?.name : undefined,
-        workspaceId: activeWorkspace.id
+        workspaceId: activeWorkspace?.partnerId || activeWorkspace?.id
       };
 
       onTaskAssigned(taskData);
@@ -125,6 +126,9 @@ export default function TaskAssignmentModal({
     }
   };
 
+  // Get workspace name - handle both formats
+  const workspaceName = activeWorkspace?.partnerName || activeWorkspace?.name || 'your workspace';
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
@@ -134,7 +138,7 @@ export default function TaskAssignmentModal({
             Assign New Task
           </DialogTitle>
           <DialogDescription>
-            Create and assign a task to a team member in {activeWorkspace.name}.
+            Create and assign a task to a team member in {workspaceName}.
           </DialogDescription>
         </DialogHeader>
 

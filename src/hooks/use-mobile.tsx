@@ -1,3 +1,4 @@
+// src/hooks/use-mobile.tsx
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -15,5 +16,5 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return isMobile
+  return !!isMobile
 }
