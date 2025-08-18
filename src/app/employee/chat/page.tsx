@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useMultiWorkspaceAuth } from '../../../hooks/use-multi-workspace-auth';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import ChatSidebar from '../../../components/chat/ChatSidebar';
 import ChatInterface from '../../../components/chat/ChatInterface';
 import EmployeeWorkspaceSwitcher from '../../../components/employee/EmployeeWorkspaceSwitcher';
