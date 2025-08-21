@@ -7,26 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { 
   ArrowRight, 
-  Shield, 
-  Briefcase, 
-  Users, 
   Bot, 
-  MessageSquare, 
   Workflow, 
   Zap, 
-  CheckCircle, 
+  Users,
   Building2,
-  Play,
-  Clock,
   TrendingUp,
-  Star
+  Shield,
+  Star,
+  CheckCircle,
+  PlayCircle,
+  Briefcase,
+  MessageSquare,
+  Clock
 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-white text-gray-800 font-body">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -41,170 +42,192 @@ export default function Home() {
               <Link href="/partner/login">Partner Login</Link>
             </Button>
             <Button asChild>
-              <Link href="/partner/signup">Get Started <ArrowRight className="ml-2" /></Link>
+              <Link href="/partner/signup">Get Started Free <ArrowRight className="ml-2" /></Link>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-cyan-50 opacity-60"></div>
-        <div className="relative container mx-auto px-6 text-center">
-          <div className="max-w-4xl mx-auto">
-            <Badge variant="outline" className="px-4 py-2 text-primary border-primary/20 bg-primary/10 mb-6">
-              <Bot className="w-4 h-4 mr-2" />
-              AI-Powered Business Automation
-            </Badge>
-            
-            <h1 className="font-headline text-5xl md:text-7xl font-extrabold bg-gradient-to-r from-primary via-cyan-600 to-primary bg-clip-text text-transparent mb-6">
-              Automate Your Operations, Intelligently.
-            </h1>
-            
-            <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-              Socket provides agentic AI workflows to streamline complex business processes, saving you time and boosting efficiency.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="px-8 py-6 text-lg">
-                <Link href="/partner/signup">
-                  Start Your Free Trial
-                  <ArrowRight className="ml-2" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild className="text-lg px-8 py-6">
-                <Link href="/employee/chat">
-                  <Users className="mr-2" />
-                  Chat & Tasks
-                </Link>
-              </Button>
+      <section className="relative py-20 md:py-32 bg-gradient-to-br from-blue-50 via-white to-cyan-50 overflow-hidden">
+        <div className="container mx-auto px-6 text-center">
+          <Badge variant="outline" className="px-4 py-2 text-primary border-primary/20 bg-primary/10 mb-6 font-medium">
+            <Bot className="w-4 h-4 mr-2" />
+            AI-Powered Business Automation
+          </Badge>
+          
+          <h1 className="font-headline text-5xl md:text-7xl font-extrabold bg-gradient-to-r from-primary via-cyan-600 to-primary bg-clip-text text-transparent mb-6 leading-tight">
+            Automate Workflows, Amplify Results.
+          </h1>
+          
+          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+            Socket empowers your business with intelligent, agentic AI workflows. 
+            Streamline complex processes, boost team productivity, and drive growth—all on one platform.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild className="px-8 py-6 text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-shadow">
+              <Link href="/partner/signup">
+                Start Your Free Trial
+                <ArrowRight className="ml-2" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild className="text-lg px-8 py-6 bg-white/50">
+              <Link href="#how-it-works">
+                <PlayCircle className="mr-2" />
+                See How It Works
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mt-12 text-sm text-gray-500">
+            <span>Trusted by companies like:</span>
+            <div className="flex flex-wrap justify-center items-center gap-x-8 md:gap-x-12 gap-y-4 mt-4 font-semibold text-gray-400">
+              <p>Innovate LLC</p>
+              <p>Solutions Co.</p>
+              <p>Quantum Leap</p>
+              <p>Apex Industries</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* "As Featured In" Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">Trusted by leading companies</p>
-          <div className="flex flex-wrap justify-center items-center gap-x-8 md:gap-x-12 gap-y-4">
-            <p className="font-medium text-gray-400">TechCorp</p>
-            <p className="font-medium text-gray-400">Innovate LLC</p>
-            <p className="font-medium text-gray-400">Solutions Co.</p>
-            <p className="font-medium text-gray-400">Quantum Leap</p>
-            <p className="font-medium text-gray-400">Apex Industries</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-24 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="font-headline text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              A smarter way to run your business
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Socket isn't just another automation tool. We provide intelligent, adaptive workflows that learn and optimize your business processes.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
-                  <Workflow className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-xl">Visual Workflow Builder</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Design complex, multi-step workflows with our intuitive drag-and-drop interface. No coding required.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
-                  <Bot className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-xl">Agentic AI Integration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Enhance workflows with AI agents for classification, summarization, and intelligent decision-making.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4">
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-xl">Team Collaboration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Built-in chat and task management for seamless communication between team members across workspaces.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* User Roles Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="font-headline text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Built for your entire organization
+              Get Started in 3 Simple Steps
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              From owners to employees, Socket provides the right tools for everyone to be more productive.
+              Go from complex problem to automated solution in minutes.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 relative">
+             {/* Dashed line connector */}
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-px border-t-2 border-dashed border-gray-300 -translate-y-4"></div>
+            
+            <div className="relative text-center p-6 bg-gray-50 rounded-xl">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg border-4 border-white">1</div>
+              <Bot className="w-12 h-12 text-primary mx-auto mb-4 mt-8"/>
+              <h3 className="text-xl font-semibold mb-2">Describe Your Problem</h3>
+              <p className="text-gray-600">Tell our AI about a process you want to automate in plain English.</p>
+            </div>
+            <div className="relative text-center p-6 bg-gray-50 rounded-xl">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg border-4 border-white">2</div>
+              <Workflow className="w-12 h-12 text-primary mx-auto mb-4 mt-8"/>
+              <h3 className="text-xl font-semibold mb-2">Generate a Workflow</h3>
+              <p className="text-gray-600">Socket instantly designs a custom, multi-step workflow template for you.</p>
+            </div>
+            <div className="relative text-center p-6 bg-gray-50 rounded-xl">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg border-4 border-white">3</div>
+              <Zap className="w-12 h-12 text-primary mx-auto mb-4 mt-8"/>
+              <h3 className="text-xl font-semibold mb-2">Deploy & Automate</h3>
+              <p className="text-gray-600">Customize if needed, and deploy your new automated process with one click.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Alternating Features Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="container mx-auto px-6 space-y-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="outline" className="mb-4">Visual Builder</Badge>
+              <h3 className="font-headline text-3xl font-bold mb-4">Design Workflows, No Code Required</h3>
+              <p className="text-lg text-gray-600 mb-6">Our intuitive drag-and-drop builder lets you visually construct complex workflows. Connect AI agents, user inputs, and external APIs with ease.</p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Conditional logic and branching</span></li>
+                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Seamless API integration</span></li>
+                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Real-time collaboration</span></li>
+              </ul>
+            </div>
+            <div className="bg-white p-4 rounded-xl shadow-lg">
+              <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="Workflow Builder" className="rounded-lg" data-ai-hint="workflow builder user interface" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+             <div className="bg-white p-4 rounded-xl shadow-lg md:order-last">
+              <Image src="https://placehold.co/600x400.png" width={600} height={400} alt="Team Collaboration" className="rounded-lg" data-ai-hint="team chat interface" />
+            </div>
+            <div>
+              <Badge variant="outline" className="mb-4">Unified Workspace</Badge>
+              <h3 className="font-headline text-3xl font-bold mb-4">Collaborate Across Your Organization</h3>
+              <p className="text-lg text-gray-600 mb-6">Bring your team together with integrated chat and task management. Switch between different workspaces effortlessly, just like Slack.</p>
+               <ul className="space-y-3">
+                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Multi-tenant workspaces for different teams or clients</span></li>
+                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Role-based access for admins, leaders, and members</span></li>
+                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Assign tasks and track progress in one place</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonial Section */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="flex justify-center mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-6 h-6 text-yellow-400 fill-current" />
+              ))}
+            </div>
+            <p className="font-headline text-2xl md:text-3xl font-medium text-gray-900 leading-snug">
+              "Socket has revolutionized how we handle our operations. We've automated over 80% of our manual data entry, saving us hundreds of hours a month. It's a game-changer."
+            </p>
+            <div className="mt-8">
+              <p className="font-semibold text-gray-800">Jessica Miller</p>
+              <p className="text-gray-500">COO, Innovate LLC</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* User Roles Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="font-headline text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Built for Your Entire Team
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Empower every member of your organization with tools tailored to their role.
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Link href="/partner/login">
-              <Card className="h-full hover:border-primary/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group bg-gradient-to-br from-blue-50 to-white">
-                <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Briefcase className="w-8 h-8 text-white" />
-                  </div>
-                  <CardTitle className="font-headline text-2xl">For Business Owners</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-gray-600 mb-6 px-4">
-                    Customize workflows, manage your team, and track your business performance from a central dashboard.
-                  </p>
-                  <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white">
-                    Manage Your Workspace <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card className="hover:shadow-xl transition-shadow duration-300">
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"><Briefcase className="w-6 h-6 text-primary" /></div>
+                  <CardTitle className="text-xl">For Partners & Team Leaders</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Customize workflows, manage your team, and oversee your entire workspace from a central dashboard.</p>
+                <Button variant="outline" asChild>
+                  <Link href="/partner/login">Manage Your Workspace <ArrowRight className="ml-2"/></Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-            <Link href="/employee/chat">
-              <Card className="h-full hover:border-primary/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group bg-gradient-to-br from-purple-50 to-white">
-                <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <CardTitle className="font-headline text-2xl">For Team Members</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-gray-600 mb-6 px-4">
-                    Execute assigned tasks, communicate with your team, and switch between multiple workspaces with ease.
-                  </p>
-                  <Button variant="outline" className="w-full group-hover:bg-purple-600 group-hover:text-white">
-                    Access Chat & Tasks <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
+            <Card className="hover:shadow-xl transition-shadow duration-300">
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"><Users className="w-6 h-6 text-primary" /></div>
+                  <CardTitle className="text-xl">For Employees & Team Members</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">Execute assigned tasks, communicate with your team, and access all your workspaces with a simple, secure login.</p>
+                <Button variant="outline" asChild>
+                  <Link href="/employee/chat">Access Your Tasks & Chat <ArrowRight className="ml-2"/></Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
