@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -31,8 +32,8 @@ export default function FlowOpsHomepage() {
 
   useEffect(() => {
     const currentPhrase = phrases[phraseIndex];
-    const typingSpeed = 150;
-    const deletingSpeed = 75;
+    const typingSpeed = 75; // Faster typing
+    const deletingSpeed = 40; // Faster deleting
     const delayAfterTyping = 2000;
 
     let timeout: NodeJS.Timeout;
@@ -59,7 +60,7 @@ export default function FlowOpsHomepage() {
     }
 
     return () => clearTimeout(timeout);
-  }, [typedText, isDeleting, phraseIndex]);
+  }, [typedText, isDeleting, phraseIndex, phrases]);
 
   useEffect(() => {
     const workflowInterval = setInterval(() => {
