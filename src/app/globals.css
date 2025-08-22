@@ -10,73 +10,14 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Poppins', sans-serif;
 }
 
-@keyframes gradientMove {
-  0%, 100% { 
-    background-position: 0% 50%;
-    transform: scale(1);
-  }
-  50% { 
-    background-position: 100% 50%;
-    transform: scale(1.03);
-  }
-}
-
-@keyframes shimmer {
-  0% { 
-    opacity: 0;
-    transform: translateX(-100%);
-  }
-  50% { 
-    opacity: 0.6;
-    transform: translateX(0%);
-  }
-  100% { 
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-.hero-text {
-  background: linear-gradient(
-    90deg, 
-    #2563eb 0%, 
-    #7c3aed 25%, 
-    #db2777 50%, 
-    #7c3aed 75%, 
-    #2563eb 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  animation: gradientMove 4s ease-in-out infinite;
-  position: relative;
-}
-
-.hero-text::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.4) 50%, 
-    transparent 100%
-  );
-  animation: shimmer 3s ease-in-out infinite;
-}
-
 @keyframes typeWriter {
   from { width: 0; }
   to { width: 100%; }
 }
 
 @keyframes blinkCursor {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  from, to { border-color: transparent; }
+  50% { border-color: hsl(var(--primary)); }
 }
 
 @keyframes fadeInUp {
@@ -101,25 +42,25 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-background-clip: text;
   color: transparent;
   overflow: hidden;
-  border-right: 3px solid #2563eb;
+  border-right: 3px solid hsl(var(--primary));
   white-space: nowrap;
   width: 0;
-  animation: typeWriter 2.5s steps(12, end) forwards, blinkCursor 1s step-end infinite;
+  animation: typeWriter 2s steps(12, end) 1s forwards, blinkCursor 750ms steps(44, end) infinite;
 }
 
 .business-text {
   opacity: 0;
-  animation: fadeInUp 0.8s ease-out 3s forwards;
+  animation: fadeInUp 0.8s ease-out 3.5s forwards;
 }
 
 .hero-description {
   opacity: 0;
-  animation: fadeInUp 0.8s ease-out 3.5s forwards;
+  animation: fadeInUp 0.8s ease-out 4s forwards;
 }
 
 .hero-buttons {
   opacity: 0;
-  animation: fadeInUp 0.8s ease-out 4s forwards;
+  animation: fadeInUp 0.8s ease-out 4.5s forwards;
 }
 
 
