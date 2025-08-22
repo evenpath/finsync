@@ -16,7 +16,8 @@ import {
   ClipboardList, 
   GitBranch, 
   EyeOff,
-  CheckCircle
+  CheckCircle,
+  Zap
 } from 'lucide-react';
 
 export default function FlowOpsHomepage() {
