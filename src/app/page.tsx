@@ -1,39 +1,89 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { 
-  Bot, 
-  Users, 
-  Zap, 
-  ClipboardList, 
-  GitBranch, 
-  EyeOff, 
+import {
+  Mail,
+  Zap,
+  Bot,
+  Users,
+  Eye,
+  GitBranch,
+  ClipboardList,
+  Play,
+  Settings,
+  Calendar,
   CheckCircle,
-  Play
 } from 'lucide-react';
 
 export default function FlowOpsHomepage() {
+  const [workflowStep, setWorkflowStep] = useState(0);
+  const [problemIndex, setProblemIndex] = useState(0);
+  const [statsCounter, setStatsCounter] = useState(0);
+
+  useEffect(() => {
+    const workflowInterval = setInterval(() => {
+      setWorkflowStep((prev) => (prev + 1) % 4);
+    }, 2000);
+    const problemInterval = setInterval(() => {
+      setProblemIndex((prev) => (prev + 1) % 3);
+    }, 3000);
+    const statsInterval = setInterval(() => {
+      setStatsCounter((prev) => (prev < 100 ? prev + 1 : 0));
+    }, 50);
+
+    return () => {
+      clearInterval(workflowInterval);
+      clearInterval(problemInterval);
+      clearInterval(statsInterval);
+    };
+  }, []);
+
+  const workflowSteps = [
+    { status: 'completed', text: 'Welcome email sent', icon: <Mail className="w-5 h-5 text-gray-500" /> },
+    { status: 'completed', text: 'Account setup completed', icon: <Settings className="w-5 h-5 text-gray-500" /> },
+    { status: 'active', text: 'Training session scheduled', icon: <Calendar className="w-5 h-5 text-blue-500" /> },
+    { status: 'pending', text: 'Follow-up call pending', icon: <Play className="w-5 h-5 text-gray-400" /> },
+  ];
+
+  const problems = [
+    {
+      title: 'Manual Task Management',
+      desc: 'Teams spend 3+ hours daily on task assignments, status updates, and progress tracking',
+      color: 'red',
+      icon: <ClipboardList className="w-6 h-6 text-red-600" />,
+    },
+    {
+      title: 'Inconsistent Processes',
+      desc: 'Without standardized workflows, quality varies and important steps get missed',
+      color: 'orange',
+      icon: <GitBranch className="w-6 h-6 text-orange-600" />,
+    },
+    {
+      title: 'No Visibility',
+      desc: "Managers can't see bottlenecks or understand where work gets stuck",
+      color: 'yellow',
+      icon: <Eye className="w-6 h-6 text-yellow-600" />,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+      <div className="min-h-screen bg-gray-50 text-gray-800">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
+          <Link href="/" className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <div className="w-5 h-5 bg-white rounded"></div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 font-headline">FlowOps</h1>
-          </div>
+          </Link>
           <div className="flex items-center space-x-6">
             <Link href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</Link>
             <Link href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</Link>
             <Link href="/partner/signup">
-              <Button>
-                Get Started
-              </Button>
+              <Button>Get Started</Button>
             </Link>
           </div>
         </div>
@@ -42,12 +92,6 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <div className="flex justify-center mb-6">
-            <Badge variant="outline" className="px-4 py-2 text-primary border-primary/20 bg-primary/5">
-              <Bot className="w-4 h-4 mr-2" />
-              AI-Powered Automation Platform
-            </Badge>
-          </div>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
             <div className="typing-container">
               <span className="typing-text bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -63,9 +107,7 @@ export default function FlowOpsHomepage() {
           </p>
           <div className="flex justify-center space-x-4 hero-buttons">
             <Link href="/partner/signup">
-              <Button size="lg">
-                Start Free Trial
-              </Button>
+              <Button size="lg">Start Free Trial</Button>
             </Link>
             <Button variant="outline" size="lg">
                <Play className="w-4 h-4 mr-2" />
@@ -85,27 +127,15 @@ export default function FlowOpsHomepage() {
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-white p-8 rounded-xl shadow-sm border-0">
-              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-6">
-                <ClipboardList className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Manual Task Management</h3>
-              <p className="text-gray-600">Teams spend 3+ hours daily on task assignments, status updates, and progress tracking.</p>
-            </Card>
-            <Card className="bg-white p-8 rounded-xl shadow-sm border-0">
-              <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-6">
-                <GitBranch className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Inconsistent Processes</h3>
-              <p className="text-gray-600">Without standardized workflows, quality varies and important steps get missed.</p>
-            </Card>
-            <Card className="bg-white p-8 rounded-xl shadow-sm border-0">
-              <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center mb-6">
-                <EyeOff className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">No Visibility</h3>
-              <p className="text-gray-600">Managers can't see bottlenecks or understand where work gets stuck.</p>
-            </Card>
+            {problems.map((problem, index) => (
+                <div key={index} className={`bg-white p-8 rounded-xl shadow-sm border-0 transition-all duration-300 ${problemIndex === index ? 'transform -translate-y-2 ring-2 ring-blue-400' : 'opacity-70'}`}>
+                    <div className={`w-12 h-12 bg-${problem.color}-100 rounded-lg flex items-center justify-center mb-6`}>
+                        {problem.icon}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{problem.title}</h3>
+                    <p className="text-gray-600">{problem.desc}</p>
+                </div>
+            ))}
           </div>
         </div>
       </section>
@@ -150,36 +180,20 @@ export default function FlowOpsHomepage() {
               </div>
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-2xl">
-              <Card className="bg-white p-6 rounded-xl shadow-lg">
-                <CardContent className="p-0">
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-semibold text-gray-900">Customer Onboarding</h4>
-                        <Badge variant="success">Active</Badge>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="flex items-center space-x-3">
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                            <span className="text-sm text-gray-600">Welcome email sent</span>
+              <div className="bg-white p-6 rounded-xl shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-gray-900">Customer Onboarding</h4>
+                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Active</span>
+                </div>
+                <div className="space-y-3">
+                    {workflowSteps.map((step, index) => (
+                        <div key={index} className={`flex items-center space-x-3 p-2 rounded-md transition-all duration-300 ${workflowStep === index ? 'bg-blue-50 scale-105' : ''}`}>
+                            {step.status === 'completed' ? <CheckCircle className="w-5 h-5 text-green-500" /> : <div className={`w-5 h-5 flex items-center justify-center rounded-full ${workflowStep === index ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`}></div>}
+                            <span className={`text-sm ${workflowStep >= index ? 'text-gray-800' : 'text-gray-500'}`}>{step.text}</span>
                         </div>
-                        <div className="flex items-center space-x-3">
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                            <span className="text-sm text-gray-600">Account setup completed</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <div className="w-5 h-5 flex items-center justify-center">
-                            <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
-                            </div>
-                            <span className="text-sm text-gray-600">Training session scheduled</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                           <div className="w-5 h-5 flex items-center justify-center">
-                            <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
-                            </div>
-                            <span className="text-sm text-gray-400">Follow-up call pending</span>
-                        </div>
-                    </div>
-                </CardContent>
-              </Card>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -223,13 +237,9 @@ export default function FlowOpsHomepage() {
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/partner/signup">
-                <Button size="lg" className="bg-white text-primary hover:bg-gray-100">
-                    Start Free Trial
-                </Button>
+                <Button size="lg" className="bg-white text-primary hover:bg-gray-100">Start Free Trial</Button>
             </Link>
-            <Button variant="outline" size="lg" className="bg-primary/20 text-white hover:bg-primary/40 border-primary-foreground/50">
-              Schedule Demo
-            </Button>
+            <Button variant="outline" size="lg" className="bg-primary/20 text-white hover:bg-primary/40 border-primary-foreground/50">Schedule Demo</Button>
           </div>
           <p className="text-purple-200 text-sm mt-4">No credit card required • 14-day free trial</p>
         </div>
