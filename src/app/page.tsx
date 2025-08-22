@@ -4,23 +4,61 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
 import {
-  Mail,
-  Zap,
   Bot,
   Users,
-  Eye,
-  GitBranch,
+  Zap,
   ClipboardList,
-  Play,
+  GitBranch,
+  Eye,
+  Mail,
   Settings,
   Calendar,
   CheckCircle,
+  Play,
 } from 'lucide-react';
 
 export default function FlowOpsHomepage() {
   const [workflowStep, setWorkflowStep] = useState(0);
   const [problemIndex, setProblemIndex] = useState(0);
   const [statsCounter, setStatsCounter] = useState(0);
+
+  // Typewriter effect state
+  const phrases = ["AI Workflows", "Automation", "Efficiency"];
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [typedText, setTypedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentPhrase = phrases[phraseIndex];
+    const typingSpeed = 150;
+    const deletingSpeed = 75;
+    const delayAfterTyping = 2000;
+
+    let timeout: NodeJS.Timeout;
+
+    if (isDeleting) {
+      if (typedText.length > 0) {
+        timeout = setTimeout(() => {
+          setTypedText(currentPhrase.substring(0, typedText.length - 1));
+        }, deletingSpeed);
+      } else {
+        setIsDeleting(false);
+        setPhraseIndex((prev) => (prev + 1) % phrases.length);
+      }
+    } else {
+      if (typedText.length < currentPhrase.length) {
+        timeout = setTimeout(() => {
+          setTypedText(currentPhrase.substring(0, typedText.length + 1));
+        }, typingSpeed);
+      } else {
+        timeout = setTimeout(() => {
+          setIsDeleting(true);
+        }, delayAfterTyping);
+      }
+    }
+
+    return () => clearTimeout(timeout);
+  }, [typedText, isDeleting, phraseIndex, phrases]);
 
   useEffect(() => {
     const workflowInterval = setInterval(() => {
@@ -92,24 +130,22 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
-            <div className="typing-container">
-              <span className="typing-text bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Workflows
-              </span>
-            </div>
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight h-24">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent inline-block border-r-4 border-primary animate-blink-cursor">
+                {typedText}
+            </span>
             <br />
-            <span className="text-gray-900 business-text">That Run Your Business</span>
+            <span className="text-gray-900">That Run Your Business</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8 hero-description">
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
             FlowOps automates your business operations with intelligent AI agents. 
             Stop managing tasks manually – let our platform handle routine processes while you focus on growth.
           </p>
-          <div className="flex justify-center space-x-4 hero-buttons">
+          <div className="flex justify-center space-x-4">
             <Link href="/partner/signup">
               <Button size="lg">Start Free Trial</Button>
             </Link>
-            <Button variant="outline" size="lg">
+             <Button variant="outline" size="lg">
                <Play className="w-4 h-4 mr-2" />
               Watch Demo
             </Button>
@@ -128,7 +164,7 @@ export default function FlowOpsHomepage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {problems.map((problem, index) => (
-                <div key={index} className={`bg-white p-8 rounded-xl shadow-sm border-0 transition-all duration-300 ${problemIndex === index ? 'transform -translate-y-2 ring-2 ring-blue-400' : 'opacity-70'}`}>
+                <div key={index} className={`bg-white p-8 rounded-xl shadow-sm border-2 transition-all duration-300 ${problemIndex === index ? 'border-primary' : 'border-transparent hover:border-primary/30'}`}>
                     <div className={`w-12 h-12 bg-${problem.color}-100 rounded-lg flex items-center justify-center mb-6`}>
                         {problem.icon}
                     </div>
@@ -261,8 +297,8 @@ export default function FlowOpsHomepage() {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="#" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">Templates</Link></li>
               </ul>
             </div>
