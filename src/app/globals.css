@@ -69,6 +69,60 @@ h1, h2, h3, h4, h5, h6 {
   animation: shimmer 3s ease-in-out infinite;
 }
 
+@keyframes typeWriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blinkCursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.typing-container {
+  display: inline-block;
+  position: relative;
+}
+
+.typing-text {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  overflow: hidden;
+  border-right: 3px solid #2563eb;
+  white-space: nowrap;
+  width: 0;
+  animation: typeWriter 2.5s steps(12, end) forwards, blinkCursor 1s step-end infinite;
+}
+
+.business-text {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out 3s forwards;
+}
+
+.hero-description {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out 3.5s forwards;
+}
+
+.hero-buttons {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out 4s forwards;
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;

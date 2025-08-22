@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
+import { Sparkles, Users, BarChart, ClipboardList, GitBranch, EyeOff } from 'lucide-react';
 
 export default function FlowOpsHomepage() {
   return (
@@ -34,17 +35,19 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h1 className="text-6xl font-bold mb-6">
-            <span className="hero-text inline-block">
-              AI Workflows
-            </span>
+            <div className="typing-container">
+              <span className="typing-text">
+                AI Workflows
+              </span>
+            </div>
             <br />
-            <span className="text-gray-900">That Run Your Business</span>
+            <span className="text-gray-900 business-text">That Run Your Business</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            FlowOps automates your business operations with intelligent AI workflows. 
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 hero-description">
+            FlowOps automates your business operations with intelligent AI workflows.
             Stop managing tasks manually – let AI handle your routine processes while you focus on growth.
           </p>
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center space-x-4 hero-buttons">
             <Link href="/partner/signup">
                 <Button size="lg">
                     Start Free Trial
@@ -68,22 +71,22 @@ export default function FlowOpsHomepage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
-                <div className="w-6 h-6 bg-red-500 rounded-full"></div>
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-6">
+                <ClipboardList className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Manual Task Management</h3>
               <p className="text-gray-600">Teams spend 3+ hours daily on task assignments, status updates, and progress tracking</p>
             </div>
             <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
-                <div className="w-6 h-6 bg-orange-500 rounded-full"></div>
+              <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-6">
+                <GitBranch className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Inconsistent Processes</h3>
               <p className="text-gray-600">Without standardized workflows, quality varies and important steps get missed</p>
             </div>
             <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
-                <div className="w-6 h-6 bg-yellow-500 rounded-full"></div>
+              <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center mb-6">
+                <EyeOff className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">No Visibility</h3>
               <p className="text-gray-600">Managers can't see bottlenecks or understand where work gets stuck</p>
@@ -104,8 +107,8 @@ export default function FlowOpsHomepage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <div className="w-5 h-5 bg-blue-600 rounded"></div>
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">AI-Powered Automation</h3>
@@ -113,8 +116,8 @@ export default function FlowOpsHomepage() {
                 </div>
               </div>
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <div className="w-5 h-5 bg-blue-600 rounded"></div>
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Task Distribution</h3>
@@ -122,8 +125,8 @@ export default function FlowOpsHomepage() {
                 </div>
               </div>
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <div className="w-5 h-5 bg-blue-600 rounded"></div>
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <BarChart className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-Time Analytics</h3>
@@ -204,10 +207,10 @@ export default function FlowOpsHomepage() {
             Join hundreds of businesses that have streamlined their workflows with FlowOps
           </p>
           <div className="flex justify-center space-x-4">
-             <Link href="/partner/signup">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-50">
-                    Start Free Trial
-                </Button>
+            <Link href="/partner/signup">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-50">
+                Start Free Trial
+              </Button>
             </Link>
             <Button variant="outline" size="lg" className="border-2 border-blue-400 text-white hover:bg-white hover:text-blue-600">
               Schedule Demo
@@ -233,8 +236,8 @@ export default function FlowOpsHomepage() {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">Templates</Link></li>
               </ul>
             </div>
