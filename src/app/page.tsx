@@ -23,6 +23,42 @@ export default function FlowOpsHomepage() {
   const [workflowStep, setWorkflowStep] = useState(0);
   const [problemIndex, setProblemIndex] = useState(0);
   const [statsCounter, setStatsCounter] = useState(0);
+  const [animatedText, setAnimatedText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopNum, setLoopNum] = useState(0);
+
+  const textOptions = ["AI Workflows", "Automation", "Efficiency"];
+  const typingSpeed = 120; // Faster typing
+  const deletingSpeed = 60; // Faster deleting
+  const delay = 1500; // Shorter pause
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const i = loopNum % textOptions.length;
+      const fullText = textOptions[i];
+
+      setAnimatedText(
+        isDeleting
+          ? fullText.substring(0, animatedText.length - 1)
+          : fullText.substring(0, animatedText.length + 1)
+      );
+
+      if (!isDeleting && animatedText === fullText) {
+        setTimeout(() => setIsDeleting(true), delay);
+      } else if (isDeleting && animatedText === '') {
+        setIsDeleting(false);
+        setLoopNum(loopNum + 1);
+      }
+    };
+
+    const typingTimeout = setTimeout(
+      handleTyping,
+      isDeleting ? deletingSpeed : typingSpeed
+    );
+
+    return () => clearTimeout(typingTimeout);
+  }, [animatedText, isDeleting, loopNum]);
+
 
   useEffect(() => {
     const workflowInterval = setInterval(() => {
@@ -94,8 +130,8 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
-             <span className="hero-text">AI Workflows</span>
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[160px] md:min-h-[190px]">
+            <span className="hero-text typing-animation">{animatedText}</span>
             <br />
             <span className="text-gray-900">That Run Your Business</span>
           </h1>
@@ -289,3 +325,4 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
+

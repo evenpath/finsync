@@ -78,6 +78,11 @@
     }
   }
 
+  .typing-animation {
+    border-right: 3px solid hsl(var(--primary));
+    animation: blink-cursor 0.7s step-end infinite;
+  }
+
   @keyframes fadeInUp {
     from {
       opacity: 0;
