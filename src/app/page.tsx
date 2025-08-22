@@ -2,26 +2,17 @@
 
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { 
-  ArrowRight, 
-  Shield, 
-  Briefcase, 
-  Users, 
   Bot, 
-  MessageSquare, 
-  Workflow, 
+  Users, 
   Zap, 
-  CheckCircle, 
-  Building2,
-  Play,
-  Clock,
-  TrendingUp,
-  Star,
-  ClipboardList,
-  GitBranch,
-  EyeOff
+  ClipboardList, 
+  GitBranch, 
+  EyeOff, 
+  CheckCircle,
+  Play
 } from 'lucide-react';
 
 export default function FlowOpsHomepage() {
@@ -52,14 +43,14 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
           <div className="flex justify-center mb-6">
-            <Badge variant="outline" className="px-4 py-2 text-blue-600 border-blue-200 bg-blue-50">
+            <Badge variant="outline" className="px-4 py-2 text-primary border-primary/20 bg-primary/5">
               <Bot className="w-4 h-4 mr-2" />
               AI-Powered Automation Platform
             </Badge>
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
             <div className="typing-container">
-              <span className="typing-text">
+              <span className="typing-text bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 AI Workflows
               </span>
             </div>
@@ -77,6 +68,7 @@ export default function FlowOpsHomepage() {
               </Button>
             </Link>
             <Button variant="outline" size="lg">
+               <Play className="w-4 h-4 mr-2" />
               Watch Demo
             </Button>
           </div>
@@ -158,34 +150,36 @@ export default function FlowOpsHomepage() {
               </div>
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-2xl">
-              <div className="bg-white p-6 rounded-xl shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-gray-900">Customer Onboarding</h4>
-                  <Badge variant="success">Active</Badge>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-sm text-gray-600">Welcome email sent</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-sm text-gray-600">Account setup completed</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 flex items-center justify-center">
-                      <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+              <Card className="bg-white p-6 rounded-xl shadow-lg">
+                <CardContent className="p-0">
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-gray-900">Customer Onboarding</h4>
+                        <Badge variant="success">Active</Badge>
                     </div>
-                    <span className="text-sm text-gray-600">Training session scheduled</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 flex items-center justify-center">
-                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                    <div className="space-y-3">
+                        <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <span className="text-sm text-gray-600">Welcome email sent</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <span className="text-sm text-gray-600">Account setup completed</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 flex items-center justify-center">
+                            <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+                            </div>
+                            <span className="text-sm text-gray-600">Training session scheduled</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                           <div className="w-5 h-5 flex items-center justify-center">
+                            <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                            </div>
+                            <span className="text-sm text-gray-400">Follow-up call pending</span>
+                        </div>
                     </div>
-                    <span className="text-sm text-gray-400">Follow-up call pending</span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -202,17 +196,17 @@ export default function FlowOpsHomepage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
+              <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose Your Workflow</h3>
               <p className="text-gray-600">Pick from pre-built templates or create custom workflows for your business.</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
+              <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Your Team</h3>
               <p className="text-gray-600">Invite team members and define their roles and permissions.</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
+              <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Watch It Work</h3>
               <p className="text-gray-600">AI takes over routine tasks while you monitor progress and results.</p>
             </div>
@@ -221,23 +215,23 @@ export default function FlowOpsHomepage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-primary">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-white mb-4 font-headline">Ready to Automate Your Operations?</h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-purple-100 mb-8">
             Join hundreds of businesses that have streamlined their workflows with FlowOps.
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/partner/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                Start Free Trial
-              </Button>
+                <Button size="lg" className="bg-white text-primary hover:bg-gray-100">
+                    Start Free Trial
+                </Button>
             </Link>
-            <Button variant="outline" size="lg" className="border-2 border-blue-400 text-white hover:bg-white hover:text-blue-600">
+            <Button variant="outline" size="lg" className="bg-primary/20 text-white hover:bg-primary/40 border-primary-foreground/50">
               Schedule Demo
             </Button>
           </div>
-          <p className="text-blue-200 text-sm mt-4">No credit card required • 14-day free trial</p>
+          <p className="text-purple-200 text-sm mt-4">No credit card required • 14-day free trial</p>
         </div>
       </section>
 
