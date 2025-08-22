@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -20,7 +21,8 @@ import {
   MoreVertical,
   Calendar,
   Shield,
-  QrCode
+  QrCode,
+  CheckSquare
 } from "lucide-react";
 import type { TeamMember } from "../../../lib/types";
 import { useToast } from "../../../hooks/use-toast";
