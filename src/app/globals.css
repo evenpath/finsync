@@ -69,8 +69,13 @@
 
 @layer utilities {
   @keyframes blink-cursor {
-    from, to { border-color: transparent; }
-    50% { border-color: hsl(var(--primary)); }
+    from,
+    to {
+      border-color: transparent;
+    }
+    50% {
+      border-color: hsl(var(--primary));
+    }
   }
 
   @keyframes fadeInUp {
@@ -82,6 +87,18 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .hero-text {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      #7c3aed 50%,
+      hsl(var(--primary)) 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
 
   @keyframes pulse {
@@ -107,10 +124,10 @@
   @keyframes glow {
     0%,
     100% {
-      box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
     }
     50% {
-      box-shadow: 0 0 30px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
     }
   }
 }

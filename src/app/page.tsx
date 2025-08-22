@@ -6,7 +6,6 @@ import { Button } from '../components/ui/button';
 import {
   Bot,
   Users,
-  Zap,
   ClipboardList,
   GitBranch,
   Eye,
@@ -15,7 +14,9 @@ import {
   Calendar,
   CheckCircle,
   Play,
+  Zap,
 } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
 
 export default function FlowOpsHomepage() {
   const [workflowStep, setWorkflowStep] = useState(0);
@@ -58,7 +59,7 @@ export default function FlowOpsHomepage() {
     }
 
     return () => clearTimeout(timeout);
-  }, [typedText, isDeleting, phraseIndex, phrases]);
+  }, [typedText, isDeleting, phraseIndex]);
 
   useEffect(() => {
     const workflowInterval = setInterval(() => {
@@ -130,10 +131,10 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight h-24">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent inline-block border-r-4 border-primary animate-blink-cursor">
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
+             <span className="hero-text inline-block border-r-4 border-primary animate-blink-cursor">
                 {typedText}
-            </span>
+              </span>
             <br />
             <span className="text-gray-900">That Run Your Business</span>
           </h1>
@@ -219,7 +220,7 @@ export default function FlowOpsHomepage() {
               <div className="bg-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-gray-900">Customer Onboarding</h4>
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Active</span>
+                    <Badge variant="success">Active</Badge>
                 </div>
                 <div className="space-y-3">
                     {workflowSteps.map((step, index) => (
