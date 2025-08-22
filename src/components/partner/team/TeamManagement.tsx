@@ -36,6 +36,7 @@ import {
 } from "../../ui/dropdown-menu";
 import GenerateInviteCodeDialog from "./GenerateInviteCodeDialog";
 import InvitationManagement from "./InvitationManagement";
+import TaskAssignmentModal from "../../chat/TaskAssignmentModal"; // Import the modal
 
 export default function TeamManagement() {
   const { user, loading: authLoading } = useAuth();
@@ -45,6 +46,7 @@ export default function TeamManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [inviteRefreshTrigger, setInviteRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
@@ -136,6 +138,14 @@ export default function TeamManagement() {
   const handleInviteGenerated = () => {
     setInviteRefreshTrigger(prev => prev + 1);
   };
+  
+  const handleTaskAssigned = (taskData: any) => {
+    toast({
+        title: "Task Assigned",
+        description: `Task "${taskData.title}" has been assigned to ${taskData.assignee}.`
+    });
+    setIsTaskModalOpen(false);
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -285,6 +295,10 @@ export default function TeamManagement() {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => setIsTaskModalOpen(true)}>
+                                        <CheckSquare className="mr-2 h-4 w-4" />
+                                        <span>Assign Task</span>
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem>
                                           <Shield className="mr-2 h-4 w-4" />
                                           <span>Edit Permissions</span>
@@ -351,12 +365,19 @@ export default function TeamManagement() {
         </TabsContent>
       </Tabs>
 
-      {/* Generate Invite Code Dialog */}
+      {/* Dialogs */}
       <GenerateInviteCodeDialog
         isOpen={isInviteDialogOpen}
         onClose={() => setIsInviteDialogOpen(false)}
         partnerId={partnerId!}
         onInviteGenerated={handleInviteGenerated}
+      />
+      <TaskAssignmentModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onTaskAssigned={handleTaskAssigned}
+        activeWorkspace={user?.customClaims}
+        teamMembers={teamMembers}
       />
     </>
   );

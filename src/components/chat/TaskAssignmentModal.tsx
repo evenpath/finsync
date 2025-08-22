@@ -33,21 +33,15 @@ import {
   Target
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import type { TeamMember } from '../../lib/types';
 
 interface TaskAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTaskAssigned: (taskData: any) => void;
   activeWorkspace: any;
+  teamMembers: TeamMember[];
 }
-
-// Mock team members - replace with real data
-const mockTeamMembers = [
-  { id: '1', name: 'Sarah Chen', role: 'Designer', status: 'online' },
-  { id: '2', name: 'Mike Johnson', role: 'Developer', status: 'online' },
-  { id: '3', name: 'Alex Rivera', role: 'Product Manager', status: 'away' },
-  { id: '4', name: 'Emma Davis', role: 'QA Engineer', status: 'offline' },
-];
 
 const workflows = [
   { id: '1', name: 'Design Review', steps: ['Initial Review', 'Feedback', 'Revision', 'Approval'] },
@@ -59,7 +53,8 @@ export default function TaskAssignmentModal({
   isOpen,
   onClose,
   onTaskAssigned,
-  activeWorkspace
+  activeWorkspace,
+  teamMembers
 }: TaskAssignmentModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -78,7 +73,7 @@ export default function TaskAssignmentModal({
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const assignedMember = mockTeamMembers.find(member => member.id === assignee);
+      const assignedMember = teamMembers.find(member => member.id === assignee);
       
       const taskData = {
         title: title.trim(),
@@ -182,13 +177,13 @@ export default function TaskAssignmentModal({
                 <SelectValue placeholder="Select team member..." />
               </SelectTrigger>
               <SelectContent>
-                {mockTeamMembers.map((member) => (
+                {teamMembers.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "w-2 h-2 rounded-full",
-                        member.status === 'online' ? 'bg-green-500' :
-                        member.status === 'away' ? 'bg-yellow-500' : 'bg-gray-400'
+                        member.status === 'active' ? 'bg-green-500' :
+                        member.status === 'invited' ? 'bg-yellow-500' : 'bg-gray-400'
                       )} />
                       <span>{member.name}</span>
                       <span className="text-xs text-muted-foreground">({member.role})</span>
@@ -300,7 +295,7 @@ export default function TaskAssignmentModal({
                   <div className="text-muted-foreground">{description}</div>
                 )}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span>Assigned to: {mockTeamMembers.find(m => m.id === assignee)?.name}</span>
+                  <span>Assigned to: {teamMembers.find(m => m.id === assignee)?.name}</span>
                   <Badge className={getPriorityColor(priority)}>
                     {priority} priority
                   </Badge>
