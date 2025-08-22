@@ -32,9 +32,9 @@ export default function FlowOpsHomepage() {
 
   useEffect(() => {
     const currentPhrase = phrases[phraseIndex];
-    const typingSpeed = 75; // Faster typing
-    const deletingSpeed = 40; // Faster deleting
-    const delayAfterTyping = 2000;
+    const typingSpeed = 50; // Speed of typing
+    const deletingSpeed = 25; // Speed of deleting
+    const delayAfterTyping = 1500; // Pause after a word is typed
 
     let timeout: NodeJS.Timeout;
 
@@ -133,9 +133,9 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
-             <span className="hero-text inline-block border-r-4 border-primary animate-blink-cursor">
+            <span className="hero-text inline-block border-r-4 border-primary animate-blink-cursor">
                 {typedText}
-              </span>
+            </span>
             <br />
             <span className="text-gray-900">That Run Your Business</span>
           </h1>
@@ -329,3 +329,4 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
+
