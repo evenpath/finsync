@@ -24,44 +24,6 @@ export default function FlowOpsHomepage() {
   const [problemIndex, setProblemIndex] = useState(0);
   const [statsCounter, setStatsCounter] = useState(0);
 
-  // Typewriter effect state
-  const phrases = ["AI Workflows", "Automation", "Efficiency"];
-  const [phraseIndex, setPhraseIndex] = useState(0);
-  const [typedText, setTypedText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const currentPhrase = phrases[phraseIndex];
-    const typingSpeed = 50; // Speed of typing
-    const deletingSpeed = 25; // Speed of deleting
-    const delayAfterTyping = 1500; // Pause after a word is typed
-
-    let timeout: NodeJS.Timeout;
-
-    if (isDeleting) {
-      if (typedText.length > 0) {
-        timeout = setTimeout(() => {
-          setTypedText(currentPhrase.substring(0, typedText.length - 1));
-        }, deletingSpeed);
-      } else {
-        setIsDeleting(false);
-        setPhraseIndex((prev) => (prev + 1) % phrases.length);
-      }
-    } else {
-      if (typedText.length < currentPhrase.length) {
-        timeout = setTimeout(() => {
-          setTypedText(currentPhrase.substring(0, typedText.length + 1));
-        }, typingSpeed);
-      } else {
-        timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, delayAfterTyping);
-      }
-    }
-
-    return () => clearTimeout(timeout);
-  }, [typedText, isDeleting, phraseIndex, phrases]);
-
   useEffect(() => {
     const workflowInterval = setInterval(() => {
       setWorkflowStep((prev) => (prev + 1) % 4);
@@ -133,9 +95,7 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight">
-            <span className="hero-text inline-block border-r-4 border-primary animate-blink-cursor">
-                {typedText}
-            </span>
+             <span className="hero-text">AI Workflows</span>
             <br />
             <span className="text-gray-900">That Run Your Business</span>
           </h1>
@@ -329,4 +289,3 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
-
