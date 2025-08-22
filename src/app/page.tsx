@@ -21,7 +21,7 @@ export default function FlowOpsHomepage() {
               <Link href="#features" className="text-gray-600 hover:text-gray-900">Features</Link>
               <Link href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
               <Link href="/partner/signup">
-                <Button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <Button>
                   Get Started
                 </Button>
               </Link>
@@ -34,7 +34,7 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h1 className="text-6xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="hero-text inline-block">
               AI Workflows
             </span>
             <br />
@@ -46,11 +46,11 @@ export default function FlowOpsHomepage() {
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/partner/signup">
-                <Button size="lg" className="bg-blue-600 text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                  Start Free Trial
+                <Button size="lg">
+                    Start Free Trial
                 </Button>
             </Link>
-            <Button variant="outline" size="lg" className="border-2 border-gray-300 text-gray-700 px-8 py-4 text-lg font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            <Button variant="outline" size="lg">
               Watch Demo
             </Button>
           </div>
@@ -204,12 +204,12 @@ export default function FlowOpsHomepage() {
             Join hundreds of businesses that have streamlined their workflows with FlowOps
           </p>
           <div className="flex justify-center space-x-4">
-            <Link href="/partner/signup">
-                <Button size="lg" className="bg-white text-blue-600 px-8 py-4 text-lg font-semibold rounded-lg hover:bg-gray-50 transition-colors">
-                Start Free Trial
+             <Link href="/partner/signup">
+                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-50">
+                    Start Free Trial
                 </Button>
             </Link>
-            <Button variant="outline" size="lg" className="border-2 border-blue-400 text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <Button variant="outline" size="lg" className="border-2 border-blue-400 text-white hover:bg-white hover:text-blue-600">
               Schedule Demo
             </Button>
           </div>
@@ -233,25 +233,25 @@ export default function FlowOpsHomepage() {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
+                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Templates</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><Link href="#" className="hover:text-white transition-colors">About</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Contact</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Community</a></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Community</Link></li>
               </ul>
             </div>
           </div>
