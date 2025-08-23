@@ -25,7 +25,6 @@ function OperationsProblemsSection() {
     return () => clearInterval(interval);
   }, []);
 
-  // Workflow Animations
   const ChatChaosAnimation = () => (
     <div className="flex items-center justify-between w-full h-full">
       <div className="text-center">
@@ -113,131 +112,24 @@ function OperationsProblemsSection() {
     </div>
   );
 
-  const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
-    <div className={`
-      px-6 py-4 rounded-lg text-center transition-all duration-500 border text-sm font-medium
-      ${active 
-        ? status === 'problem' 
-          ? 'bg-red-50 border-red-200 text-red-900' 
-          : status === 'slow'
-          ? 'bg-orange-50 border-orange-200 text-orange-900'
-          : 'bg-blue-50 border-blue-200 text-blue-900'
-        : 'bg-gray-50 border-gray-200 text-gray-500'
-      }
-    `}
-    style={{ transitionDelay: `${delay}ms` }}>
-      {children}
-    </div>
-  );
-
-  const FlowArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
-    <div className="flex justify-center items-center py-2">
-      <div className={`
-        w-px h-6 transition-all duration-500
-        ${active ? 'bg-gray-400' : 'bg-gray-300'}
-      `}
-      style={{ transitionDelay: `${delay}ms` }}>
-      </div>
-      <div className={`
-        w-2 h-2 border-b border-r border-gray-400 transform rotate-45 -mt-1 transition-all duration-500
-        ${active ? 'border-gray-400' : 'border-gray-300'}
-      `}
-      style={{ transitionDelay: `${delay + 100}ms` }}>
-      </div>
-    </div>
-  );
-
-  const ChatWorkFlow = ({ active }: { active: boolean }) => (
-    <div className="h-80 flex flex-col justify-center">
-      <div className="space-y-4 max-w-sm mx-auto">
-        <ProcessNode active={active} delay={0}>💬 Task mentioned in chat</ProcessNode>
-        <FlowArrow active={active} delay={300} />
-        <ProcessNode active={active} delay={600} status="slow">🔍 Scroll through 200+ messages</ProcessNode>
-        <FlowArrow active={active} delay={900} />
-        <ProcessNode active={active} delay={1200} status="slow">📱 Ping 5 people for status</ProcessNode>
-        <FlowArrow active={active} delay={1500} />
-        <ProcessNode active={active} delay={1800} status="problem">⏰ Deadline already passed</ProcessNode>
-      </div>
-    </div>
-  );
-
-  const ChannelChaosFlow = ({ active }: { active: boolean }) => (
-    <div className="h-80 flex flex-col justify-center">
-      <div className="space-y-6">
-        <div className="flex justify-center">
-          <ProcessNode active={active} delay={0}>📋 Same project discussion</ProcessNode>
-        </div>
-        <FlowArrow active={active} delay={300} />
-        <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto">
-          <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">#general</div>
-            <ProcessNode active={active} delay={600} status="normal">💬 Initial mention</ProcessNode>
-          </div>
-          <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">#project-channel</div>
-            <ProcessNode active={active} delay={800} status="slow">📝 Detailed discussion</ProcessNode>
-          </div>
-          <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">DM threads</div>
-            <ProcessNode active={active} delay={1000} status="problem">🤫 Side conversations</ProcessNode>
-          </div>
-        </div>
-        <FlowArrow active={active} delay={1300} />
-        <div className="flex justify-center">
-          <ProcessNode active={active} delay={1600} status="problem">🤷 Nobody has the full picture</ProcessNode>
-        </div>
-      </div>
-    </div>
-  );
-
-  const InformationBuriedFlow = ({ active }: { active: boolean }) => (
-    <div className="h-80 flex flex-col justify-center">
-      <div className="space-y-6">
-        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
-          <ProcessNode active={active} delay={0}>📊 Critical update shared</ProcessNode>
-          <ProcessNode active={active} delay={200}>📈 Progress reported</ProcessNode>
-          <ProcessNode active={active} delay={400}>🚨 Issue mentioned</ProcessNode>
-        </div>
-        <FlowArrow active={active} delay={600} />
-        <div className="flex justify-center">
-          <div className={`
-            text-center p-6 rounded-lg border-2 border-dashed transition-all duration-500 max-w-xs
-            ${active ? 'border-gray-400 bg-gray-50' : 'border-gray-300 bg-gray-50'}
-          `}
-          style={{ transitionDelay: '800ms' }}>
-            <div className="text-lg font-medium text-gray-700 mb-1">💬 Lost in 500+ messages</div>
-            <div className="text-sm text-gray-500">Manager hasn't seen it</div>
-          </div>
-        </div>
-        <FlowArrow active={active} delay={1200} />
-        <div className="flex justify-center">
-          <ProcessNode active={active} delay={1500} status="problem">🔥 Emergency discovered in client call</ProcessNode>
-        </div>
-      </div>
-    </div>
-  );
-
   const problems = [
     {
       title: "Chat Coordination Chaos",
       subtitle: "Important tasks get buried in endless message threads",
-      component: ChatWorkFlow,
-      impact: "3+ hours daily hunting for updates",
-      animation: ChatChaosAnimation
+      component: ChatChaosAnimation,
+      impact: "3+ hours daily hunting for updates"
     },
     {
       title: "Multi-Channel Confusion", 
       subtitle: "Same project scattered across different channels and DMs",
-      component: ChannelChaosFlow,
-      impact: "Context switching reduces productivity 40%",
-      animation: ChannelChaosAnimation
+      component: ChannelChaosAnimation,
+      impact: "Context switching reduces productivity 40%"
     },
     {
       title: "Critical Updates Buried",
       subtitle: "Important status changes lost in message history",
-      component: InformationBuriedFlow,
-      impact: "Problems discovered when it's too late",
-      animation: MessageBuriedAnimation
+      component: MessageBuriedAnimation,
+      impact: "Problems discovered when it's too late"
     }
   ];
 
@@ -299,19 +191,6 @@ function OperationsProblemsSection() {
             </div>
           </div>
           
-          {/* Flow Content - Fixed Height Container */}
-          <div className="relative overflow-hidden h-[380px]">
-            {problems.map((problem, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 px-8 transition-opacity duration-500 ${
-                  activeFlow === index ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
-              >
-                <problem.component active={activeFlow === index} />
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Progress Indicators */}
@@ -378,7 +257,7 @@ function PricingSection() {
       additionalUser: '$8/additional user',
       buttonText: 'Start Free Trial',
       buttonStyle: 'bg-blue-600 hover:bg-blue-700',
-      popular: false
+      popular: true
     },
     {
       name: 'Professional',
@@ -391,12 +270,11 @@ function PricingSection() {
         '25,000 Predictions / month',
         '5GB Storage',
         'Advanced AI & Integrations',
-        'Priority Support'
       ],
       additionalUser: '$6/additional user',
       buttonText: 'Start Free Trial',
       buttonStyle: 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600',
-      popular: true
+      popular: false
     }
   ];
 
@@ -719,6 +597,3 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
-    
-
-    
