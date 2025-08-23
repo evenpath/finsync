@@ -7,31 +7,200 @@ import { Button } from '../components/ui/button';
 import {
   Bot,
   Users,
-  ClipboardList,
-  GitBranch,
-  Eye,
-  Mail,
-  Settings,
-  Calendar,
   CheckCircle,
   Play,
   Zap,
+  Mail,
+  Settings,
+  Calendar,
 } from 'lucide-react';
-import { Badge } from '../components/shared/Badge';
+
+function OperationsProblemsSection() {
+  const [activeFlow, setActiveFlow] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFlow((prev) => (prev + 1) % 3);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const SimpleNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
+    <div className={`
+      px-4 py-3 rounded-lg text-center transition-all duration-700 border
+      ${active 
+        ? status === 'problem' 
+          ? 'bg-red-50 border-red-200 text-red-700' 
+          : status === 'slow'
+          ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+          : 'bg-blue-50 border-blue-200 text-blue-700'
+        : 'bg-gray-50 border-gray-200 text-gray-500'
+      }
+    `}
+    style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+
+  const SimpleArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
+    <div className="flex justify-center items-center py-2">
+      <div className={`
+        text-2xl transition-all duration-500
+        ${active ? 'text-gray-600' : 'text-gray-300'}
+      `}
+      style={{ transitionDelay: `${delay}ms` }}>
+        ↓
+      </div>
+    </div>
+  );
+
+  const ManualFlow = ({ active }: { active: boolean }) => (
+    <div className="space-y-4 max-w-xs mx-auto">
+      <SimpleNode active={active} delay={0}>📋 Task Assigned</SimpleNode>
+      <SimpleArrow active={active} delay={300} />
+      <SimpleNode active={active} delay={600} status="slow">⏱️ Find the right tool</SimpleNode>
+      <SimpleArrow active={active} delay={900} />
+      <SimpleNode active={active} delay={1200} status="slow">💬 Ask for clarification</SimpleNode>
+      <SimpleArrow active={active} delay={1500} />
+      <SimpleNode active={active} delay={1800} status="problem">😰 Rush to finish</SimpleNode>
+    </div>
+  );
+
+  const ProcessFlow = ({ active }: { active: boolean }) => (
+    <div className="space-y-6">
+      <SimpleNode active={active} delay={0}>📋 Same Task</SimpleNode>
+      <SimpleArrow active={active} delay={300} />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center">
+          <div className={`text-sm text-gray-500 mb-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '600ms' }}>Person A</div>
+          <SimpleNode active={active} delay={600} status="normal">Method 1</SimpleNode>
+        </div>
+        <div className="text-center">
+          <div className={`text-sm text-gray-500 mb-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '800ms' }}>Person B</div>
+          <SimpleNode active={active} delay={800} status="slow">Method 2</SimpleNode>
+        </div>
+        <div className="text-center">
+          <div className={`text-sm text-gray-500 mb-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '1000ms' }}>Person C</div>
+          <SimpleNode active={active} delay={1000} status="problem">Method 3</SimpleNode>
+        </div>
+      </div>
+      <SimpleArrow active={active} delay={1300} />
+      <SimpleNode active={active} delay={1600} status="problem">❌ Inconsistent Results</SimpleNode>
+    </div>
+  );
+
+  const VisibilityFlow = ({ active }: { active: boolean }) => (
+    <div className="space-y-4 max-w-md mx-auto">
+      <div className="grid grid-cols-3 gap-4">
+        <SimpleNode active={active} delay={0}>Task 1</SimpleNode>
+        <SimpleNode active={active} delay={200}>Task 2</SimpleNode>
+        <SimpleNode active={active} delay={400}>Task 3</SimpleNode>
+      </div>
+      <SimpleArrow active={active} delay={600} />
+      <div className={`
+        text-center p-4 rounded-lg border-2 border-dashed transition-all duration-700
+        ${active ? 'border-gray-400 bg-gray-100' : 'border-gray-200 bg-gray-50'}
+      `}
+      style={{ transitionDelay: '800ms' }}>
+        <div className="text-2xl mb-2">🤷‍♂️</div>
+        <div className="text-sm text-gray-600">Manager's View</div>
+        <div className="text-xs text-gray-500 mt-1">What's the status?</div>
+      </div>
+      <SimpleArrow active={active} delay={1200} />
+      <SimpleNode active={active} delay={1500} status="problem">🚨 Last-minute surprises</SimpleNode>
+    </div>
+  );
+
+  const problems = [
+    {
+      title: "Manual Work",
+      subtitle: "Too many steps, too much time",
+      component: ManualFlow
+    },
+    {
+      title: "No Standard Process",
+      subtitle: "Everyone does it differently",
+      component: ProcessFlow
+    },
+    {
+      title: "No Visibility",
+      subtitle: "Problems discovered too late",
+      component: VisibilityFlow
+    }
+  ];
+
+  return (
+    <div className="bg-gray-50 py-16 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Your Operations Shouldn't Be This Hard
+          </h2>
+          <p className="text-lg text-gray-600">
+            Every day, your team wastes hours on repetitive tasks that could be automated.
+          </p>
+        </div>
+
+        {/* Current Problem Display */}
+        <div className="bg-white rounded-xl p-8 shadow-sm mb-8">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-1">
+              {problems[activeFlow].title}
+            </h3>
+            <p className="text-gray-600 text-sm">
+              {problems[activeFlow].subtitle}
+            </p>
+          </div>
+          
+          <div className="min-h-[280px] flex items-center justify-center">
+            {problems.map((problem, index) => (
+              <div
+                key={index}
+                className={`transition-opacity duration-500 ${
+                  activeFlow === index ? 'opacity-100' : 'opacity-0 absolute'
+                }`}
+              >
+                <problem.component active={activeFlow === index} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Simple Navigation */}
+        <div className="flex justify-center space-x-8">
+          {problems.map((problem, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveFlow(index)}
+              className={`text-center transition-all duration-200 ${
+                activeFlow === index ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <div className={`w-3 h-3 rounded-full mx-auto mb-2 transition-colors ${
+                activeFlow === index ? 'bg-blue-500' : 'bg-gray-300'
+              }`} />
+              <div className="text-xs font-medium">{problem.title}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function FlowOpsHomepage() {
   const [workflowStep, setWorkflowStep] = useState(0);
-  const [problemIndex, setProblemIndex] = useState(0);
-  const [statsCounter, setStatsCounter] = useState(0);
   const [animatedText, setAnimatedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [isYearly, setIsYearly] = useState(false);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 100;
-  const deletingSpeed = 50;
-  const delay = 1500;
+  const typingSpeed = 60; // Faster typing
+  const deletingSpeed = 30; // Faster deleting
+  const delay = 1500; // Shorter pause
 
   useEffect(() => {
     const handleTyping = () => {
@@ -65,17 +234,8 @@ export default function FlowOpsHomepage() {
     const workflowInterval = setInterval(() => {
       setWorkflowStep((prev) => (prev + 1) % 4);
     }, 2000);
-    const problemInterval = setInterval(() => {
-      setProblemIndex((prev) => (prev + 1) % 3);
-    }, 3000);
-    const statsInterval = setInterval(() => {
-      setStatsCounter((prev) => (prev < 100 ? prev + 1 : 0));
-    }, 50);
-
     return () => {
       clearInterval(workflowInterval);
-      clearInterval(problemInterval);
-      clearInterval(statsInterval);
     };
   }, []);
 
@@ -84,27 +244,6 @@ export default function FlowOpsHomepage() {
     { status: 'completed', text: 'Account setup completed', icon: <Settings className="w-5 h-5 text-gray-500" /> },
     { status: 'active', text: 'Training session scheduled', icon: <Calendar className="w-5 h-5 text-blue-500" /> },
     { status: 'pending', text: 'Follow-up call pending', icon: <Play className="w-5 h-5 text-gray-400" /> },
-  ];
-
-  const problems = [
-    {
-      title: 'Manual Task Management',
-      desc: 'Teams spend 3+ hours daily on task assignments, status updates, and progress tracking',
-      color: 'red',
-      icon: <ClipboardList className="w-6 h-6 text-red-600" />,
-    },
-    {
-      title: 'Inconsistent Processes',
-      desc: 'Without standardized workflows, quality varies and important steps get missed',
-      color: 'orange',
-      icon: <GitBranch className="w-6 h-6 text-orange-600" />,
-    },
-    {
-      title: 'No Visibility',
-      desc: "Managers can't see bottlenecks or understand where work gets stuck",
-      color: 'yellow',
-      icon: <Eye className="w-6 h-6 text-yellow-600" />,
-    },
   ];
 
     const plans = [
@@ -118,8 +257,7 @@ export default function FlowOpsHomepage() {
         '500 Predictions / month',
         '25MB Storage',
         'Basic Workflows',
-        'Admin Roles & Permissions',
-        'Community Support'
+        'Admin Roles & Permissions'
       ],
       buttonText: 'Get Started',
       buttonVariant: 'outline' as const,
@@ -139,7 +277,7 @@ export default function FlowOpsHomepage() {
         'Admin Roles & Permissions',
         'Email Support'
       ],
-      additionalUser: '+$8/additional user',
+      additionalUser: '+$5/additional user',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
       popular: true,
@@ -147,17 +285,17 @@ export default function FlowOpsHomepage() {
     {
       name: 'Professional',
       description: 'For growing businesses',
-      monthlyPrice: 49,
+      monthlyPrice: 30,
       yearlyPrice: 39,
       features: [
         'Everything in Starter',
-        '10 Users',
+        '6 Users',
         '25,000 Predictions / month',
         '5GB Storage',
         'Advanced AI & Integrations',
         'Admin Roles & Permissions',
       ],
-      additionalUser: '+$6/additional user',
+      additionalUser: '+$5/additional user',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
       popular: false
@@ -195,10 +333,10 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
-            <span className="hero-text typing-animation">{animatedText}</span>
+            <div className="hero-text typing-animation">{animatedText}</div>
           </div>
           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
-            <span className="text-gray-900">That Run Your Business</span>
+            <div className="text-gray-900">That Run Your Business</div>
           </div>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mt-6 mb-8">
             FlowOps automates your business operations with intelligent AI agents.
@@ -216,28 +354,7 @@ export default function FlowOpsHomepage() {
         </div>
       </section>
 
-      {/* Problem Section */}
-      <section id="features" className="py-20 bg-gray-100">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4 font-headline">Your Operations Shouldn't Be This Hard</h2>
-            <p className="text-xl text-gray-600">
-              Every day, your team wastes hours on repetitive tasks that could be automated.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {problems.map((problem, index) => (
-                <div key={index} className={`bg-white p-8 rounded-xl shadow-sm border-2 transition-all duration-300 ${problemIndex === index ? 'border-primary' : 'border-transparent hover:border-primary/30'}`}>
-                    <div className={`w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6`}>
-                        {problem.icon}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{problem.title}</h3>
-                    <p className="text-gray-600">{problem.desc}</p>
-                </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <OperationsProblemsSection />
 
       {/* Solution Section */}
       <section className="py-20 bg-white">
@@ -282,7 +399,7 @@ export default function FlowOpsHomepage() {
               <div className="bg-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-gray-900">Customer Onboarding</h4>
-                    <Badge variant="success">Active</Badge>
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Active</span>
                 </div>
                 <div className="space-y-3">
                     {workflowSteps.map((step, index) => (
@@ -337,7 +454,7 @@ export default function FlowOpsHomepage() {
                   </div>
                 )}
                 
-                <div className={`${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300 flex flex-col`}>
+                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300`}>
                   <div className="flex-grow">
                     <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                     <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
@@ -346,11 +463,11 @@ export default function FlowOpsHomepage() {
                         ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
                       </span>
                       <span className="text-gray-400 ml-1">
-                        {plan.monthlyPrice === 0 ? '/forever' : '/month'}
+                        {plan.monthlyPrice === 0 ? '' : '/month'}
                       </span>
                     </div>
                   
-                    <ul className="space-y-4">
+                    <ul className="space-y-4 mb-8">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start">
                           <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
@@ -359,7 +476,7 @@ export default function FlowOpsHomepage() {
                       ))}
                     </ul>
                      {plan.additionalUser && (
-                      <p className="text-xs text-gray-400 mt-4">{plan.additionalUser}</p>
+                      <p className="text-xs text-gray-400 mt-auto">{plan.additionalUser}</p>
                     )}
                   </div>
                   
