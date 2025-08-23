@@ -26,6 +26,7 @@ export default function FlowOpsHomepage() {
   const [animatedText, setAnimatedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
+  const [isYearly, setIsYearly] = useState(false);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
   const typingSpeed = 100; 
@@ -106,58 +107,83 @@ export default function FlowOpsHomepage() {
     },
   ];
 
-  const pricingTiers = [
+  const plans = [
     {
       name: 'Free',
-      price: '$0',
-      description: '',
-      buttonText: 'Get Started',
-      buttonVariant: 'outline' as const,
+      description: 'Perfect for getting started',
+      monthlyPrice: 0,
+      yearlyPrice: 0,
       features: [
         '1 User',
-        '100 Predictions / month',
-        '5MB Storage',
-        'Evaluations & Metrics',
-        'Community Support',
-        'Admin Roles & Permissions',
+        '500 Predictions / month',
+        '25MB Storage',
+        'Basic Workflows',
+        'Community Support'
       ],
-      popular: false,
+      buttonText: 'Get Started',
+      buttonVariant: 'outline' as const,
+      popular: false
     },
     {
       name: 'Starter',
-      price: '$15',
       description: 'For individuals & small teams',
-      buttonText: 'Get Started - First Month Free',
-      buttonVariant: 'default' as const,
+      monthlyPrice: 19,
+      yearlyPrice: 15,
       features: [
         'Everything in Free',
-        'Unlimited Flows & Assistants',
-        '10,000 Predictions / month',
-        '1GB Storage',
-        'Admin Roles & Permissions',
         '3 Users',
-        '+ $5/user/month',
+        '5,000 Predictions / month',
+        '500MB Storage',
+        'AI Agents & Custom Workflows',
+        'Email Support'
       ],
-      popular: true,
+      additionalUser: '$8/additional user',
+      buttonText: 'Start Free Trial',
+      buttonVariant: 'default' as const,
+      popular: false
     },
     {
-      name: 'Pro',
-      price: '$30',
-      description: 'For medium-sized businesses',
-      buttonText: 'Get Started',
-      buttonVariant: 'outline' as const,
+      name: 'Professional',
+      description: 'For growing businesses',
+      monthlyPrice: 49,
+      yearlyPrice: 39,
       features: [
         'Everything in Starter',
-        '50,000 Predictions / month',
-        '10GB Storage',
-        'Unlimited Workspaces',
-        '6 Users',
-        '+ $5/user/month',
-        'Admin Roles & Permissions',
+        '10 Users',
+        '25,000 Predictions / month',
+        '5GB Storage',
+        'Advanced AI & Integrations',
+        'Priority Support'
       ],
-      popular: false,
+      additionalUser: '$6/additional user',
+      buttonText: 'Start Free Trial',
+      buttonVariant: 'default' as const,
+      popular: true
     },
+    {
+      name: 'Enterprise',
+      description: 'For large organizations',
+      monthlyPrice: 99,
+      yearlyPrice: 76,
+      features: [
+        'Everything in Professional',
+        'Unlimited Users',
+        '100,000 Predictions / month',
+        '25GB Storage',
+        'White-label & SSO',
+        'Dedicated Support'
+      ],
+      buttonText: 'Contact Sales',
+      buttonVariant: 'outline' as const,
+      popular: false
+    }
   ];
+
+  const getSavingsPercentage = (monthly: number, yearly: number) => {
+    if (monthly === 0) return 0;
+    return Math.round(((monthly * 12 - yearly * 12) / (monthly * 12)) * 100);
+  };
+
 
   return (
       <div className="min-h-screen bg-gray-50 text-gray-800">
@@ -287,63 +313,87 @@ export default function FlowOpsHomepage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-16 bg-gray-900 text-white">
+       {/* Pricing Section */}
+       <section id="pricing" className="py-16 bg-gray-900 text-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
-            <p className="text-xl text-gray-400">
-              Start for free, then scale as you grow.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 items-center">
-            {pricingTiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`bg-gray-800 p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col h-full ${
-                  tier.popular ? 'border-purple-500 scale-105' : 'border-gray-700'
-                }`}
+            <p className="text-xl text-gray-400 mb-8">Start for free, then scale as you grow.</p>
+            
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <span className={`${!isYearly ? 'text-white' : 'text-gray-400'}`}>Monthly</span>
+              <div 
+                className="relative w-14 h-8 bg-gray-600 rounded-full cursor-pointer"
+                onClick={() => setIsYearly(!isYearly)}
               >
-                {tier.popular && (
-                  <div className="absolute top-0 right-8 -mt-4">
-                    <Badge className="bg-purple-500 text-white">Most Popular</Badge>
+                <div 
+                  className={`absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                    isYearly ? 'transform translate-x-6' : ''
+                  }`}
+                />
+              </div>
+              <span className={`${isYearly ? 'text-white' : 'text-gray-400'}`}>
+                Yearly <span className="text-green-400 text-sm">(Save up to 23%)</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
+            {plans.map((plan) => (
+              <div 
+                key={plan.name} 
+                className={`relative ${plan.popular ? 'bg-gradient-to-br from-purple-600 to-blue-600 p-0.5' : ''} rounded-xl flex`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                    <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      Most Popular
+                    </span>
                   </div>
                 )}
-                <div className="flex-grow">
-                  <h3 className="text-2xl font-semibold mb-2">{tier.name}</h3>
-                  <p className="text-gray-400 mb-6 h-6">{tier.description}</p>
-                  <div className="mb-6 flex items-baseline">
-                    <span className="text-4xl font-bold">{tier.price}</span>
-                    {tier.price !== '$0' && <span className="text-gray-400">/month</span>}
+                
+                <div className={`${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-6 h-full transition-all duration-300 flex flex-col`}>
+                  <div className="mb-6 flex-grow">
+                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold">
+                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                      </span>
+                      <span className="text-gray-400 ml-1">
+                        {plan.monthlyPrice === 0 ? 'forever' : '/month'}
+                      </span>
+                    </div>
+                    {isYearly && plan.monthlyPrice > 0 && (
+                      <div className="text-green-400 text-xs mt-1">
+                        ${plan.yearlyPrice * 12}/year (Save {getSavingsPercentage(plan.monthlyPrice, plan.yearlyPrice)}%)
+                      </div>
+                    )}
+                  
+                    <ul className="space-y-3 mt-6">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start">
+                          <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                     {plan.additionalUser && (
+                      <p className="text-xs text-gray-400 mt-4">+ {plan.additionalUser}</p>
+                    )}
                   </div>
-                  <ul className="space-y-3">
-                    {tier.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        {feature.startsWith('+') ? (
-                          <span className="text-sm text-gray-400 ml-6">{feature}</span>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
-                            <span>{feature}</span>
-                          </>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="mt-8">
-                  <Link href={tier.buttonText.includes("First Month Free") ? "/partner/signup" : "/partner/signup"}>
-                    <Button
-                      size="lg"
-                      className={`w-full text-lg ${
-                        tier.popular
-                          ? 'bg-purple-600 hover:bg-purple-700'
-                          : 'bg-gray-700 hover:bg-gray-600'
-                      }`}
-                    >
-                      {tier.buttonText}
-                    </Button>
-                  </Link>
+                  
+                  <div className="mt-auto">
+                    <Link href="/partner/signup">
+                      <Button
+                        size="lg"
+                        className="w-full text-lg"
+                        variant={plan.buttonVariant}
+                      >
+                        {plan.buttonText}
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
