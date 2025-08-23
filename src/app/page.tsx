@@ -154,7 +154,7 @@ function OperationsProblemsSection() {
             </p>
           </div>
           
-          <div className="min-h-[280px] flex items-center justify-center">
+          <div className="h-[380px] flex items-center justify-center">
             {problems.map((problem, index) => (
               <div
                 key={index}
@@ -205,6 +205,7 @@ function PricingSection() {
         '500 Predictions / month',
         '25MB Storage',
         'Basic Workflows',
+        'Community Support',
         'Admin Roles & Permissions'
       ],
       buttonText: 'Get Started',
@@ -222,10 +223,10 @@ function PricingSection() {
         '5,000 Predictions / month',
         '500MB Storage',
         'AI Agents & Custom Workflows',
-        'Admin Roles & Permissions',
-        'Email Support'
+        'Email Support',
+        'Admin Roles & Permissions'
       ],
-      additionalUser: '+$5/additional user',
+      additionalUser: '+$5/user/month',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
       popular: true,
@@ -241,9 +242,9 @@ function PricingSection() {
         '25,000 Predictions / month',
         '5GB Storage',
         'Advanced AI & Integrations',
-        'Admin Roles & Permissions',
+        'Admin Roles & Permissions'
       ],
-      additionalUser: '+$5/additional user',
+      additionalUser: '+$5/user/month',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
       popular: false
@@ -257,7 +258,7 @@ function PricingSection() {
 
 
   return (
-       <section id="pricing" className="py-16 bg-gray-900 text-white">
+       <section id="pricing" className="py-12 bg-gray-900 text-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
@@ -295,7 +296,7 @@ function PricingSection() {
                   </div>
                 )}
                 
-                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800 border-2 border-purple-500 shadow-lg' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300`}>
+                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800 border-2 border-purple-500 shadow-lg' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-6 h-full transition-all duration-300`}>
                     <div className="mb-6">
                       <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                       <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
@@ -328,7 +329,7 @@ function PricingSection() {
                         className="w-full text-lg"
                         variant={plan.buttonVariant}
                       >
-                        {plan.buttonText}
+                        {plan.name === 'Free' ? 'Get Started' : 'First Month Free'}
                       </Button>
                     </Link>
                   </div>
@@ -349,7 +350,7 @@ export default function FlowOpsHomepage() {
   const [loopNum, setLoopNum] = useState(0);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 60; 
+  const typingSpeed = 60;
   const deletingSpeed = 30;
   const delay = 1500;
 
@@ -422,11 +423,11 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
            <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
-            <div className="hero-text"><span className="typing-animation">{animatedText}</span></div>
-          </div>
-          <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
-            <div className="text-gray-900">That Run Your Business</div>
-          </div>
+             <div className="hero-text"><span className="typing-animation">{animatedText}</span></div>
+           </div>
+           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
+             <div className="text-gray-900">That Run Your Business</div>
+           </div>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mt-6 mb-8">
             FlowOps automates your business operations with intelligent AI agents.
             Stop managing tasks manually – let our platform handle routine processes while you focus on growth.
