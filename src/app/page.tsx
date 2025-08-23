@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -189,6 +190,7 @@ function OperationsProblemsSection() {
   );
 }
 
+
 function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
 
@@ -255,11 +257,11 @@ function PricingSection() {
 
 
   return (
-       <section id="pricing" className="py-20 bg-gray-900 text-white">
+       <section id="pricing" className="py-16 bg-gray-900 text-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
-            <p className="text-xl text-gray-400 mb-8">Start for free, then scale as you grow.</p>
+            <p className="text-lg text-gray-400 mb-8">Start for free, then scale as you grow.</p>
             
             <div className="flex items-center justify-center gap-4 mb-8">
               <span className={`${!isYearly ? 'text-white' : 'text-gray-400'}`}>Monthly</span>
@@ -279,11 +281,11 @@ function PricingSection() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center max-w-5xl mx-auto">
             {plans.map((plan) => (
               <div 
                 key={plan.name} 
-                className={`relative ${plan.popular ? 'bg-gradient-to-br from-purple-600 to-blue-600 p-0.5' : ''} rounded-xl flex`}
+                className={`relative ${plan.popular ? 'transform scale-105' : ''} flex`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
@@ -293,20 +295,21 @@ function PricingSection() {
                   </div>
                 )}
                 
-                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300`}>
-                  <div className="flex-grow">
-                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                    <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
-                    <div className="flex items-baseline mb-6">
-                      <span className="text-4xl font-bold">
-                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                      </span>
-                      <span className="text-gray-400 ml-1">
-                        {plan.monthlyPrice === 0 ? '' : '/month'}
-                      </span>
+                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800 border-2 border-purple-500 shadow-lg' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300`}>
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                      <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
+                      <div className="flex items-baseline mb-6">
+                        <span className="text-4xl font-bold">
+                          ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                        </span>
+                        <span className="text-gray-400 ml-1">
+                          {plan.monthlyPrice === 0 ? '' : '/month'}
+                        </span>
+                      </div>
                     </div>
                   
-                    <ul className="space-y-4 mb-8">
+                    <ul className="space-y-4 mb-8 flex-grow">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start">
                           <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
@@ -317,7 +320,6 @@ function PricingSection() {
                      {plan.additionalUser && (
                       <p className="text-xs text-gray-400 mt-auto">{plan.additionalUser}</p>
                     )}
-                  </div>
                   
                   <div className="mt-8">
                     <Link href="/partner/signup">
@@ -420,7 +422,7 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
            <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
-            <div className="hero-text typing-animation">{animatedText}</div>
+            <div className="hero-text"><span className="typing-animation">{animatedText}</span></div>
           </div>
           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
             <div className="text-gray-900">That Run Your Business</div>
