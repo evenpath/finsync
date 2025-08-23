@@ -28,9 +28,9 @@ export default function FlowOpsHomepage() {
   const [loopNum, setLoopNum] = useState(0);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 120; 
-  const deletingSpeed = 60; 
-  const delay = 1500; 
+  const typingSpeed = 120;
+  const deletingSpeed = 60;
+  const delay = 1500;
 
   useEffect(() => {
     const handleTyping = () => {
@@ -114,7 +114,7 @@ export default function FlowOpsHomepage() {
       buttonText: 'Get Started',
       buttonVariant: 'outline' as const,
       features: [
-        '2 Flows & Assistants',
+        '1 User',
         '100 Predictions / month',
         '5MB Storage',
         'Evaluations & Metrics',
