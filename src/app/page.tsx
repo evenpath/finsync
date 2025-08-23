@@ -28,9 +28,9 @@ export default function FlowOpsHomepage() {
   const [loopNum, setLoopNum] = useState(0);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 120; // Faster typing
-  const deletingSpeed = 60; // Faster deleting
-  const delay = 1500; // Shorter pause
+  const typingSpeed = 120;
+  const deletingSpeed = 60;
+  const delay = 1500;
 
   useEffect(() => {
     const handleTyping = () => {
@@ -106,6 +106,58 @@ export default function FlowOpsHomepage() {
     },
   ];
 
+  const pricingTiers = [
+    {
+      name: 'Free',
+      price: '$0',
+      description: '',
+      buttonText: 'Get Started',
+      buttonVariant: 'outline' as const,
+      features: [
+        '2 Flows & Assistants',
+        '100 Predictions / month',
+        '5MB Storage',
+        'Evaluations & Metrics',
+        'Custom Embedded Chatbot Branding',
+        'Community Support',
+      ],
+      popular: false,
+    },
+    {
+      name: 'Starter',
+      price: '$15',
+      description: 'For individuals & small teams',
+      buttonText: 'Get Started - First Month Free',
+      buttonVariant: 'default' as const,
+      features: [
+        'Everything in Free',
+        'Unlimited Flows & Assistants',
+        '10,000 Predictions / month',
+        '1GB Storage',
+        'Community Support',
+      ],
+      popular: true,
+    },
+    {
+      name: 'Pro',
+      price: '$60',
+      description: 'For medium-sized businesses',
+      buttonText: 'Get Started',
+      buttonVariant: 'outline' as const,
+      features: [
+        'Everything in Starter',
+        '50,000 Predictions / month',
+        '10GB Storage',
+        'Unlimited Workspaces',
+        '6 Users',
+        '+ $10/user/month',
+        'Admin Roles & Permissions',
+        'Priority Support',
+      ],
+      popular: false,
+    },
+  ];
+
   return (
       <div className="min-h-screen bg-gray-50 text-gray-800">
       {/* Header */}
@@ -130,13 +182,12 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[160px] md:min-h-[190px]">
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[80px] md:min-h-[90px]">
             <span className="hero-text typing-animation">{animatedText}</span>
-            <br />
-            <span className="text-gray-900">That Run Your Business</span>
+            <span className="text-gray-900"> That Run Your Business</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            FlowOps automates your business operations with intelligent AI agents. 
+            FlowOps automates your business operations with intelligent AI agents.
             Stop managing tasks manually – let our platform handle routine processes while you focus on growth.
           </p>
           <div className="flex justify-center space-x-4">
@@ -163,7 +214,7 @@ export default function FlowOpsHomepage() {
           <div className="grid md:grid-cols-3 gap-8">
             {problems.map((problem, index) => (
                 <div key={index} className={`bg-white p-8 rounded-xl shadow-sm border-2 transition-all duration-300 ${problemIndex === index ? 'border-primary' : 'border-transparent hover:border-primary/30'}`}>
-                    <div className={`w-12 h-12 bg-${problem.color}-100 rounded-lg flex items-center justify-center mb-6`}>
+                    <div className={`w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6`}>
                         {problem.icon}
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">{problem.title}</h3>
@@ -233,31 +284,64 @@ export default function FlowOpsHomepage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="pricing" className="py-20 bg-gray-100">
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-gray-900 text-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4 font-headline">Get Started in Minutes</h2>
-            <p className="text-xl text-gray-600">
-              No complex setup or technical expertise required.
+            <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
+            <p className="text-xl text-gray-400">
+              Start for free, then scale as you grow.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Choose Your Workflow</h3>
-              <p className="text-gray-600">Pick from pre-built templates or create custom workflows for your business.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Your Team</h3>
-              <p className="text-gray-600">Invite team members and define their roles and permissions.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Watch It Work</h3>
-              <p className="text-gray-600">AI takes over routine tasks while you monitor progress and results.</p>
-            </div>
+          <div className="grid md:grid-cols-3 gap-8 items-center">
+            {pricingTiers.map((tier) => (
+              <div
+                key={tier.name}
+                className={`bg-gray-800 p-8 rounded-2xl border-2 transition-all duration-300 flex flex-col h-full ${
+                  tier.popular ? 'border-purple-500 scale-105' : 'border-gray-700'
+                }`}
+              >
+                {tier.popular && (
+                  <div className="absolute top-0 right-8 -mt-4">
+                    <Badge className="bg-purple-500 text-white">Most Popular</Badge>
+                  </div>
+                )}
+                <div className="flex-grow">
+                  <h3 className="text-2xl font-semibold mb-2">{tier.name}</h3>
+                  <p className="text-gray-400 mb-6 h-6">{tier.description}</p>
+                  <div className="mb-8">
+                    <span className="text-5xl font-bold">{tier.price}</span>
+                    <span className="text-gray-400">/month</span>
+                  </div>
+                  <ul className="space-y-4">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-start">
+                        {feature.startsWith('+') ? (
+                          <span className="text-sm text-gray-400 ml-6">{feature}</span>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-8">
+                  <Button
+                    size="lg"
+                    className={`w-full text-lg ${
+                      tier.popular
+                        ? 'bg-purple-600 hover:bg-purple-700'
+                        : 'bg-gray-700 hover:bg-gray-600'
+                    }`}
+                  >
+                    {tier.buttonText}
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -271,7 +355,7 @@ export default function FlowOpsHomepage() {
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/partner/signup">
-                <Button size="lg" className="bg-white text-primary hover:bg-gray-100">Start Free Trial</Button>
+                <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100">Start Free Trial</Button>
             </Link>
             <Button variant="outline" size="lg" className="bg-primary/20 text-white hover:bg-primary/40 border-primary-foreground/50">Schedule Demo</Button>
           </div>
@@ -325,4 +409,3 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
-
