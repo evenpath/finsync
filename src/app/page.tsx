@@ -139,7 +139,7 @@ export default function FlowOpsHomepage() {
         'Admin Roles & Permissions',
         'Email Support'
       ],
-      additionalUser: '$8/additional user',
+      additionalUser: '+$8/additional user',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
       popular: true,
@@ -157,7 +157,7 @@ export default function FlowOpsHomepage() {
         'Advanced AI & Integrations',
         'Admin Roles & Permissions',
       ],
-      additionalUser: '$6/additional user',
+      additionalUser: '+$6/additional user',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
       popular: false
@@ -346,7 +346,7 @@ export default function FlowOpsHomepage() {
                         ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
                       </span>
                       <span className="text-gray-400 ml-1">
-                        {plan.monthlyPrice === 0 ? 'forever' : '/month'}
+                        {plan.monthlyPrice === 0 ? '/forever' : '/month'}
                       </span>
                     </div>
                   
@@ -359,7 +359,7 @@ export default function FlowOpsHomepage() {
                       ))}
                     </ul>
                      {plan.additionalUser && (
-                      <p className="text-xs text-gray-400 mt-4">+ {plan.additionalUser}</p>
+                      <p className="text-xs text-gray-400 mt-4">{plan.additionalUser}</p>
                     )}
                   </div>
                   
