@@ -29,8 +29,8 @@ export default function FlowOpsHomepage() {
   const [isYearly, setIsYearly] = useState(false);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 100; 
-  const deletingSpeed = 50; 
+  const typingSpeed = 100;
+  const deletingSpeed = 50;
   const delay = 1500;
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function FlowOpsHomepage() {
     },
   ];
 
-  const plans = [
+    const plans = [
     {
       name: 'Free',
       description: 'Perfect for getting started',
@@ -118,6 +118,7 @@ export default function FlowOpsHomepage() {
         '500 Predictions / month',
         '25MB Storage',
         'Basic Workflows',
+        'Admin Roles & Permissions',
         'Community Support'
       ],
       buttonText: 'Get Started',
@@ -135,12 +136,13 @@ export default function FlowOpsHomepage() {
         '5,000 Predictions / month',
         '500MB Storage',
         'AI Agents & Custom Workflows',
+        'Admin Roles & Permissions',
         'Email Support'
       ],
       additionalUser: '$8/additional user',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
-      popular: false
+      popular: true,
     },
     {
       name: 'Professional',
@@ -153,28 +155,11 @@ export default function FlowOpsHomepage() {
         '25,000 Predictions / month',
         '5GB Storage',
         'Advanced AI & Integrations',
-        'Priority Support'
+        'Admin Roles & Permissions',
       ],
       additionalUser: '$6/additional user',
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
-      popular: true
-    },
-    {
-      name: 'Enterprise',
-      description: 'For large organizations',
-      monthlyPrice: 99,
-      yearlyPrice: 76,
-      features: [
-        'Everything in Professional',
-        'Unlimited Users',
-        '100,000 Predictions / month',
-        '25GB Storage',
-        'White-label & SSO',
-        'Dedicated Support'
-      ],
-      buttonText: 'Contact Sales',
-      buttonVariant: 'outline' as const,
       popular: false
     }
   ];
@@ -338,7 +323,7 @@ export default function FlowOpsHomepage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch justify-center">
             {plans.map((plan) => (
               <div 
                 key={plan.name} 
