@@ -154,7 +154,6 @@ export default function FlowOpsHomepage() {
         '6 Users',
         '+ $5/user/month',
         'Admin Roles & Permissions',
-        'Priority Support',
       ],
       popular: false,
     },
@@ -289,19 +288,19 @@ export default function FlowOpsHomepage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-gray-900 text-white">
+      <section id="pricing" className="py-16 bg-gray-900 text-white">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
             <p className="text-xl text-gray-400">
               Start for free, then scale as you grow.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 items-center">
+          <div className="grid md:grid-cols-3 gap-6 items-center">
             {pricingTiers.map((tier) => (
               <div
                 key={tier.name}
-                className={`bg-gray-800 p-8 rounded-2xl border-2 transition-all duration-300 flex flex-col h-full ${
+                className={`bg-gray-800 p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col h-full ${
                   tier.popular ? 'border-purple-500 scale-105' : 'border-gray-700'
                 }`}
               >
@@ -313,11 +312,11 @@ export default function FlowOpsHomepage() {
                 <div className="flex-grow">
                   <h3 className="text-2xl font-semibold mb-2">{tier.name}</h3>
                   <p className="text-gray-400 mb-6 h-6">{tier.description}</p>
-                  <div className="mb-8">
+                  <div className="mb-6">
                     <span className="text-5xl font-bold">{tier.price}</span>
                     {tier.price !== '$0' && <span className="text-gray-400">/month</span>}
                   </div>
-                  <ul className="space-y-4">
+                  <ul className="space-y-3">
                     {tier.features.map((feature, i) => (
                       <li key={i} className="flex items-start">
                         {feature.startsWith('+') ? (
