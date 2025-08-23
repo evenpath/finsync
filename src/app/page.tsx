@@ -299,7 +299,7 @@ export default function FlowOpsHomepage() {
       </section>
 
        {/* Pricing Section */}
-       <section id="pricing" className="py-16 bg-gray-900 text-white">
+       <section id="pricing" className="py-20 bg-gray-900 text-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
@@ -323,7 +323,7 @@ export default function FlowOpsHomepage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center">
             {plans.map((plan) => (
               <div 
                 key={plan.name} 
@@ -337,11 +337,11 @@ export default function FlowOpsHomepage() {
                   </div>
                 )}
                 
-                <div className={`${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-6 h-full transition-all duration-300 flex flex-col`}>
-                  <div className="mb-6 flex-grow">
+                <div className={`${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300 flex flex-col`}>
+                  <div className="flex-grow">
                     <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                     <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
-                    <div className="flex items-baseline">
+                    <div className="flex items-baseline mb-6">
                       <span className="text-4xl font-bold">
                         ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
                       </span>
@@ -349,13 +349,8 @@ export default function FlowOpsHomepage() {
                         {plan.monthlyPrice === 0 ? 'forever' : '/month'}
                       </span>
                     </div>
-                    {isYearly && plan.monthlyPrice > 0 && (
-                      <div className="text-green-400 text-xs mt-1">
-                        ${plan.yearlyPrice * 12}/year (Save {getSavingsPercentage(plan.monthlyPrice, plan.yearlyPrice)}%)
-                      </div>
-                    )}
                   
-                    <ul className="space-y-3 mt-6">
+                    <ul className="space-y-4">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start">
                           <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
@@ -368,7 +363,7 @@ export default function FlowOpsHomepage() {
                     )}
                   </div>
                   
-                  <div className="mt-auto">
+                  <div className="mt-8">
                     <Link href="/partner/signup">
                       <Button
                         size="lg"
