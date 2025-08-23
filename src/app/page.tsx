@@ -28,8 +28,8 @@ export default function FlowOpsHomepage() {
   const [loopNum, setLoopNum] = useState(0);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 120;
-  const deletingSpeed = 60;
+  const typingSpeed = 100; 
+  const deletingSpeed = 50; 
   const delay = 1500;
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <div className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[80px] md:min-h-[90px]">
+          <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
             <span className="hero-text typing-animation">{animatedText}</span>
           </div>
           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
@@ -312,8 +312,8 @@ export default function FlowOpsHomepage() {
                 <div className="flex-grow">
                   <h3 className="text-2xl font-semibold mb-2">{tier.name}</h3>
                   <p className="text-gray-400 mb-6 h-6">{tier.description}</p>
-                  <div className="mb-6">
-                    <span className="text-5xl font-bold">{tier.price}</span>
+                  <div className="mb-6 flex items-baseline">
+                    <span className="text-4xl font-bold">{tier.price}</span>
                     {tier.price !== '$0' && <span className="text-gray-400">/month</span>}
                   </div>
                   <ul className="space-y-3">
@@ -332,7 +332,7 @@ export default function FlowOpsHomepage() {
                   </ul>
                 </div>
                 <div className="mt-8">
-                  <Link href="/partner/signup">
+                  <Link href={tier.buttonText.includes("First Month Free") ? "/partner/signup" : "/partner/signup"}>
                     <Button
                       size="lg"
                       className={`w-full text-lg ${
