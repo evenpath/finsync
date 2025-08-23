@@ -28,15 +28,9 @@ export default function FlowOpsHomepage() {
   const [loopNum, setLoopNum] = useState(0);
 
   const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-<<<<<<< HEAD
-  const typingSpeed = 100;
-  const deletingSpeed = 50;
-  const delay = 1500;
-=======
-  const typingSpeed = 120; // Faster typing
-  const deletingSpeed = 60; // Faster deleting
-  const delay = 1500; // Shorter pause
->>>>>>> 198db5f70d0fe1a5d86e38afef01f794cf878e01
+  const typingSpeed = 120; 
+  const deletingSpeed = 60; 
+  const delay = 1500; 
 
   useEffect(() => {
     const handleTyping = () => {
@@ -140,7 +134,6 @@ export default function FlowOpsHomepage() {
         'Unlimited Flows & Assistants',
         '10,000 Predictions / month',
         '1GB Storage',
-        'Community Support',
         'Admin Roles & Permissions',
       ],
       popular: true,
@@ -189,22 +182,11 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-<<<<<<< HEAD
-          <div className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[160px] md:min-h-[180px]">
-            <div className="h-[80px] md:h-[90px]">
-              <span className="hero-text typing-animation">{animatedText}</span>
-            </div>
-            <div>
-              <span className="text-gray-900">That Run Your Business</span>
-            </div>
-          </div>
-=======
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[160px] md:min-h-[190px]">
             <span className="hero-text typing-animation">{animatedText}</span>
             <br />
             <span className="text-gray-900">That Run Your Business</span>
           </h1>
->>>>>>> 198db5f70d0fe1a5d86e38afef01f794cf878e01
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
             FlowOps automates your business operations with intelligent AI agents.
             Stop managing tasks manually – let our platform handle routine processes while you focus on growth.
@@ -428,4 +410,4 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
-
+    
