@@ -135,12 +135,14 @@ export default function FlowOpsHomepage() {
         '10,000 Predictions / month',
         '1GB Storage',
         'Admin Roles & Permissions',
+        '3 Users',
+        '+ $5/user/month',
       ],
       popular: true,
     },
     {
       name: 'Pro',
-      price: '$60',
+      price: '$30',
       description: 'For medium-sized businesses',
       buttonText: 'Get Started',
       buttonVariant: 'outline' as const,
@@ -150,7 +152,7 @@ export default function FlowOpsHomepage() {
         '10GB Storage',
         'Unlimited Workspaces',
         '6 Users',
-        '+ $10/user/month',
+        '+ $5/user/month',
         'Admin Roles & Permissions',
         'Priority Support',
       ],
@@ -182,12 +184,13 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[160px] md:min-h-[190px]">
+          <div className="text-5xl md:text-7xl font-extrabold mb-6 font-headline leading-tight min-h-[80px] md:min-h-[90px]">
             <span className="hero-text typing-animation">{animatedText}</span>
-            <br />
+          </div>
+          <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
             <span className="text-gray-900">That Run Your Business</span>
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+          </div>
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mt-6 mb-8">
             FlowOps automates your business operations with intelligent AI agents.
             Stop managing tasks manually – let our platform handle routine processes while you focus on growth.
           </p>
@@ -312,7 +315,7 @@ export default function FlowOpsHomepage() {
                   <p className="text-gray-400 mb-6 h-6">{tier.description}</p>
                   <div className="mb-8">
                     <span className="text-5xl font-bold">{tier.price}</span>
-                    <span className="text-gray-400">/month</span>
+                    {tier.price !== '$0' && <span className="text-gray-400">/month</span>}
                   </div>
                   <ul className="space-y-4">
                     {tier.features.map((feature, i) => (
@@ -330,16 +333,18 @@ export default function FlowOpsHomepage() {
                   </ul>
                 </div>
                 <div className="mt-8">
-                  <Button
-                    size="lg"
-                    className={`w-full text-lg ${
-                      tier.popular
-                        ? 'bg-purple-600 hover:bg-purple-700'
-                        : 'bg-gray-700 hover:bg-gray-600'
-                    }`}
-                  >
-                    {tier.buttonText}
-                  </Button>
+                  <Link href="/partner/signup">
+                    <Button
+                      size="lg"
+                      className={`w-full text-lg ${
+                        tier.popular
+                          ? 'bg-purple-600 hover:bg-purple-700'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      {tier.buttonText}
+                    </Button>
+                  </Link>
                 </div>
               </div>
             ))}
