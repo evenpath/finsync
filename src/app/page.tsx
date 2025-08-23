@@ -189,64 +189,10 @@ function OperationsProblemsSection() {
   );
 }
 
-
-export default function FlowOpsHomepage() {
-  const [workflowStep, setWorkflowStep] = useState(0);
-  const [animatedText, setAnimatedText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [loopNum, setLoopNum] = useState(0);
+function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
 
-  const textOptions = ["AI Workflows", "Automation", "Efficiency"];
-  const typingSpeed = 60; // Faster typing
-  const deletingSpeed = 30; // Faster deleting
-  const delay = 1500; // Shorter pause
-
-  useEffect(() => {
-    const handleTyping = () => {
-      const i = loopNum % textOptions.length;
-      const fullText = textOptions[i];
-
-      setAnimatedText(
-        isDeleting
-          ? fullText.substring(0, animatedText.length - 1)
-          : fullText.substring(0, animatedText.length + 1)
-      );
-
-      if (!isDeleting && animatedText === fullText) {
-        setTimeout(() => setIsDeleting(true), delay);
-      } else if (isDeleting && animatedText === '') {
-        setIsDeleting(false);
-        setLoopNum(loopNum + 1);
-      }
-    };
-
-    const typingTimeout = setTimeout(
-      handleTyping,
-      isDeleting ? deletingSpeed : typingSpeed
-    );
-
-    return () => clearTimeout(typingTimeout);
-  }, [animatedText, isDeleting, loopNum]);
-
-
-  useEffect(() => {
-    const workflowInterval = setInterval(() => {
-      setWorkflowStep((prev) => (prev + 1) % 4);
-    }, 2000);
-    return () => {
-      clearInterval(workflowInterval);
-    };
-  }, []);
-
-  const workflowSteps = [
-    { status: 'completed', text: 'Welcome email sent', icon: <Mail className="w-5 h-5 text-gray-500" /> },
-    { status: 'completed', text: 'Account setup completed', icon: <Settings className="w-5 h-5 text-gray-500" /> },
-    { status: 'active', text: 'Training session scheduled', icon: <Calendar className="w-5 h-5 text-blue-500" /> },
-    { status: 'pending', text: 'Follow-up call pending', icon: <Play className="w-5 h-5 text-gray-400" /> },
-  ];
-
-    const plans = [
+  const plans = [
     {
       name: 'Free',
       description: 'Perfect for getting started',
@@ -309,6 +255,147 @@ export default function FlowOpsHomepage() {
 
 
   return (
+       <section id="pricing" className="py-20 bg-gray-900 text-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
+            <p className="text-xl text-gray-400 mb-8">Start for free, then scale as you grow.</p>
+            
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <span className={`${!isYearly ? 'text-white' : 'text-gray-400'}`}>Monthly</span>
+              <div 
+                className="relative w-14 h-8 bg-gray-600 rounded-full cursor-pointer"
+                onClick={() => setIsYearly(!isYearly)}
+              >
+                <div 
+                  className={`absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                    isYearly ? 'transform translate-x-6' : ''
+                  }`}
+                />
+              </div>
+              <span className={`${isYearly ? 'text-white' : 'text-gray-400'}`}>
+                Yearly <span className="text-green-400 text-sm">(Save up to 23%)</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center">
+            {plans.map((plan) => (
+              <div 
+                key={plan.name} 
+                className={`relative ${plan.popular ? 'bg-gradient-to-br from-purple-600 to-blue-600 p-0.5' : ''} rounded-xl flex`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                    <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                
+                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300`}>
+                  <div className="flex-grow">
+                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
+                    <div className="flex items-baseline mb-6">
+                      <span className="text-4xl font-bold">
+                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                      </span>
+                      <span className="text-gray-400 ml-1">
+                        {plan.monthlyPrice === 0 ? '' : '/month'}
+                      </span>
+                    </div>
+                  
+                    <ul className="space-y-4 mb-8">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start">
+                          <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                     {plan.additionalUser && (
+                      <p className="text-xs text-gray-400 mt-auto">{plan.additionalUser}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mt-8">
+                    <Link href="/partner/signup">
+                      <Button
+                        size="lg"
+                        className="w-full text-lg"
+                        variant={plan.buttonVariant}
+                      >
+                        {plan.buttonText}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+  );
+}
+
+
+export default function FlowOpsHomepage() {
+  const [workflowStep, setWorkflowStep] = useState(0);
+  const [animatedText, setAnimatedText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopNum, setLoopNum] = useState(0);
+
+  const textOptions = ["AI Workflows", "Automation", "Efficiency"];
+  const typingSpeed = 60; 
+  const deletingSpeed = 30;
+  const delay = 1500;
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const i = loopNum % textOptions.length;
+      const fullText = textOptions[i];
+
+      setAnimatedText(
+        isDeleting
+          ? fullText.substring(0, animatedText.length - 1)
+          : fullText.substring(0, animatedText.length + 1)
+      );
+
+      if (!isDeleting && animatedText === fullText) {
+        setTimeout(() => setIsDeleting(true), delay);
+      } else if (isDeleting && animatedText === '') {
+        setIsDeleting(false);
+        setLoopNum(loopNum + 1);
+      }
+    };
+
+    const typingTimeout = setTimeout(
+      handleTyping,
+      isDeleting ? deletingSpeed : typingSpeed
+    );
+
+    return () => clearTimeout(typingTimeout);
+  }, [animatedText, isDeleting, loopNum]);
+
+
+  useEffect(() => {
+    const workflowInterval = setInterval(() => {
+      setWorkflowStep((prev) => (prev + 1) % 4);
+    }, 2000);
+    return () => {
+      clearInterval(workflowInterval);
+    };
+  }, []);
+
+  const workflowSteps = [
+    { status: 'completed', text: 'Welcome email sent', icon: <Mail className="w-5 h-5 text-gray-500" /> },
+    { status: 'completed', text: 'Account setup completed', icon: <Settings className="w-5 h-5 text-gray-500" /> },
+    { status: 'active', text: 'Training session scheduled', icon: <Calendar className="w-5 h-5 text-blue-500" /> },
+    { status: 'pending', text: 'Follow-up call pending', icon: <Play className="w-5 h-5 text-gray-400" /> },
+  ];
+
+  return (
       <div className="min-h-screen bg-gray-50 text-gray-800">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b">
@@ -332,7 +419,7 @@ export default function FlowOpsHomepage() {
       {/* Hero Section */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
-          <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
+           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
             <div className="hero-text typing-animation">{animatedText}</div>
           </div>
           <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
@@ -415,88 +502,7 @@ export default function FlowOpsHomepage() {
         </div>
       </section>
 
-       {/* Pricing Section */}
-       <section id="pricing" className="py-20 bg-gray-900 text-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
-            <p className="text-xl text-gray-400 mb-8">Start for free, then scale as you grow.</p>
-            
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <span className={`${!isYearly ? 'text-white' : 'text-gray-400'}`}>Monthly</span>
-              <div 
-                className="relative w-14 h-8 bg-gray-600 rounded-full cursor-pointer"
-                onClick={() => setIsYearly(!isYearly)}
-              >
-                <div 
-                  className={`absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
-                    isYearly ? 'transform translate-x-6' : ''
-                  }`}
-                />
-              </div>
-              <span className={`${isYearly ? 'text-white' : 'text-gray-400'}`}>
-                Yearly <span className="text-green-400 text-sm">(Save up to 23%)</span>
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center">
-            {plans.map((plan) => (
-              <div 
-                key={plan.name} 
-                className={`relative ${plan.popular ? 'bg-gradient-to-br from-purple-600 to-blue-600 p-0.5' : ''} rounded-xl flex`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                    <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                
-                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-8 h-full transition-all duration-300`}>
-                  <div className="flex-grow">
-                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                    <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
-                    <div className="flex items-baseline mb-6">
-                      <span className="text-4xl font-bold">
-                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                      </span>
-                      <span className="text-gray-400 ml-1">
-                        {plan.monthlyPrice === 0 ? '' : '/month'}
-                      </span>
-                    </div>
-                  
-                    <ul className="space-y-4 mb-8">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start">
-                          <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                     {plan.additionalUser && (
-                      <p className="text-xs text-gray-400 mt-auto">{plan.additionalUser}</p>
-                    )}
-                  </div>
-                  
-                  <div className="mt-8">
-                    <Link href="/partner/signup">
-                      <Button
-                        size="lg"
-                        className="w-full text-lg"
-                        variant={plan.buttonVariant}
-                      >
-                        {plan.buttonText}
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       <PricingSection />
 
       {/* CTA Section */}
       <section className="py-20 bg-primary">
