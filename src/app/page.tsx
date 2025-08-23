@@ -22,19 +22,19 @@ function OperationsProblemsSection() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveFlow((prev) => (prev + 1) % 3);
-    }, 3000);
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
-  const SimpleNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
+  const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
     <div className={`
-      px-4 py-3 rounded-lg text-center transition-all duration-700 border
+      px-6 py-4 rounded-lg text-center transition-all duration-500 border text-sm font-medium
       ${active 
         ? status === 'problem' 
-          ? 'bg-red-50 border-red-200 text-red-700' 
+          ? 'bg-red-50 border-red-200 text-red-900' 
           : status === 'slow'
-          ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-          : 'bg-blue-50 border-blue-200 text-blue-700'
+          ? 'bg-orange-50 border-orange-200 text-orange-900'
+          : 'bg-blue-50 border-blue-200 text-blue-900'
         : 'bg-gray-50 border-gray-200 text-gray-500'
       }
     `}
@@ -43,123 +43,170 @@ function OperationsProblemsSection() {
     </div>
   );
 
-  const SimpleArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
+  const FlowArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
     <div className="flex justify-center items-center py-2">
       <div className={`
-        text-2xl transition-all duration-500
-        ${active ? 'text-gray-600' : 'text-gray-300'}
+        w-px h-6 transition-all duration-500
+        ${active ? 'bg-gray-400' : 'bg-gray-300'}
       `}
       style={{ transitionDelay: `${delay}ms` }}>
-        ↓
+      </div>
+      <div className={`
+        w-2 h-2 border-b border-r border-gray-400 transform rotate-45 -mt-1 transition-all duration-500
+        ${active ? 'border-gray-400' : 'border-gray-300'}
+      `}
+      style={{ transitionDelay: `${delay + 100}ms` }}>
       </div>
     </div>
   );
 
-  const ManualFlow = ({ active }: { active: boolean }) => (
-    <div className="space-y-4 max-w-xs mx-auto">
-      <SimpleNode active={active} delay={0}>📋 Task Assigned</SimpleNode>
-      <SimpleArrow active={active} delay={300} />
-      <SimpleNode active={active} delay={600} status="slow">⏱️ Find the right tool</SimpleNode>
-      <SimpleArrow active={active} delay={900} />
-      <SimpleNode active={active} delay={1200} status="slow">💬 Ask for clarification</SimpleNode>
-      <SimpleArrow active={active} delay={1500} />
-      <SimpleNode active={active} delay={1800} status="problem">😰 Rush to finish</SimpleNode>
+  const ManualWorkFlow = ({ active }: { active: boolean }) => (
+    <div className="h-80 flex flex-col justify-center">
+      <div className="space-y-4 max-w-sm mx-auto">
+        <ProcessNode active={active} delay={0}>Task Request Received</ProcessNode>
+        <FlowArrow active={active} delay={300} />
+        <ProcessNode active={active} delay={600} status="slow">Search Through Multiple Tools</ProcessNode>
+        <FlowArrow active={active} delay={900} />
+        <ProcessNode active={active} delay={1200} status="slow">Request Clarification & Wait</ProcessNode>
+        <FlowArrow active={active} delay={1500} />
+        <ProcessNode active={active} delay={1800} status="problem">Rushed Completion Under Pressure</ProcessNode>
+      </div>
     </div>
   );
 
-  const ProcessFlow = ({ active }: { active: boolean }) => (
-    <div className="space-y-6">
-      <SimpleNode active={active} delay={0}>📋 Same Task</SimpleNode>
-      <SimpleArrow active={active} delay={300} />
-      <div className="grid grid-cols-3 gap-4">
-        <div className="text-center">
-          <div className={`text-sm text-gray-500 mb-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '600ms' }}>Person A</div>
-          <SimpleNode active={active} delay={600} status="normal">Method 1</SimpleNode>
+  const InconsistentProcessFlow = ({ active }: { active: boolean }) => (
+    <div className="h-80 flex flex-col justify-center">
+      <div className="space-y-6">
+        <div className="flex justify-center">
+          <ProcessNode active={active} delay={0}>Identical Task Assignment</ProcessNode>
         </div>
-        <div className="text-center">
-          <div className={`text-sm text-gray-500 mb-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '800ms' }}>Person B</div>
-          <SimpleNode active={active} delay={800} status="slow">Method 2</SimpleNode>
+        <FlowArrow active={active} delay={300} />
+        <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto">
+          <div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">Team Member A</div>
+            <ProcessNode active={active} delay={600} status="normal">Standard Approach</ProcessNode>
+          </div>
+          <div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">Team Member B</div>
+            <ProcessNode active={active} delay={800} status="slow">Alternative Method</ProcessNode>
+          </div>
+          <div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">Team Member C</div>
+            <ProcessNode active={active} delay={1000} status="problem">Custom Workaround</ProcessNode>
+          </div>
         </div>
-        <div className="text-center">
-          <div className={`text-sm text-gray-500 mb-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '1000ms' }}>Person C</div>
-          <SimpleNode active={active} delay={1000} status="problem">Method 3</SimpleNode>
+        <FlowArrow active={active} delay={1300} />
+        <div className="flex justify-center">
+          <ProcessNode active={active} delay={1600} status="problem">Inconsistent Quality & Outcomes</ProcessNode>
         </div>
       </div>
-      <SimpleArrow active={active} delay={1300} />
-      <SimpleNode active={active} delay={1600} status="problem">❌ Inconsistent Results</SimpleNode>
     </div>
   );
 
   const VisibilityFlow = ({ active }: { active: boolean }) => (
-    <div className="space-y-4 max-w-md mx-auto">
-      <div className="grid grid-cols-3 gap-4">
-        <SimpleNode active={active} delay={0}>Task 1</SimpleNode>
-        <SimpleNode active={active} delay={200}>Task 2</SimpleNode>
-        <SimpleNode active={active} delay={400}>Task 3</SimpleNode>
+    <div className="h-80 flex flex-col justify-center">
+      <div className="space-y-6">
+        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+          <ProcessNode active={active} delay={0}>Project Alpha</ProcessNode>
+          <ProcessNode active={active} delay={200}>Project Beta</ProcessNode>
+          <ProcessNode active={active} delay={400}>Project Gamma</ProcessNode>
+        </div>
+        <FlowArrow active={active} delay={600} />
+        <div className="flex justify-center">
+          <div className={`
+            text-center p-6 rounded-lg border-2 border-dashed transition-all duration-500 max-w-xs
+            ${active ? 'border-gray-400 bg-gray-50' : 'border-gray-300 bg-gray-50'}
+          `}
+          style={{ transitionDelay: '800ms' }}>
+            <div className="text-lg font-medium text-gray-700 mb-1">Management View</div>
+            <div className="text-sm text-gray-500">Status Unknown</div>
+          </div>
+        </div>
+        <FlowArrow active={active} delay={1200} />
+        <div className="flex justify-center">
+          <ProcessNode active={active} delay={1500} status="problem">Crisis Discovery During Client Review</ProcessNode>
+        </div>
       </div>
-      <SimpleArrow active={active} delay={600} />
-      <div className={`
-        text-center p-4 rounded-lg border-2 border-dashed transition-all duration-700
-        ${active ? 'border-gray-400 bg-gray-100' : 'border-gray-200 bg-gray-50'}
-      `}
-      style={{ transitionDelay: '800ms' }}>
-        <div className="text-2xl mb-2">🤷‍♂️</div>
-        <div className="text-sm text-gray-600">Manager's View</div>
-        <div className="text-xs text-gray-500 mt-1">What's the status?</div>
-      </div>
-      <SimpleArrow active={active} delay={1200} />
-      <SimpleNode active={active} delay={1500} status="problem">🚨 Last-minute surprises</SimpleNode>
     </div>
   );
 
   const problems = [
     {
-      title: "Manual Work",
-      subtitle: "Too many steps, too much time",
-      component: ManualFlow
+      title: "Manual Coordination",
+      subtitle: "Excessive time spent on routine task management",
+      component: ManualWorkFlow,
+      impact: "45 min lost daily per person"
     },
     {
-      title: "No Standard Process",
-      subtitle: "Everyone does it differently",
-      component: ProcessFlow
+      title: "Process Inconsistency",
+      subtitle: "Different approaches leading to unpredictable results",
+      component: InconsistentProcessFlow,
+      impact: "30% rework rate"
     },
     {
-      title: "No Visibility",
-      subtitle: "Problems discovered too late",
-      component: VisibilityFlow
+      title: "Limited Visibility",
+      subtitle: "Management operates without real-time project insights",
+      component: VisibilityFlow,
+      impact: "Reactive problem solving"
     }
   ];
 
   return (
-    <div className="bg-gray-50 py-16 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="bg-gray-50 py-20 px-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Your Operations Shouldn't Be This Hard
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Your Operations Shouldn't Be This Inefficient
           </h2>
-          <p className="text-lg text-gray-600">
-            Every day, your team wastes hours on repetitive tasks that could be automated.
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Every day, your team loses valuable time on repetitive coordination that intelligent automation could eliminate.
           </p>
         </div>
 
-        {/* Current Problem Display */}
-        <div className="bg-white rounded-xl p-8 shadow-sm mb-8">
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-1">
-              {problems[activeFlow].title}
-            </h3>
-            <p className="text-gray-600 text-sm">
-              {problems[activeFlow].subtitle}
-            </p>
+        {/* Navigation */}
+        <div className="flex justify-center mb-12">
+          <div className="bg-white rounded-lg shadow-sm border p-1">
+            {problems.map((problem, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveFlow(index)}
+                className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                  activeFlow === index
+                    ? 'bg-slate-900 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {problem.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Problem Display */}
+        <div className="bg-white rounded-lg shadow-sm border">
+          {/* Header */}
+          <div className="px-8 py-6 border-b border-gray-200">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {problems[activeFlow].title}
+              </h3>
+              <p className="text-gray-600 text-sm mb-3">
+                {problems[activeFlow].subtitle}
+              </p>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                Impact: {problems[activeFlow].impact}
+              </span>
+            </div>
           </div>
           
-          <div className="h-[380px] flex items-center justify-center">
+          {/* Flow Content - Fixed Height Container */}
+          <div className="relative overflow-hidden">
             {problems.map((problem, index) => (
               <div
                 key={index}
-                className={`transition-opacity duration-500 ${
-                  activeFlow === index ? 'opacity-100' : 'opacity-0 absolute'
+                className={`absolute inset-0 px-8 transition-opacity duration-500 ${
+                  activeFlow === index ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
               >
                 <problem.component active={activeFlow === index} />
@@ -168,27 +215,32 @@ function OperationsProblemsSection() {
           </div>
         </div>
 
-        {/* Simple Navigation */}
-        <div className="flex justify-center space-x-8">
-          {problems.map((problem, index) => (
+        {/* Progress Indicators */}
+        <div className="flex justify-center mt-8 space-x-2">
+          {problems.map((_, index) => (
             <button
               key={index}
               onClick={() => setActiveFlow(index)}
-              className={`text-center transition-all duration-200 ${
-                activeFlow === index ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+              className={`h-2 rounded-full transition-all duration-300 ${
+                activeFlow === index 
+                  ? 'w-8 bg-slate-900' 
+                  : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
-            >
-              <div className={`w-3 h-3 rounded-full mx-auto mb-2 transition-colors ${
-                activeFlow === index ? 'bg-blue-500' : 'bg-gray-300'
-              }`} />
-              <div className="text-xs font-medium">{problem.title}</div>
-            </button>
+            />
           ))}
+        </div>
+
+        {/* Bottom Note */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-500">
+            Scenarios auto-advance every 4 seconds • Click tabs to explore manually
+          </p>
         </div>
       </div>
     </div>
   );
 }
+
 
 
 function PricingSection() {
