@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -25,6 +24,94 @@ function OperationsProblemsSection() {
     }, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  // Workflow Animations
+  const ChatChaosAnimation = () => (
+    <div className="flex items-center justify-between w-full h-full">
+      <div className="text-center">
+        <div className="w-16 h-8 bg-blue-100 rounded text-sm flex items-center justify-center border border-blue-200 font-medium">
+          Task
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="h-px w-12 bg-blue-400"></div>
+        <div className="w-2 h-2 border-r-2 border-b-2 border-blue-400 transform rotate-45 -ml-1"></div>
+      </div>
+      <div className="text-center">
+        <div className="w-20 h-8 bg-orange-100 rounded text-sm flex items-center justify-center border border-orange-200 font-medium">
+          Search
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="h-px w-12 bg-orange-400"></div>
+        <div className="w-2 h-2 border-r-2 border-b-2 border-orange-400 transform rotate-45 -ml-1"></div>
+      </div>
+      <div className="text-center">
+        <div className="w-16 h-8 bg-red-100 rounded text-sm flex items-center justify-center border border-red-200 font-medium">
+          Late
+        </div>
+      </div>
+    </div>
+  );
+
+  const ChannelChaosAnimation = () => (
+    <div className="flex items-center justify-between w-full h-full">
+      <div className="text-center">
+        <div className="w-16 h-8 bg-blue-100 rounded text-sm flex items-center justify-center border border-blue-200 font-medium">
+          Task
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="h-px w-8 bg-gray-400"></div>
+        <div className="w-2 h-2 border-r-2 border-b-2 border-gray-400 transform rotate-45 -ml-1"></div>
+      </div>
+      <div className="text-center space-y-1">
+        <div className="w-20 h-6 bg-green-100 rounded text-xs flex items-center justify-center border border-green-200">
+          #general
+        </div>
+        <div className="w-20 h-6 bg-orange-100 rounded text-xs flex items-center justify-center border border-orange-200">
+          #project
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="h-px w-8 bg-gray-400"></div>
+        <div className="w-2 h-2 border-r-2 border-b-2 border-gray-400 transform rotate-45 -ml-1"></div>
+      </div>
+      <div className="text-center">
+        <div className="w-20 h-8 bg-red-100 rounded text-sm flex items-center justify-center border border-red-200 font-medium">
+          Chaos
+        </div>
+      </div>
+    </div>
+  );
+
+  const MessageBuriedAnimation = () => (
+    <div className="flex items-center justify-between w-full h-full">
+      <div className="text-center">
+        <div className="w-20 h-8 bg-blue-100 rounded text-sm flex items-center justify-center border border-blue-200 font-medium">
+          Update
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="h-px w-10 bg-blue-400"></div>
+        <div className="w-2 h-2 border-r-2 border-b-2 border-blue-400 transform rotate-45 -ml-1"></div>
+      </div>
+      <div className="text-center">
+        <div className="w-20 h-8 bg-gray-100 rounded text-sm flex items-center justify-center border border-gray-300 font-medium">
+          Lost
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="h-px w-10 bg-red-400"></div>
+        <div className="w-2 h-2 border-r-2 border-b-2 border-red-400 transform rotate-45 -ml-1"></div>
+      </div>
+      <div className="text-center">
+        <div className="w-20 h-8 bg-red-100 rounded text-sm flex items-center justify-center border border-red-200 font-medium">
+          Crisis
+        </div>
+      </div>
+    </div>
+  );
 
   const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
     <div className={`
@@ -60,56 +147,56 @@ function OperationsProblemsSection() {
     </div>
   );
 
-  const ManualWorkFlow = ({ active }: { active: boolean }) => (
+  const ChatWorkFlow = ({ active }: { active: boolean }) => (
     <div className="h-80 flex flex-col justify-center">
       <div className="space-y-4 max-w-sm mx-auto">
-        <ProcessNode active={active} delay={0}>Task Request Received</ProcessNode>
+        <ProcessNode active={active} delay={0}>💬 Task mentioned in chat</ProcessNode>
         <FlowArrow active={active} delay={300} />
-        <ProcessNode active={active} delay={600} status="slow">Search Through Multiple Tools</ProcessNode>
+        <ProcessNode active={active} delay={600} status="slow">🔍 Scroll through 200+ messages</ProcessNode>
         <FlowArrow active={active} delay={900} />
-        <ProcessNode active={active} delay={1200} status="slow">Request Clarification & Wait</ProcessNode>
+        <ProcessNode active={active} delay={1200} status="slow">📱 Ping 5 people for status</ProcessNode>
         <FlowArrow active={active} delay={1500} />
-        <ProcessNode active={active} delay={1800} status="problem">Rushed Completion Under Pressure</ProcessNode>
+        <ProcessNode active={active} delay={1800} status="problem">⏰ Deadline already passed</ProcessNode>
       </div>
     </div>
   );
 
-  const InconsistentProcessFlow = ({ active }: { active: boolean }) => (
+  const ChannelChaosFlow = ({ active }: { active: boolean }) => (
     <div className="h-80 flex flex-col justify-center">
       <div className="space-y-6">
         <div className="flex justify-center">
-          <ProcessNode active={active} delay={0}>Identical Task Assignment</ProcessNode>
+          <ProcessNode active={active} delay={0}>📋 Same project discussion</ProcessNode>
         </div>
         <FlowArrow active={active} delay={300} />
         <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto">
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">Team Member A</div>
-            <ProcessNode active={active} delay={600} status="normal">Standard Approach</ProcessNode>
+            <div className="text-xs text-gray-600 mb-2 font-medium">#general</div>
+            <ProcessNode active={active} delay={600} status="normal">💬 Initial mention</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">Team Member B</div>
-            <ProcessNode active={active} delay={800} status="slow">Alternative Method</ProcessNode>
+            <div className="text-xs text-gray-600 mb-2 font-medium">#project-channel</div>
+            <ProcessNode active={active} delay={800} status="slow">📝 Detailed discussion</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">Team Member C</div>
-            <ProcessNode active={active} delay={1000} status="problem">Custom Workaround</ProcessNode>
+            <div className="text-xs text-gray-600 mb-2 font-medium">DM threads</div>
+            <ProcessNode active={active} delay={1000} status="problem">🤫 Side conversations</ProcessNode>
           </div>
         </div>
         <FlowArrow active={active} delay={1300} />
         <div className="flex justify-center">
-          <ProcessNode active={active} delay={1600} status="problem">Inconsistent Quality & Outcomes</ProcessNode>
+          <ProcessNode active={active} delay={1600} status="problem">🤷 Nobody has the full picture</ProcessNode>
         </div>
       </div>
     </div>
   );
 
-  const VisibilityFlow = ({ active }: { active: boolean }) => (
+  const InformationBuriedFlow = ({ active }: { active: boolean }) => (
     <div className="h-80 flex flex-col justify-center">
       <div className="space-y-6">
         <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
-          <ProcessNode active={active} delay={0}>Project Alpha</ProcessNode>
-          <ProcessNode active={active} delay={200}>Project Beta</ProcessNode>
-          <ProcessNode active={active} delay={400}>Project Gamma</ProcessNode>
+          <ProcessNode active={active} delay={0}>📊 Critical update shared</ProcessNode>
+          <ProcessNode active={active} delay={200}>📈 Progress reported</ProcessNode>
+          <ProcessNode active={active} delay={400}>🚨 Issue mentioned</ProcessNode>
         </div>
         <FlowArrow active={active} delay={600} />
         <div className="flex justify-center">
@@ -118,13 +205,13 @@ function OperationsProblemsSection() {
             ${active ? 'border-gray-400 bg-gray-50' : 'border-gray-300 bg-gray-50'}
           `}
           style={{ transitionDelay: '800ms' }}>
-            <div className="text-lg font-medium text-gray-700 mb-1">Management View</div>
-            <div className="text-sm text-gray-500">Status Unknown</div>
+            <div className="text-lg font-medium text-gray-700 mb-1">💬 Lost in 500+ messages</div>
+            <div className="text-sm text-gray-500">Manager hasn't seen it</div>
           </div>
         </div>
         <FlowArrow active={active} delay={1200} />
         <div className="flex justify-center">
-          <ProcessNode active={active} delay={1500} status="problem">Crisis Discovery During Client Review</ProcessNode>
+          <ProcessNode active={active} delay={1500} status="problem">🔥 Emergency discovered in client call</ProcessNode>
         </div>
       </div>
     </div>
@@ -132,22 +219,25 @@ function OperationsProblemsSection() {
 
   const problems = [
     {
-      title: "Manual Coordination",
-      subtitle: "Excessive time spent on routine task management",
-      component: ManualWorkFlow,
-      impact: "45 min lost daily per person"
+      title: "Chat Coordination Chaos",
+      subtitle: "Important tasks get buried in endless message threads",
+      component: ChatWorkFlow,
+      impact: "3+ hours daily hunting for updates",
+      animation: ChatChaosAnimation
     },
     {
-      title: "Process Inconsistency",
-      subtitle: "Different approaches leading to unpredictable results",
-      component: InconsistentProcessFlow,
-      impact: "30% rework rate"
+      title: "Multi-Channel Confusion", 
+      subtitle: "Same project scattered across different channels and DMs",
+      component: ChannelChaosFlow,
+      impact: "Context switching reduces productivity 40%",
+      animation: ChannelChaosAnimation
     },
     {
-      title: "Limited Visibility",
-      subtitle: "Management operates without real-time project insights",
-      component: VisibilityFlow,
-      impact: "Reactive problem solving"
+      title: "Critical Updates Buried",
+      subtitle: "Important status changes lost in message history",
+      component: InformationBuriedFlow,
+      impact: "Problems discovered when it's too late",
+      animation: MessageBuriedAnimation
     }
   ];
 
@@ -157,10 +247,10 @@ function OperationsProblemsSection() {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Your Operations Shouldn't Be This Inefficient
+            Work Coordination Shouldn't Be This Messy
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Every day, your team loses valuable time on repetitive coordination that intelligent automation could eliminate.
+            Your team spends more time hunting for information in chat than actually getting work done.
           </p>
         </div>
 
@@ -191,17 +281,26 @@ function OperationsProblemsSection() {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {problems[activeFlow].title}
               </h3>
-              <p className="text-gray-600 text-sm mb-3">
+              <p className="text-gray-600 text-sm mb-4">
                 {problems[activeFlow].subtitle}
               </p>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mb-6">
                 Impact: {problems[activeFlow].impact}
               </span>
+              
+              {/* Workflow Animation */}
+              <div className="flex justify-center">
+                <div className="w-80 h-16 relative">
+                  {activeFlow === 0 && <ChatChaosAnimation />}
+                  {activeFlow === 1 && <ChannelChaosAnimation />}
+                  {activeFlow === 2 && <MessageBuriedAnimation />}
+                </div>
+              </div>
             </div>
           </div>
           
           {/* Flow Content - Fixed Height Container */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden h-[380px]">
             {problems.map((problem, index) => (
               <div
                 key={index}
@@ -257,11 +356,10 @@ function PricingSection() {
         '500 Predictions / month',
         '25MB Storage',
         'Basic Workflows',
-        'Community Support',
-        'Admin Roles & Permissions'
+        'Community Support'
       ],
       buttonText: 'Get Started',
-      buttonVariant: 'outline' as const,
+      buttonStyle: 'bg-gray-700 hover:bg-gray-600 border border-gray-600',
       popular: false
     },
     {
@@ -275,31 +373,30 @@ function PricingSection() {
         '5,000 Predictions / month',
         '500MB Storage',
         'AI Agents & Custom Workflows',
-        'Email Support',
-        'Admin Roles & Permissions'
+        'Email Support'
       ],
-      additionalUser: '+$5/user/month',
+      additionalUser: '$8/additional user',
       buttonText: 'Start Free Trial',
-      buttonVariant: 'default' as const,
-      popular: true,
+      buttonStyle: 'bg-blue-600 hover:bg-blue-700',
+      popular: false
     },
     {
       name: 'Professional',
       description: 'For growing businesses',
-      monthlyPrice: 30,
+      monthlyPrice: 49,
       yearlyPrice: 39,
       features: [
         'Everything in Starter',
-        '6 Users',
+        '10 Users',
         '25,000 Predictions / month',
         '5GB Storage',
         'Advanced AI & Integrations',
-        'Admin Roles & Permissions'
+        'Priority Support'
       ],
-      additionalUser: '+$5/user/month',
+      additionalUser: '$6/additional user',
       buttonText: 'Start Free Trial',
-      buttonVariant: 'default' as const,
-      popular: false
+      buttonStyle: 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600',
+      popular: true
     }
   ];
 
@@ -308,89 +405,88 @@ function PricingSection() {
     return Math.round(((monthly * 12 - yearly * 12) / (monthly * 12)) * 100);
   };
 
-
   return (
-       <section id="pricing" className="py-12 bg-gray-900 text-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
-            <p className="text-lg text-gray-400 mb-8">Start for free, then scale as you grow.</p>
-            
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <span className={`${!isYearly ? 'text-white' : 'text-gray-400'}`}>Monthly</span>
+    <section id="pricing" className="bg-gray-900 py-20 text-white">
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 font-headline">Choose Your Plan</h2>
+          <p className="text-lg text-gray-400 mb-8">Start for free, then scale as you grow.</p>
+          
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <span className={`${!isYearly ? 'text-white' : 'text-gray-400'}`}>Monthly</span>
+            <div 
+              className="relative w-14 h-8 bg-gray-600 rounded-full cursor-pointer"
+              onClick={() => setIsYearly(!isYearly)}
+            >
               <div 
-                className="relative w-14 h-8 bg-gray-600 rounded-full cursor-pointer"
-                onClick={() => setIsYearly(!isYearly)}
-              >
-                <div 
-                  className={`absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
-                    isYearly ? 'transform translate-x-6' : ''
-                  }`}
-                />
-              </div>
-              <span className={`${isYearly ? 'text-white' : 'text-gray-400'}`}>
-                Yearly <span className="text-green-400 text-sm">(Save up to 23%)</span>
-              </span>
+                className={`absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 ${
+                  isYearly ? 'transform translate-x-6' : ''
+                }`}
+              />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center max-w-5xl mx-auto">
-            {plans.map((plan) => (
-              <div 
-                key={plan.name} 
-                className={`relative ${plan.popular ? 'transform scale-105' : ''} flex`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                    <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                
-                <div className={`flex flex-col ${plan.popular ? 'bg-gray-800 border-2 border-purple-500 shadow-lg' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-6 h-full transition-all duration-300`}>
-                    <div className="mb-6">
-                      <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
-                      <div className="flex items-baseline mb-6">
-                        <span className="text-4xl font-bold">
-                          ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                        </span>
-                        <span className="text-gray-400 ml-1">
-                          {plan.monthlyPrice === 0 ? '' : '/month'}
-                        </span>
-                      </div>
-                    </div>
-                  
-                    <ul className="space-y-4 mb-8 flex-grow">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start">
-                          <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                     {plan.additionalUser && (
-                      <p className="text-xs text-gray-400 mt-auto">{plan.additionalUser}</p>
-                    )}
-                  
-                  <div className="mt-8">
-                    <Link href="/partner/signup">
-                      <Button
-                        size="lg"
-                        className="w-full text-lg"
-                        variant={plan.buttonVariant}
-                      >
-                        {plan.name === 'Free' ? 'Get Started' : 'First Month Free'}
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <span className={`${isYearly ? 'text-white' : 'text-gray-400'}`}>
+              Yearly <span className="text-green-400 text-sm">(Save up to 23%)</span>
+            </span>
           </div>
         </div>
-      </section>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch justify-center max-w-5xl mx-auto">
+          {plans.map((plan) => (
+            <div 
+              key={plan.name} 
+              className={`relative flex flex-col ${plan.popular ? 'transform lg:scale-105' : ''}`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              
+              <div className={`flex flex-col ${plan.popular ? 'bg-gray-800 border-2 border-purple-500 shadow-lg' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-6 h-full transition-all duration-300`}>
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                    <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
+                    <div className="flex items-baseline mb-6">
+                      <span className="text-4xl font-bold">
+                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                      </span>
+                      <span className="text-gray-400 ml-1">
+                        {plan.monthlyPrice === 0 ? '' : '/month'}
+                      </span>
+                    </div>
+                  </div>
+                
+                  <ul className="space-y-4 mb-8 flex-grow">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start">
+                        <CheckCircle className="w-5 h-5 text-green-400 mr-3 mt-1 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                   {plan.additionalUser && (
+                    <p className="text-xs text-gray-400 mt-auto">{plan.additionalUser}</p>
+                  )}
+                
+                <div className="mt-8">
+                  <Link href="/partner/signup">
+                    <Button
+                      size="lg"
+                      className="w-full text-lg"
+                      variant={plan.name === 'Free' ? 'outline' : 'default'}
+                    >
+                      {plan.name === 'Free' ? 'Get Started' : 'First Month Free'}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -475,7 +571,8 @@ export default function FlowOpsHomepage() {
       <section className="bg-white py-24">
         <div className="container mx-auto px-6 text-center">
            <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight min-h-[80px] md:min-h-[90px]">
-             <div className="hero-text"><span className="typing-animation">{animatedText}</span></div>
+             <span className="hero-text">{animatedText}</span>
+             <span className="typing-animation"></span>
            </div>
            <div className="text-5xl md:text-7xl font-extrabold font-headline leading-tight">
              <div className="text-gray-900">That Run Your Business</div>
@@ -622,4 +719,6 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
+    
+
     
