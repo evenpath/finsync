@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ import {
   Mail,
   Settings,
   Calendar,
+  ArrowDown,
 } from 'lucide-react';
 
 function OperationsProblemsSection() {
@@ -25,88 +27,94 @@ function OperationsProblemsSection() {
     return () => clearInterval(interval);
   }, []);
 
-  const ChatChaosAnimation = () => (
-    <div className="flex items-center justify-between w-full h-full">
-      <div className="text-center">
-        <div className="w-16 h-8 bg-blue-100 rounded text-sm flex items-center justify-center border border-blue-200 font-medium">
-          Task
+  const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
+    <div className={`
+      px-6 py-4 rounded-lg text-center transition-all duration-500 border text-sm font-medium
+      ${active 
+        ? status === 'problem' 
+          ? 'bg-red-50 border-red-200 text-red-900' 
+          : status === 'slow'
+          ? 'bg-orange-50 border-orange-200 text-orange-900'
+          : 'bg-blue-50 border-blue-200 text-blue-900'
+        : 'bg-gray-50 border-gray-200 text-gray-500'
+      }
+    `}
+    style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+
+  const FlowArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
+    <div className="flex justify-center items-center py-2">
+      <ArrowDown className={`w-5 h-5 transition-opacity duration-500 ${active ? 'text-gray-400' : 'text-gray-200'}`} style={{ transitionDelay: `${delay}ms` }}/>
+    </div>
+  );
+
+  const ChatWorkFlow = ({ active }: { active: boolean }) => (
+    <div className="h-96 flex flex-col justify-center">
+      <div className="space-y-2 max-w-sm mx-auto">
+        <ProcessNode active={active} delay={0}>💬 Task mentioned in chat</ProcessNode>
+        <FlowArrow active={active} delay={300} />
+        <ProcessNode active={active} delay={600} status="slow">🔍 Scroll through 200+ messages</ProcessNode>
+        <FlowArrow active={active} delay={900} />
+        <ProcessNode active={active} delay={1200} status="slow">📱 Ping 5 people for status</ProcessNode>
+        <FlowArrow active={active} delay={1500} />
+        <ProcessNode active={active} delay={1800} status="problem">⏰ Deadline already passed</ProcessNode>
+      </div>
+    </div>
+  );
+
+  const ChannelChaosFlow = ({ active }: { active: boolean }) => (
+    <div className="h-96 flex flex-col justify-center">
+      <div className="space-y-4">
+        <div className="flex justify-center">
+          <ProcessNode active={active} delay={0}>📋 Same project discussion</ProcessNode>
         </div>
-      </div>
-      <div className="flex items-center">
-        <div className="h-px w-12 bg-blue-400"></div>
-        <div className="w-2 h-2 border-r-2 border-b-2 border-blue-400 transform rotate-45 -ml-1"></div>
-      </div>
-      <div className="text-center">
-        <div className="w-20 h-8 bg-orange-100 rounded text-sm flex items-center justify-center border border-orange-200 font-medium">
-          Search
+        <FlowArrow active={active} delay={300} />
+        <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto">
+          <div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">#general</div>
+            <ProcessNode active={active} delay={600} status="normal">💬 Initial mention</ProcessNode>
+          </div>
+          <div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">#project-channel</div>
+            <ProcessNode active={active} delay={800} status="slow">📝 Detailed discussion</ProcessNode>
+          </div>
+          <div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">DM threads</div>
+            <ProcessNode active={active} delay={1000} status="problem">🤫 Side conversations</ProcessNode>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center">
-        <div className="h-px w-12 bg-orange-400"></div>
-        <div className="w-2 h-2 border-r-2 border-b-2 border-orange-400 transform rotate-45 -ml-1"></div>
-      </div>
-      <div className="text-center">
-        <div className="w-16 h-8 bg-red-100 rounded text-sm flex items-center justify-center border border-red-200 font-medium">
-          Late
+        <FlowArrow active={active} delay={1300} />
+        <div className="flex justify-center">
+          <ProcessNode active={active} delay={1600} status="problem">🤷 Nobody has the full picture</ProcessNode>
         </div>
       </div>
     </div>
   );
 
-  const ChannelChaosAnimation = () => (
-    <div className="flex items-center justify-between w-full h-full">
-      <div className="text-center">
-        <div className="w-16 h-8 bg-blue-100 rounded text-sm flex items-center justify-center border border-blue-200 font-medium">
-          Task
+  const InformationBuriedFlow = ({ active }: { active: boolean }) => (
+    <div className="h-96 flex flex-col justify-center">
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+          <ProcessNode active={active} delay={0}>📊 Critical update shared</ProcessNode>
+          <ProcessNode active={active} delay={200}>📈 Progress reported</ProcessNode>
+          <ProcessNode active={active} delay={400}>🚨 Issue mentioned</ProcessNode>
         </div>
-      </div>
-      <div className="flex items-center">
-        <div className="h-px w-8 bg-gray-400"></div>
-        <div className="w-2 h-2 border-r-2 border-b-2 border-gray-400 transform rotate-45 -ml-1"></div>
-      </div>
-      <div className="text-center space-y-1">
-        <div className="w-20 h-6 bg-green-100 rounded text-xs flex items-center justify-center border border-green-200">
-          #general
+        <FlowArrow active={active} delay={600} />
+        <div className="flex justify-center">
+          <div className={`
+            text-center p-6 rounded-lg border-2 border-dashed transition-all duration-500 max-w-xs
+            ${active ? 'border-gray-400 bg-gray-50' : 'border-gray-300 bg-gray-50'}
+          `}
+          style={{ transitionDelay: '800ms' }}>
+            <div className="text-lg font-medium text-gray-700 mb-1">💬 Lost in 500+ messages</div>
+            <div className="text-sm text-gray-500">Manager hasn't seen it</div>
+          </div>
         </div>
-        <div className="w-20 h-6 bg-orange-100 rounded text-xs flex items-center justify-center border border-orange-200">
-          #project
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="h-px w-8 bg-gray-400"></div>
-        <div className="w-2 h-2 border-r-2 border-b-2 border-gray-400 transform rotate-45 -ml-1"></div>
-      </div>
-      <div className="text-center">
-        <div className="w-20 h-8 bg-red-100 rounded text-sm flex items-center justify-center border border-red-200 font-medium">
-          Chaos
-        </div>
-      </div>
-    </div>
-  );
-
-  const MessageBuriedAnimation = () => (
-    <div className="flex items-center justify-between w-full h-full">
-      <div className="text-center">
-        <div className="w-20 h-8 bg-blue-100 rounded text-sm flex items-center justify-center border border-blue-200 font-medium">
-          Update
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="h-px w-10 bg-blue-400"></div>
-        <div className="w-2 h-2 border-r-2 border-b-2 border-blue-400 transform rotate-45 -ml-1"></div>
-      </div>
-      <div className="text-center">
-        <div className="w-20 h-8 bg-gray-100 rounded text-sm flex items-center justify-center border border-gray-300 font-medium">
-          Lost
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="h-px w-10 bg-red-400"></div>
-        <div className="w-2 h-2 border-r-2 border-b-2 border-red-400 transform rotate-45 -ml-1"></div>
-      </div>
-      <div className="text-center">
-        <div className="w-20 h-8 bg-red-100 rounded text-sm flex items-center justify-center border border-red-200 font-medium">
-          Crisis
+        <FlowArrow active={active} delay={1200} />
+        <div className="flex justify-center">
+          <ProcessNode active={active} delay={1500} status="problem">🔥 Emergency discovered in client call</ProcessNode>
         </div>
       </div>
     </div>
@@ -116,19 +124,19 @@ function OperationsProblemsSection() {
     {
       title: "Chat Coordination Chaos",
       subtitle: "Important tasks get buried in endless message threads",
-      component: ChatChaosAnimation,
+      component: ChatWorkFlow,
       impact: "3+ hours daily hunting for updates"
     },
     {
       title: "Multi-Channel Confusion", 
       subtitle: "Same project scattered across different channels and DMs",
-      component: ChannelChaosAnimation,
+      component: ChannelChaosFlow,
       impact: "Context switching reduces productivity 40%"
     },
     {
       title: "Critical Updates Buried",
       subtitle: "Important status changes lost in message history",
-      component: MessageBuriedAnimation,
+      component: InformationBuriedFlow,
       impact: "Problems discovered when it's too late"
     }
   ];
@@ -176,21 +184,25 @@ function OperationsProblemsSection() {
               <p className="text-gray-600 text-sm mb-4">
                 {problems[activeFlow].subtitle}
               </p>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mb-6">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                 Impact: {problems[activeFlow].impact}
               </span>
-              
-              {/* Workflow Animation */}
-              <div className="flex justify-center">
-                <div className="w-80 h-16 relative">
-                  {activeFlow === 0 && <ChatChaosAnimation />}
-                  {activeFlow === 1 && <ChannelChaosAnimation />}
-                  {activeFlow === 2 && <MessageBuriedAnimation />}
-                </div>
-              </div>
             </div>
           </div>
           
+          {/* Flow Content - Fixed Height Container */}
+          <div className="relative overflow-hidden h-[400px]">
+            {problems.map((problem, index) => (
+              <div
+                key={index}
+                className={`w-full absolute inset-0 px-8 transition-opacity duration-500 ${
+                  activeFlow === index ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                <problem.component active={activeFlow === index} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Progress Indicators */}
@@ -218,8 +230,6 @@ function OperationsProblemsSection() {
     </div>
   );
 }
-
-
 
 function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
@@ -256,7 +266,7 @@ function PricingSection() {
       ],
       additionalUser: '$8/additional user',
       buttonText: 'Start Free Trial',
-      buttonStyle: 'bg-blue-600 hover:bg-blue-700',
+      buttonStyle: 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600',
       popular: true
     },
     {
@@ -270,10 +280,11 @@ function PricingSection() {
         '25,000 Predictions / month',
         '5GB Storage',
         'Advanced AI & Integrations',
+        'Priority Support'
       ],
       additionalUser: '$6/additional user',
       buttonText: 'Start Free Trial',
-      buttonStyle: 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600',
+      buttonStyle: 'bg-blue-600 hover:bg-blue-700',
       popular: false
     }
   ];
@@ -323,7 +334,7 @@ function PricingSection() {
               )}
               
               <div className={`flex flex-col ${plan.popular ? 'bg-gray-800 border-2 border-purple-500 shadow-lg' : 'bg-gray-800 border border-gray-700 hover:border-gray-600'} rounded-xl p-6 h-full transition-all duration-300`}>
-                  <div className="mb-6">
+                  <div className="mb-6 h-28">
                     <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                     <p className="text-gray-400 text-sm mb-4 h-10">{plan.description}</p>
                     <div className="flex items-baseline mb-6">
@@ -352,10 +363,9 @@ function PricingSection() {
                   <Link href="/partner/signup">
                     <Button
                       size="lg"
-                      className="w-full text-lg"
-                      variant={plan.name === 'Free' ? 'outline' : 'default'}
+                      className={`w-full text-lg ${plan.buttonStyle}`}
                     >
-                      {plan.name === 'Free' ? 'Get Started' : 'First Month Free'}
+                      {plan.buttonText}
                     </Button>
                   </Link>
                 </div>
