@@ -116,6 +116,7 @@ export default function TeamManagement() {
   }, [partnerId, authLoading, user]);
   
   const handleRemoveMember = async (memberToRemove: TeamMember) => {
+    if (!memberToRemove) return;
     const userIdToRemove = memberToRemove.id;
     
     if (!partnerId) {
