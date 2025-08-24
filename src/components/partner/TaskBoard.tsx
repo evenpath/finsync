@@ -5,9 +5,10 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Plus, Search, Calendar, Clock, CheckSquare, AlertTriangle, Loader2, ListTodo, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Search, Calendar, Clock, CheckSquare, AlertTriangle, Loader2, ListTodo, Edit, Trash2, MoreVertical, RefreshCw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useToast } from '../../hooks/use-toast';
 import { useAuth } from '../../hooks/use-auth';
 import { db } from '../../lib/firebase';
@@ -28,11 +29,12 @@ export default function TaskBoard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
+  const [connectionRetry, setConnectionRetry] = useState(0);
   const { toast } = useToast();
 
   // Get partner info from user's custom claims
-  const partnerId = user?.customClaims?.partnerId;
-  const tenantId = user?.customClaims?.tenantId;
+  const partnerId = user?.customClaims?.partnerId || user?.customClaims?.activePartnerId;
+  const tenantId = user?.customClaims?.tenantId || user?.customClaims?.activeTenantId;
   const userRole = user?.customClaims?.role;
 
   const filteredTasks = useMemo(() => {
@@ -46,31 +48,54 @@ export default function TaskBoard() {
     });
   }, [tasks, searchTerm, statusFilter]);
 
-  // Fetch team members
+  // Retry connection function
+  const retryConnection = () => {
+    setConnectionRetry(prev => prev + 1);
+    setFirestoreError(null);
+    setIsLoading(true);
+  };
+
+  // Fetch team members with enhanced error handling
   useEffect(() => {
-    if (!partnerId || !db || authLoading) return;
+    if (!partnerId || !db || authLoading) {
+      return;
+    }
+
+    console.log('Fetching team members for partner:', partnerId);
 
     const teamMembersRef = collection(db, "teamMembers");
     const q = query(
       teamMembersRef,
-      where("partnerId", "==", partnerId)
+      where("partnerId", "==", partnerId),
+      where("status", "==", "active")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const membersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as TeamMember));
-      
-      setTeamMembers(membersData);
-    }, (error) => {
-      console.error("Error fetching team members:", error);
-    });
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        console.log(`Found ${snapshot.docs.length} team members`);
+        const membersData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as TeamMember));
+        
+        setTeamMembers(membersData);
+        console.log('Team members loaded successfully');
+      }, 
+      (error) => {
+        console.error("Error fetching team members:", error);
+        // Don't set this as a critical error since tasks can still work
+        toast({
+          title: "Warning",
+          description: "Could not load team members. Some features may be limited.",
+          variant: "destructive",
+        });
+      }
+    );
 
     return () => unsubscribe();
-  }, [partnerId, authLoading]);
+  }, [partnerId, authLoading, connectionRetry]);
 
-  // Fetch tasks
+  // Fetch tasks with enhanced error handling and connection retry
   useEffect(() => {
     if (authLoading) {
       setIsLoading(true);
@@ -78,10 +103,14 @@ export default function TaskBoard() {
     }
 
     if (!partnerId || !db) {
-      setFirestoreError(`Missing required data:
+      const errorMessage = `Database connection issue:
         - Partner ID: ${partnerId || 'MISSING'}
         - Database: ${db ? 'Connected' : 'NOT CONNECTED'}
-        - User Email: ${user?.email || 'No email'}`);
+        - User Email: ${user?.email || 'No email'}
+        - User Role: ${userRole || 'No role'}`;
+      
+      console.error('Task loading failed:', errorMessage);
+      setFirestoreError(errorMessage);
       setIsLoading(false);
       return;
     }
@@ -97,224 +126,289 @@ export default function TaskBoard() {
       orderBy("createdAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      console.log(`Found ${snapshot.docs.length} tasks`);
-      const tasksData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
-          dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : null,
-        } as Task;
-      });
-      
-      setTasks(tasksData);
-      setFirestoreError(null);
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching tasks:", error);
-      setFirestoreError(`Failed to fetch tasks: ${error.message}`);
-      setIsLoading(false);
-    });
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        console.log(`Found ${snapshot.docs.length} tasks`);
+        const tasksData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+            dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : null,
+            completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : null,
+          } as Task;
+        });
+        
+        setTasks(tasksData);
+        setIsLoading(false);
+        setConnectionRetry(0); // Reset retry counter on success
+        console.log('Tasks loaded successfully');
+      }, 
+      (error) => {
+        console.error("Error fetching tasks:", error);
+        
+        let errorMessage = `Failed to load tasks: ${error.message}`;
+        
+        // Provide specific error messages for common issues
+        if (error.code === 'permission-denied') {
+          errorMessage = 'Permission denied. Please check your access rights or contact support.';
+        } else if (error.code === 'unavailable') {
+          errorMessage = 'Database temporarily unavailable. Please try again.';
+        } else if (error.code === 'failed-precondition') {
+          errorMessage = 'Database query failed. This might be due to missing indexes.';
+        }
+        
+        setFirestoreError(errorMessage);
+        setIsLoading(false);
+        
+        // Auto-retry for transient errors
+        if (['unavailable', 'deadline-exceeded'].includes(error.code) && connectionRetry < 3) {
+          console.log(`Auto-retrying connection (${connectionRetry + 1}/3)...`);
+          setTimeout(() => {
+            setConnectionRetry(prev => prev + 1);
+          }, 2000 * (connectionRetry + 1)); // Exponential backoff
+        }
+      }
+    );
 
     return () => unsubscribe();
-  }, [partnerId, authLoading, user]);
+  }, [partnerId, authLoading, connectionRetry, user?.email, userRole]);
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!partnerId) return;
+
+    try {
+      const result = await deleteTaskAction({ taskId, partnerId });
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete task. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!partnerId) return;
-
-    const result = await deleteTaskAction({ taskId, partnerId });
-    if (result.success) {
-      toast({
-        title: "Task Deleted",
-        description: result.message
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Delete Failed",
-        description: result.message
-      });
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'completed': return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'in_progress': return <Badge variant="default" className="bg-blue-100 text-blue-800">In Progress</Badge>;
-      case 'awaiting_approval': return <Badge variant="default" className="bg-orange-100 text-orange-800">In Review</Badge>;
-      case 'overdue': return <Badge variant="destructive">Overdue</Badge>;
+      case 'completed':
+        return 'default';
+      case 'in_progress':
+        return 'secondary';
+      case 'overdue':
+        return 'destructive';
       case 'assigned':
-      default: return <Badge variant="secondary">To Do</Badge>;
+        return 'outline';
+      default:
+        return 'outline';
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
+  const getPriorityBadgeVariant = (priority: string) => {
     switch (priority) {
-      case 'high': return <Badge variant="destructive">High</Badge>;
-      case 'medium': return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Medium</Badge>;
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'default';
       case 'low':
-      default: return <Badge variant="secondary">Low</Badge>;
+        return 'secondary';
+      default:
+        return 'secondary';
     }
   };
 
-  const getStatusCount = (status: string) => {
-    if (status === 'active') {
-      return tasks.filter(t => ['in_progress', 'assigned'].includes(t.status)).length;
-    }
-    return tasks.filter(t => t.status === status).length;
+  const formatDate = (date: Date | null) => {
+    if (!date) return 'No due date';
+    return new Date(date).toLocaleDateString();
   };
 
-  if (firestoreError) {
+  if (authLoading || isLoading) {
     return (
       <Card>
-        <CardContent className="p-6 text-center">
-          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-destructive">Database Connection Error</h3>
-          <pre className="text-sm text-muted-foreground mb-4 max-w-2xl mx-auto text-left bg-muted p-4 rounded whitespace-pre-wrap">
-            {firestoreError}
-          </pre>
-          <Button onClick={() => window.location.reload()}>
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Retry
-          </Button>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          Loading tasks...
         </CardContent>
       </Card>
     );
   }
 
-  if (isLoading) {
+  if (firestoreError) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-20"></div>
-                    <div className="h-8 bg-gray-200 rounded w-12"></div>
-                  </div>
-                  <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading tasks...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="w-5 h-5" />
+            Database Connection Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 whitespace-pre-line">
+                {firestoreError}
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={retryConnection}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Retry Connection
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-2">Troubleshooting Steps:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Check your internet connection</li>
+                <li>Verify you're logged in with the correct account</li>
+                <li>Contact support if the issue persists</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Header and Controls */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="assigned">Assigned</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {userRole === 'partner_admin' && teamMembers.length > 0 && (
+            <Button onClick={() => setIsAssignDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Assign Task
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Task Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <ListTodo className="w-5 h-5 text-gray-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
                 <p className="text-2xl font-bold">{tasks.length}</p>
+                <p className="text-sm text-muted-foreground">Total Tasks</p>
               </div>
-              <CheckSquare className="w-8 h-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{getStatusCount('active')}</p>
+                <p className="text-2xl font-bold">
+                  {tasks.filter(t => t.status === 'assigned').length}
+                </p>
+                <p className="text-sm text-muted-foreground">Assigned</p>
               </div>
-              <Clock className="w-8 h-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-orange-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{getStatusCount('completed')}</p>
+                <p className="text-2xl font-bold">
+                  {tasks.filter(t => t.status === 'in_progress').length}
+                </p>
+                <p className="text-sm text-muted-foreground">In Progress</p>
               </div>
-              <CheckSquare className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold">{getStatusCount('overdue')}</p>
+                <p className="text-2xl font-bold">
+                  {tasks.filter(t => t.status === 'completed').length}
+                </p>
+                <p className="text-sm text-muted-foreground">Completed</p>
               </div>
-              <AlertTriangle className="w-8 h-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Task List */}
+      {/* Tasks Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Tasks ({tasks.length} total, {filteredTasks.length} shown)</CardTitle>
-            {userRole === 'partner_admin' && (
-              <Button onClick={() => setIsAssignDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Assign Task
-              </Button>
-            )}
-          </div>
+          <CardTitle>Task Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md bg-white"
-            >
-              <option value="all">All Status</option>
-              <option value="assigned">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="awaiting_approval">In Review</option>
-              <option value="completed">Completed</option>
-              <option value="overdue">Overdue</option>
-            </select>
-          </div>
-
           {tasks.length === 0 ? (
             <div className="text-center py-12">
-              <ListTodo className="w-24 h-24 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-xl font-semibold mb-2">No Tasks Yet</h3>
+              <ListTodo className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-semibold mb-2">No Tasks Created</h3>
               <p className="text-muted-foreground mb-4">
-                Start by assigning the first task to your team members.
+                Get started by assigning the first task to your team.
               </p>
               {userRole === 'partner_admin' && teamMembers.length > 0 && (
                 <Button onClick={() => setIsAssignDialogOpen(true)}>
@@ -372,20 +466,24 @@ export default function TaskBoard() {
                               {task.assigneeName?.charAt(0) || '?'}
                             </span>
                           </div>
-                          <span className="text-sm">{task.assigneeName || 'Unassigned'}</span>
+                          <div>
+                            <div className="text-sm font-medium">{task.assigneeName || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground">{task.assigneeEmail || ''}</div>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(task.status)}</TableCell>
-                      <TableCell>{getPriorityBadge(task.priority)}</TableCell>
                       <TableCell>
-                        {task.dueDate ? (
-                          <div className="flex items-center gap-1 text-sm">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(task.dueDate).toLocaleDateString()}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">No due date</span>
-                        )}
+                        <Badge variant={getStatusBadgeVariant(task.status || 'assigned')}>
+                          {task.status || 'assigned'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getPriorityBadgeVariant(task.priority || 'medium')}>
+                          {task.priority || 'medium'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{formatDate(task.dueDate)}</div>
                       </TableCell>
                       {userRole === 'partner_admin' && (
                         <TableCell>
@@ -402,7 +500,7 @@ export default function TaskBoard() {
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteTask(task.id)}
-                                className="text-red-600 focus:bg-red-50"
+                                className="text-red-600"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete Task
@@ -421,20 +519,27 @@ export default function TaskBoard() {
       </Card>
 
       {/* Dialogs */}
-      <AssignTaskDialog
-        isOpen={isAssignDialogOpen}
-        onClose={() => setIsAssignDialogOpen(false)}
-        teamMembers={teamMembers}
-        partnerId={partnerId!}
-      />
-
-      <EditTaskDialog
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        task={editingTask}
-        teamMembers={teamMembers}
-        partnerId={partnerId!}
-      />
+      {partnerId && (
+        <>
+          <AssignTaskDialog
+            isOpen={isAssignDialogOpen}
+            onClose={() => setIsAssignDialogOpen(false)}
+            teamMembers={teamMembers}
+            partnerId={partnerId}
+          />
+          
+          <EditTaskDialog
+            isOpen={isEditDialogOpen}
+            onClose={() => {
+              setIsEditDialogOpen(false);
+              setEditingTask(null);
+            }}
+            task={editingTask}
+            teamMembers={teamMembers}
+            partnerId={partnerId}
+          />
+        </>
+      )}
     </div>
   );
 }

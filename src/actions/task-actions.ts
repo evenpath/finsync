@@ -1,4 +1,3 @@
-// src/actions/task-actions.ts
 'use server';
 
 import { db } from '../lib/firebase-admin';
@@ -46,18 +45,18 @@ export async function createTaskAction(input: {
 
     const teamMemberData = teamMemberDoc.data();
 
-    // Create task document
+    // Create task document with consistent field naming
     const taskData = {
       title: input.title,
       description: input.description || '',
-      assignee: input.assignee,
+      assignee: input.assignee, // Keep consistent with field name used in rules
       assigneeName: teamMemberData?.name || 'Unknown',
       assigneeEmail: teamMemberData?.email || '',
       priority: input.priority,
       status: input.status || 'assigned',
       workflow: input.workflow || '',
       partnerId: input.partnerId,
-      tenantId: teamMemberData?.tenantId, // FIX: Correctly get tenantId from the team member
+      tenantId: teamMemberData?.tenantId,
       dueDate: input.dueDate ? new Date(input.dueDate) : null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -169,6 +168,75 @@ export async function updateTaskAction(input: {
     return {
       success: false,
       message: `Failed to update task: ${error.message}`
+    };
+  }
+}
+
+export async function updateTaskStatusAction(input: {
+  taskId: string;
+  status: string;
+  userId: string;
+}): Promise<{ success: boolean; message: string }> {
+  
+  if (!db) {
+    return {
+      success: false,
+      message: "Database not available"
+    };
+  }
+
+  if (!input.taskId || !input.status || !input.userId) {
+    return {
+      success: false,
+      message: "Task ID, status, and user ID are required"
+    };
+  }
+
+  try {
+    console.log('Updating task status:', input);
+
+    const taskRef = db.collection('tasks').doc(input.taskId);
+    const taskDoc = await taskRef.get();
+
+    if (!taskDoc.exists) {
+      return {
+        success: false,
+        message: "Task not found"
+      };
+    }
+
+    // Verify the task is assigned to this user
+    const taskData = taskDoc.data();
+    if (taskData?.assignee !== input.userId) {
+      return {
+        success: false,
+        message: "You can only update tasks assigned to you"
+      };
+    }
+
+    const updateData: any = {
+      status: input.status,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    // Add completion timestamp if task is completed
+    if (input.status === 'completed') {
+      updateData.completedAt = FieldValue.serverTimestamp();
+    }
+
+    await taskRef.update(updateData);
+    console.log('Task status updated successfully');
+
+    return {
+      success: true,
+      message: "Task status updated successfully"
+    };
+
+  } catch (error: any) {
+    console.error('Error updating task status:', error);
+    return {
+      success: false,
+      message: `Failed to update task status: ${error.message}`
     };
   }
 }
