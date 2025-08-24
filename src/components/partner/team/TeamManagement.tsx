@@ -1,4 +1,4 @@
-
+// src/components/partner/team/TeamManagement.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -126,14 +126,16 @@ export default function TeamManagement() {
       return;
     }
     
-    const result = await removeTeamMemberAction({ partnerId, userIdToRemove, tenantId });
-    if (result.success) {
-      toast({ title: "Success", description: result.message });
-      if (selectedMember?.id === userIdToRemove) {
-        setSelectedMember(null);
-      }
-    } else {
-      toast({ variant: "destructive", title: "Error", description: result.message });
+    if (window.confirm("Are you sure you want to remove this team member? This will revoke their access to the workspace.")) {
+        const result = await removeTeamMemberAction({ partnerId, userIdToRemove, tenantId });
+        if (result.success) {
+          toast({ title: "Success", description: result.message });
+          if (selectedMember?.id === userIdToRemove) {
+            setSelectedMember(null);
+          }
+        } else {
+          toast({ variant: "destructive", title: "Error", description: result.message });
+        }
     }
   };
 

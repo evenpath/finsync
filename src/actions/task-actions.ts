@@ -1,3 +1,4 @@
+// src/actions/task-actions.ts
 'use server';
 
 import { db } from '../lib/firebase-admin';
@@ -56,7 +57,7 @@ export async function createTaskAction(input: {
       status: input.status || 'assigned',
       workflow: input.workflow || '',
       partnerId: input.partnerId,
-      tenantId: teamMemberData?.tenantId,
+      tenantId: teamMemberData?.tenantId, // FIX: Correctly get tenantId from the team member
       dueDate: input.dueDate ? new Date(input.dueDate) : null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
