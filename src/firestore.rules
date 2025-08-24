@@ -1,0 +1,81 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // ============================================================================
+    // Helper Functions
+    // ============================================================================
+    function isPartnerMember(partnerId) {
+      // Correctly checks if a partnerId exists in the user's custom claims.
+      return request.auth.token.partnerIds != null && partnerId in request.auth.token.partnerIds;
+    }
+    
+    function isEmployee() {
+      return request.auth.token.role == 'employee';
+    }
+    
+    function isPartnerAdmin() {
+      return request.auth.token.role == 'partner_admin';
+    }
+    
+    function isSuperAdmin() {
+        return request.auth.token.role == 'Super Admin' || request.auth.token.role == 'Admin' || request.auth.token.email == 'core@suupe.com';
+    }
+    
+    // ============================================================================
+    // Collection Rules
+    // ============================================================================
+
+    // Partners can be read by their members or super admins.
+    // Only partner admins or super admins can write to their own partner document.
+    match /partners/{partnerId} {
+      allow read: if isPartnerMember(partnerId) || isSuperAdmin();
+      allow write: if (isPartnerAdmin() && isPartnerMember(partnerId)) || isSuperAdmin();
+    }
+    
+    // Tasks can be read by members of the partner org OR if they are the assignee.
+    // They can be created/deleted by partner admins.
+    // They can be updated by a partner admin or the assigned employee.
+    match /tasks/{taskId} {
+      allow read: if isPartnerMember(resource.data.partnerId) || request.auth.uid == resource.data.assignee;
+      allow create, delete: if isPartnerAdmin() && isPartnerMember(request.resource.data.partnerId);
+      allow update: if (isPartnerAdmin() && isPartnerMember(request.resource.data.partnerId)) || (isEmployee() && request.auth.uid == resource.data.assignee);
+    }
+    
+    // Team members can be read by any member of the partner org.
+    // Creation/deletion/updates are restricted to partner admins.
+    match /teamMembers/{userId} {
+        allow read: if isPartnerMember(resource.data.partnerId) || isSuperAdmin();
+        allow write: if (isPartnerAdmin() && isPartnerMember(request.resource.data.partnerId)) || isSuperAdmin();
+    }
+    
+    // User mappings are public-readable for login flow, but write-restricted.
+    match /userMappings/{email} {
+        allow read: if true;
+        allow write: if false; // Should only be written by backend/admin
+    }
+    
+    // userWorkspaceLinks are private and link users to workspaces.
+    match /userWorkspaceLinks/{linkId} {
+        allow read: if request.auth.uid == linkId.split('_')[0] || isSuperAdmin();
+        allow write: if request.auth.uid == request.resource.data.userId || isSuperAdmin();
+    }
+
+    // User-specific context, only the user themselves can read/write.
+    match /userWorkspaceContexts/{userId} {
+        allow read, write: if request.auth.uid == userId;
+    }
+
+    // Invitations can be read/written by admins of the relevant partner.
+    match /workspaceInvitations/{inviteId} {
+      allow read, write: if (isPartnerAdmin() && isPartnerMember(request.resource.data.partnerId)) || isSuperAdmin();
+    }
+    
+    // Allow admins to manage admin users.
+    match /adminUsers/{userId} {
+      allow read, write: if isSuperAdmin();
+    }
+  }
+}

@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { useAuth } from '../../hooks/use-auth';
+import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
 import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -14,7 +15,7 @@ import { updateTaskStatusAction } from '../../actions/task-actions';
 import type { Task } from '../../lib/types';
 
 export default function EmployeeTasks() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, currentWorkspace } = useMultiWorkspaceAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
@@ -22,21 +23,16 @@ export default function EmployeeTasks() {
     const { toast } = useToast();
 
     const userId = user?.uid;
-    const userRole = user?.customClaims?.role;
+    const partnerId = currentWorkspace?.partnerId;
 
-    // Fetch tasks assigned to the current user
+    // Fetch tasks assigned to the current user within the current workspace
     useEffect(() => {
-        if (authLoading) {
-            setIsLoading(true);
-            return;
-        }
-
-        if (!userId || !db || userRole !== 'employee') {
+        if (authLoading || !userId || !partnerId) {
             setIsLoading(false);
             return;
         }
 
-        console.log('Fetching tasks for employee:', userId);
+        console.log(`Fetching tasks for employee: ${userId} in workspace: ${partnerId}`);
         setIsLoading(true);
         setFirestoreError(null);
 
@@ -44,13 +40,14 @@ export default function EmployeeTasks() {
         const q = query(
             tasksRef,
             where('assignee', '==', userId),
+            where('partnerId', '==', partnerId), // Ensure query is scoped to the workspace
             orderBy('createdAt', 'desc')
         );
 
         const unsubscribe = onSnapshot(
             q,
             (snapshot) => {
-                console.log(`Found ${snapshot.docs.length} tasks for employee`);
+                console.log(`Found ${snapshot.docs.length} tasks for employee in this workspace.`);
                 const tasksData = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
@@ -68,13 +65,13 @@ export default function EmployeeTasks() {
             },
             (error) => {
                 console.error('Error fetching employee tasks:', error);
-                setFirestoreError(`Error loading tasks: ${error.message}`);
+                setFirestoreError(`Error loading tasks: ${error.message}. Please check your permissions.`);
                 setIsLoading(false);
             }
         );
 
         return () => unsubscribe();
-    }, [userId, authLoading, userRole]);
+    }, [userId, partnerId, authLoading]);
 
     const handleTaskStatusUpdate = async (taskId: string, newStatus: string) => {
         if (!userId) return;
@@ -224,22 +221,6 @@ export default function EmployeeTasks() {
         );
     }
 
-    if (userRole !== 'employee') {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-amber-500" />
-                        Access Restricted
-                    </CardTitle>
-                    <CardDescription>
-                        This feature is only available to employees. Please contact your admin.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-        );
-    }
-
     if (firestoreError) {
         return (
             <Card>
@@ -260,58 +241,6 @@ export default function EmployeeTasks() {
 
     return (
         <div className="space-y-6">
-            {/* Task Statistics */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                            <ListTodo className="w-5 h-5 text-gray-600" />
-                            <div>
-                                <p className="text-2xl font-bold">{stats.total}</p>
-                                <p className="text-sm text-muted-foreground">Total</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-blue-600" />
-                            <div>
-                                <p className="text-2xl font-bold">{stats.assigned}</p>
-                                <p className="text-sm text-muted-foreground">Assigned</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                            <Play className="w-5 h-5 text-orange-600" />
-                            <div>
-                                <p className="text-2xl font-bold">{stats.inProgress}</p>
-                                <p className="text-sm text-muted-foreground">In Progress</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                            <div>
-                                <p className="text-2xl font-bold">{stats.completed}</p>
-                                <p className="text-sm text-muted-foreground">Completed</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Tasks Table */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -319,7 +248,7 @@ export default function EmployeeTasks() {
                         My Tasks
                     </CardTitle>
                     <CardDescription>
-                        Your assigned tasks and their current status
+                        Your assigned tasks and their current status for {currentWorkspace?.partnerName}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -328,7 +257,7 @@ export default function EmployeeTasks() {
                             <ListTodo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="text-lg font-semibold">No tasks assigned</h3>
                             <p className="text-muted-foreground">
-                                You don't have any tasks assigned yet. Check back later or contact your manager.
+                                You don't have any tasks assigned in this workspace yet.
                             </p>
                         </div>
                     ) : (
