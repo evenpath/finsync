@@ -286,8 +286,7 @@ function FeaturesSection() {
           {/* Right Panel: Demo Visualization */}
           <div>
               <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-full min-h-[30rem] overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0 bg-grid-pattern" style={{ maskImage: 'linear-gradient(to top, transparent, black)' }}></div>
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('/grid-pattern.svg')" }}>
                 </div>
                 
                 <div className="relative z-10 h-full flex flex-col">
