@@ -310,7 +310,7 @@ function FeaturesSection() {
     <div className="bg-gradient-to-b from-white to-gray-50 py-20 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Features Grid */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
+        <div className="space-y-8 mb-12">
           {/* Left Panel: Features List */}
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-6">
@@ -658,3 +658,5 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
+
+    
