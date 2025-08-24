@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -30,9 +29,9 @@ function OperationsProblemsSection() {
   const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
     <div className={`
       px-6 py-4 rounded-lg text-center transition-all duration-500 border text-sm font-medium
-      ${active
-        ? status === 'problem'
-          ? 'bg-red-50 border-red-200 text-red-900'
+      ${active 
+        ? status === 'problem' 
+          ? 'bg-red-50 border-red-200 text-red-900' 
           : status === 'slow'
           ? 'bg-orange-50 border-orange-200 text-orange-900'
           : 'bg-blue-50 border-blue-200 text-blue-900'
@@ -46,11 +45,12 @@ function OperationsProblemsSection() {
 
   const FlowArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
     <div className="flex justify-center items-center py-2">
-       <ArrowDown className={`
-        w-6 h-6 transition-all duration-500
-        ${active ? 'text-gray-600' : 'text-gray-300'}
-      `}
-      style={{ transitionDelay: `${delay}ms` }} />
+      <ArrowDown
+        className={`w-5 h-5 transition-opacity duration-500 ${
+          active ? 'text-gray-400 opacity-100' : 'text-gray-300 opacity-0'
+        }`}
+        style={{ transitionDelay: `${delay}ms` }}
+      />
     </div>
   );
 
@@ -77,15 +77,15 @@ function OperationsProblemsSection() {
         <FlowArrow active={active} delay={300} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">#general</div>
+            <div className="text-xs text-gray-600 mb-2 font-medium text-center">#general</div>
             <ProcessNode active={active} delay={600} status="normal">💬 Initial mention</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">#project-channel</div>
+            <div className="text-xs text-gray-600 mb-2 font-medium text-center">#project-channel</div>
             <ProcessNode active={active} delay={800} status="slow">📝 Detailed discussion</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">DM threads</div>
+            <div className="text-xs text-gray-600 mb-2 font-medium text-center">DM threads</div>
             <ProcessNode active={active} delay={1000} status="problem">🤫 Side conversations</ProcessNode>
           </div>
         </div>
@@ -131,7 +131,7 @@ function OperationsProblemsSection() {
       component: ChatWorkFlow,
     },
     {
-      title: "Multi-Channel Confusion",
+      title: "Multi-Channel Confusion", 
       subtitle: "Same project scattered across different channels and DMs",
       component: ChannelChaosFlow,
     },
@@ -157,7 +157,7 @@ function OperationsProblemsSection() {
 
         {/* Navigation */}
         <div className="flex justify-center mb-12">
-          <div className="bg-white rounded-lg shadow-sm border p-1 flex flex-wrap justify-center">
+          <div className="bg-white rounded-lg shadow-sm border p-1 flex flex-wrap justify-center gap-1">
             {problems.map((problem, index) => (
               <button
                 key={index}
@@ -175,19 +175,19 @@ function OperationsProblemsSection() {
         </div>
 
         {/* Problem Display */}
-        <div className="bg-white rounded-lg shadow-sm border min-h-[450px]">
+        <div className="bg-white rounded-lg shadow-sm border">
           {/* Header */}
-          <div className="px-6 md:px-8 py-6 border-b border-gray-200">
+          <div className="px-4 md:px-8 py-6 border-b border-gray-200">
             <div className="text-center">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {problems[activeFlow].title}
               </h3>
-              <p className="text-gray-600 text-sm mb-4">
+              <p className="text-gray-600 text-sm">
                 {problems[activeFlow].subtitle}
               </p>
             </div>
           </div>
-
+          
           {/* Flow Content - Fixed Height Container */}
           <div className="relative overflow-hidden h-[380px]">
             {problems.map((problem, index) => (
@@ -202,26 +202,10 @@ function OperationsProblemsSection() {
             ))}
           </div>
         </div>
-
-        {/* Progress Indicators */}
-        <div className="flex justify-center mt-8 space-x-2">
-          {problems.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveFlow(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                activeFlow === index
-                  ? 'w-8 bg-slate-900'
-                  : 'w-2 bg-gray-300 hover:bg-gray-400'
-              }`}
-            />
-          ))}
-        </div>
       </div>
     </div>
   );
 }
-
 
 function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
@@ -285,7 +269,6 @@ function PricingSection() {
     if (monthly === 0) return 0;
     return Math.round(((monthly * 12 - yearly * 12) / (monthly * 12)) * 100);
   };
-
 
   return (
        <section id="pricing" className="py-12 bg-gray-900 text-white">
@@ -371,7 +354,6 @@ function PricingSection() {
       </section>
   );
 }
-
 
 export default function FlowOpsHomepage() {
   const [workflowStep, setWorkflowStep] = useState(0);
