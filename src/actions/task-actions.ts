@@ -56,7 +56,7 @@ export async function createTaskAction(input: {
       status: input.status || 'assigned',
       workflow: input.workflow || '',
       partnerId: input.partnerId,
-      tenantId: teamMemberData?.tenantId,
+      tenantId: teamMemberData?.tenantId, // Ensure tenantId is included
       dueDate: input.dueDate ? new Date(input.dueDate) : null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
