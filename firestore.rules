@@ -1,101 +1,74 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions to check user authentication and roles
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.role == 'Super Admin';
-    }
-
-    function isPartnerAdmin(partnerId) {
-      return isSignedIn() && request.auth.token.role == 'partner_admin' && request.auth.token.partnerId == partnerId;
+    // Helper function to check if the user is a member of the workspace
+    function isWorkspaceMember(partnerId) {
+      return request.auth != null && (
+        request.auth.token.partnerId == partnerId || 
+        (request.auth.token.partnerIds != null && partnerId in request.auth.token.partnerIds)
+      );
     }
     
-    function isEmployee(partnerId) {
-       return isSignedIn() && request.auth.token.role == 'employee' && request.auth.token.partnerId == partnerId;
+    // Helper function to check if the user is an admin of the workspace
+    function isWorkspaceAdmin(partnerId) {
+      return isWorkspaceMember(partnerId) && request.auth.token.role == 'partner_admin';
     }
-    
-    function belongsToPartner(partnerId) {
-        return isPartnerAdmin(partnerId) || isEmployee(partnerId);
-    }
-    
-    // =================================================================
-    // Public Collections
-    // =================================================================
 
-    // Partners can be read by anyone to get basic info, but only created/managed by backend/admins.
-    match /partners/{partnerId} {
+    // Allow public read for user mappings for login flow
+    match /userMappings/{identifier} {
       allow read: if true;
-      allow write: if isSuperAdmin();
-    }
-    
-    // User mappings are critical for login. They should be readable by anyone attempting to log in,
-    // but only writable by a secure backend function to maintain integrity.
-    match /userMappings/{email} {
-        allow read: if true;
-        allow create, update, delete: if isSuperAdmin(); // Should only be done by server functions
-    }
-    
-    // =================================================================
-    // Authenticated User Collections
-    // =================================================================
-
-    // Users can only read/write their own data.
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
-    }
-    
-    // User's context for their active workspace can only be managed by them.
-    match /userWorkspaceContexts/{userId} {
-        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // Only backend can write
     }
 
-    // =================================================================
-    // Partner-Scoped Collections
-    // =================================================================
-    
-    // Team members can be read by anyone in the same partner organization.
-    // Only partner admins can create, update, or delete team members.
+    // Partners can be read by their members, but only written by backend/admins
+    match /partners/{partnerId} {
+      allow read: if isWorkspaceMember(partnerId);
+      allow write: if false; // Managed by backend flows
+    }
+
+    // Team members can be read by others in the same partner, written by admins
     match /teamMembers/{userId} {
-      allow read: if belongsToPartner(resource.data.partnerId);
-      allow create, update, delete: if isPartnerAdmin(resource.data.partnerId);
-    }
-    
-    // Tasks can be read by anyone in the same partner organization.
-    // Tasks can only be created or deleted by a partner admin.
-    // An employee can update a task only if it is assigned to them.
-    match /tasks/{taskId} {
-      allow read: if belongsToPartner(resource.data.partnerId);
-      allow create, delete: if isPartnerAdmin(resource.data.partnerId);
-      allow update: if isPartnerAdmin(resource.data.partnerId) || 
-                      (isEmployee(resource.data.partnerId) && resource.data.assignee == request.auth.uid);
-    }
-    
-    // Workspace links are the source of truth for access.
-    // They can be read by the user they belong to.
-    // They can only be created/modified by a partner admin (e.g., during invitation).
-    match /userWorkspaceLinks/{linkId} {
-        allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
-        allow create, update, delete: if isPartnerAdmin(request.resource.data.partnerId);
-    }
-    
-    // Invitation codes can be read by anyone, but only created/managed by partner admins.
-    match /invitationCodes/{codeId} {
-        allow read: if true;
-        allow create, update, delete: if isPartnerAdmin(request.resource.data.partnerId);
+      allow read: if isWorkspaceMember(resource.data.partnerId);
+      // Allow creation by admins, allow updates by self or admins
+      allow write: if isWorkspaceAdmin(request.resource.data.partnerId) || (request.auth.uid == userId);
     }
 
-    // Audit logs are write-only for authenticated users and unreadable by clients.
-    // This prevents users from seeing potentially sensitive log data.
+    // Tasks can be read by partner members, written by admins, or updated by the assignee
+    match /tasks/{taskId} {
+      allow read: if isWorkspaceMember(resource.data.partnerId);
+      allow create: if isWorkspaceAdmin(request.resource.data.partnerId);
+      allow update: if isWorkspaceAdmin(resource.data.partnerId) || request.auth.uid == resource.data.assignee;
+      allow delete: if isWorkspaceAdmin(resource.data.partnerId);
+    }
+    
+    // Employee/user-specific collections
+    match /userWorkspaceLinks/{linkId} {
+      allow read, write: if request.auth.uid == linkId.split('_')[0]; // User can manage their own links
+    }
+    
+    match /userWorkspaceContexts/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Admin-only collections (for safety)
+    match /adminUsers/{userId} {
+        allow read, write: if request.auth.token.role == 'Super Admin';
+    }
+    
+    match /invitationCodes/{codeId} {
+        allow read, write: if isWorkspaceAdmin(resource.data.partnerId);
+    }
+    
     match /auditLogs/{logId} {
-        allow read: if false;
-        allow write: if isSignedIn();
+        allow read: if isWorkspaceMember(resource.data.partnerId);
+        allow write: if false; // Only backend
+    }
+    
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
