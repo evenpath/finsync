@@ -31,101 +31,7 @@ function FeaturesSection() {
   const [activeFeature, setActiveFeature] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  useEffect(() => {
-    if (!isAutoPlaying) return;
-    
-    const interval = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % features.length);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [isAutoPlaying]);
-
-  const FeatureCard = ({ feature, isActive, onClick }: { feature: any, isActive: boolean, onClick: () => void }) => (
-    <div 
-      className={`group cursor-pointer p-6 rounded-xl border transition-all duration-300 ${
-        isActive 
-          ? 'bg-white border-blue-200 shadow-lg ring-2 ring-blue-100' 
-          : 'bg-gray-50 border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-md'
-      }`}
-      onClick={onClick}
-    >
-      <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-lg transition-all duration-300 ${
-          isActive 
-            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg' 
-            : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-        }`}>
-          <feature.icon className="w-6 h-6" />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-          <p className="text-gray-600 text-sm leading-relaxed mb-3">{feature.description}</p>
-          <div className="flex flex-wrap gap-2">
-            {feature.highlights.map((highlight: string, index: number) => (
-              <span 
-                key={index}
-                className={`text-xs px-2 py-1 rounded-full transition-all duration-300 ${
-                  isActive 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-                }`}
-              >
-                {highlight}
-              </span>
-            ))}
-          </div>
-        </div>
-        <ChevronRight className={`w-5 h-5 transition-all duration-300 ${
-          isActive ? 'text-blue-500 transform rotate-90' : 'text-gray-400 group-hover:text-gray-600'
-        }`} />
-      </div>
-    </div>
-  );
-
-  const DemoVisualization = ({ feature }: { feature: any }) => (
-    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-96 overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-grid-pattern"></div>
-      </div>
-      
-      {/* Demo Content */}
-      <div className="relative z-10 h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
-              <feature.icon className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h4 className="text-white font-semibold">{feature.title}</h4>
-              <p className="text-gray-400 text-sm">{feature.demoTitle}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            Live Demo
-          </div>
-        </div>
-
-        <div className="flex-1">
-          <feature.demoComponent />
-        </div>
-
-        {/* Stats Bar */}
-        <div className="flex justify-between items-center pt-4 border-t border-gray-700">
-          {feature.stats.map((stat: any, index: number) => (
-            <div key={index} className="text-center">
-              <div className="text-lg font-bold text-white">{stat.value}</div>
-              <div className="text-xs text-gray-400">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Demo Components
+  // Demo Components must be defined before they are used in the `features` array.
   const WorkflowBuilderDemo = () => (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -305,16 +211,108 @@ function FeaturesSection() {
       ]
     }
   ];
+  
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % features.length);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, features.length]);
 
+  const FeatureCard = ({ feature, isActive, onClick }: { feature: any, isActive: boolean, onClick: () => void }) => (
+    <div 
+      className={`group cursor-pointer p-6 rounded-xl border transition-all duration-300 ${
+        isActive 
+          ? 'bg-white border-blue-200 shadow-lg ring-2 ring-blue-100' 
+          : 'bg-gray-50 border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-md'
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex items-start gap-4">
+        <div className={`p-3 rounded-lg transition-all duration-300 ${
+          isActive 
+            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg' 
+            : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+        }`}>
+          <feature.icon className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+          <p className="text-gray-600 text-sm leading-relaxed mb-3">{feature.description}</p>
+          <div className="flex flex-wrap gap-2">
+            {feature.highlights.map((highlight: string, index: number) => (
+              <span 
+                key={index}
+                className={`text-xs px-2 py-1 rounded-full transition-all duration-300 ${
+                  isActive 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+                }`}
+              >
+                {highlight}
+              </span>
+            ))}
+          </div>
+        </div>
+        <ChevronRight className={`w-5 h-5 transition-all duration-300 ${
+          isActive ? 'text-blue-500 transform rotate-90' : 'text-gray-400 group-hover:text-gray-600'
+        }`} />
+      </div>
+    </div>
+  );
+
+  const DemoVisualization = ({ feature }: { feature: any }) => (
+    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-full min-h-[30rem] overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-grid-pattern" style={{ maskImage: 'linear-gradient(to top, transparent, black)' }}></div>
+      </div>
+      
+      {/* Demo Content */}
+      <div className="relative z-10 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
+              <feature.icon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="text-white font-semibold">{feature.title}</h4>
+              <p className="text-gray-400 text-sm">{feature.demoTitle}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            Live Demo
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <feature.demoComponent />
+        </div>
+
+        {/* Stats Bar */}
+        <div className="flex justify-between items-center pt-4 border-t border-gray-700">
+          {feature.stats.map((stat: any, index: number) => (
+            <div key={index} className="text-center">
+              <div className="text-lg font-bold text-white">{stat.value}</div>
+              <div className="text-xs text-gray-400">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+  
   return (
     <div className="bg-gradient-to-b from-white to-gray-50 py-20 px-4">
       <div className="max-w-7xl mx-auto">
-
-
         {/* Features Grid */}
-        <div className="grid lg:grid-cols-5 gap-8 mb-12">
-          {/* Features List */}
-          <div className="space-y-4 lg:col-span-2">
+        <div className="grid lg:grid-cols-2 gap-8 mb-12">
+          {/* Left Panel: Features List */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900">Core Capabilities</h3>
               <div className="flex items-center gap-2">
@@ -350,8 +348,8 @@ function FeaturesSection() {
             ))}
           </div>
 
-          {/* Demo Visualization */}
-          <div className="lg:col-span-3">
+          {/* Right Panel: Demo Visualization */}
+          <div>
             <DemoVisualization feature={features[activeFeature]} />
           </div>
         </div>
