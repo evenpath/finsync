@@ -23,341 +23,343 @@ import {
   Sparkles,
   ChevronRight,
   Check,
-  Pause
+  Pause,
+  ArrowDown,
 } from 'lucide-react';
 
 function FeaturesSection() {
-    const [activeFeature, setActiveFeature] = useState(0);
-    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-    useEffect(() => {
-      if (!isAutoPlaying) return;
-      
-      const interval = setInterval(() => {
-        setActiveFeature((prev) => (prev + 1) % features.length);
-      }, 5000);
-      
-      return () => clearInterval(interval);
-    }, [isAutoPlaying]);
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % features.length);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [isAutoPlaying]);
 
-    const WorkflowBuilderDemo = () => (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          {[
-            { name: 'Form Input', active: true },
-            { name: 'AI Analysis', active: true },
-            { name: 'Approval', active: false },
-            { name: 'Notification', active: false }
-          ].map((step, index) => (
-            <div key={index} className="flex items-center">
-              <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-medium transition-all duration-500 ${
-                step.active 
-                  ? 'bg-blue-500 border-blue-500 text-white' 
-                  : 'border-gray-600 text-gray-400'
-              }`}>
-                {index + 1}
-              </div>
-              {index < 3 && (
-                <div className={`w-8 h-0.5 mx-2 transition-all duration-500 ${
-                  step.active ? 'bg-blue-500' : 'bg-gray-600'
-                }`} />
-              )}
+  const FeatureCard = ({ feature, isActive, onClick }: { feature: any, isActive: boolean, onClick: () => void }) => (
+    <div 
+      className={`group cursor-pointer p-6 rounded-xl border transition-all duration-300 ${
+        isActive 
+          ? 'bg-white border-blue-200 shadow-lg ring-2 ring-blue-100' 
+          : 'bg-gray-50 border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-md'
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex items-start gap-4">
+        <div className={`p-3 rounded-lg transition-all duration-300 ${
+          isActive 
+            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg' 
+            : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+        }`}>
+          <feature.icon className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+          <p className="text-gray-600 text-sm leading-relaxed mb-3">{feature.description}</p>
+          <div className="flex flex-wrap gap-2">
+            {feature.highlights.map((highlight: string, index: number) => (
+              <span 
+                key={index}
+                className={`text-xs px-2 py-1 rounded-full transition-all duration-300 ${
+                  isActive 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+                }`}
+              >
+                {highlight}
+              </span>
+            ))}
+          </div>
+        </div>
+        <ChevronRight className={`w-5 h-5 transition-all duration-300 ${
+          isActive ? 'text-blue-500 transform rotate-90' : 'text-gray-400 group-hover:text-gray-600'
+        }`} />
+      </div>
+    </div>
+  );
+
+  const DemoVisualization = ({ feature }: { feature: any }) => (
+    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-96 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-grid-pattern"></div>
+      </div>
+      
+      {/* Demo Content */}
+      <div className="relative z-10 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
+              <feature.icon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="text-white font-semibold">{feature.title}</h4>
+              <p className="text-gray-400 text-sm">{feature.demoTitle}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            Live Demo
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <feature.demoComponent />
+        </div>
+
+        {/* Stats Bar */}
+        <div className="flex justify-between items-center pt-4 border-t border-gray-700">
+          {feature.stats.map((stat: any, index: number) => (
+            <div key={index} className="text-center">
+              <div className="text-lg font-bold text-white">{stat.value}</div>
+              <div className="text-xs text-gray-400">{stat.label}</div>
             </div>
           ))}
         </div>
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="text-sm text-green-400 mb-1">✓ Workflow Created</div>
-          <div className="text-white text-sm">Customer Onboarding Process</div>
-          <div className="text-gray-400 text-xs">4 steps • 2 AI agents • 15min avg completion</div>
+      </div>
+    </div>
+  );
+
+  // Demo Components
+  const WorkflowBuilderDemo = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        {[
+          { name: 'Form Input', active: true },
+          { name: 'AI Analysis', active: true },
+          { name: 'Approval', active: false },
+          { name: 'Notification', active: false }
+        ].map((step, index) => (
+          <div key={index} className="flex items-center">
+            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-medium transition-all duration-500 ${
+              step.active 
+                ? 'bg-blue-500 border-blue-500 text-white' 
+                : 'border-gray-600 text-gray-400'
+            }`}>
+              {index + 1}
+            </div>
+            {index < 3 && (
+              <div className={`w-8 h-0.5 mx-2 transition-all duration-500 ${
+                step.active ? 'bg-blue-500' : 'bg-gray-600'
+              }`} />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="bg-gray-800 rounded-lg p-4">
+        <div className="text-sm text-green-400 mb-1">✓ Workflow Created</div>
+        <div className="text-white text-sm">Customer Onboarding Process</div>
+        <div className="text-gray-400 text-xs">4 steps • 2 AI agents • 15min avg completion</div>
+      </div>
+    </div>
+  );
+
+  const AIAgentDemo = () => (
+    <div className="space-y-3">
+      <div className="bg-gray-800 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Bot className="w-4 h-4 text-blue-400" />
+          <span className="text-sm text-blue-400">AI Agent Processing</span>
+        </div>
+        <div className="text-white text-sm mb-1">Analyzing customer feedback...</div>
+        <div className="w-full bg-gray-700 rounded-full h-2">
+          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full w-3/4 animate-pulse"></div>
         </div>
       </div>
-    );
-  
-    const AIAgentDemo = () => (
-      <div className="space-y-3">
-        <div className="bg-gray-800 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Bot className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-blue-400">AI Agent Processing</span>
-          </div>
-          <div className="text-white text-sm mb-1">Analyzing customer feedback...</div>
-          <div className="w-full bg-gray-700 rounded-full h-2">
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full w-3/4 animate-pulse"></div>
-          </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-green-500/20 border border-green-500/30 rounded p-2">
+          <div className="text-green-400 text-xs font-medium">Sentiment: Positive</div>
+          <div className="text-white text-xs">Confidence: 94%</div>
         </div>
+        <div className="bg-blue-500/20 border border-blue-500/30 rounded p-2">
+          <div className="text-blue-400 text-xs font-medium">Category: Support</div>
+          <div className="text-white text-xs">Priority: Medium</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ChatDemo = () => (
+    <div className="space-y-2">
+      <div className="bg-gray-800 rounded-lg p-3 max-w-xs">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+            <span className="text-xs text-white">SM</span>
+          </div>
+          <span className="text-sm text-gray-300">Sarah M.</span>
+          <span className="text-xs text-gray-500">2:34 PM</span>
+        </div>
+        <div className="text-white text-sm">Task review completed ✅</div>
+      </div>
+      <div className="bg-blue-600 rounded-lg p-3 max-w-xs ml-auto">
+        <div className="text-white text-sm">Great! Moving to next step</div>
+        <div className="text-blue-200 text-xs mt-1">2:35 PM</div>
+      </div>
+      <div className="flex items-center gap-2 text-gray-400 text-xs">
+        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+        <span>3 team members online</span>
+      </div>
+    </div>
+  );
+
+  const features = [
+    {
+      icon: Workflow,
+      title: 'Visual Workflow Builder',
+      description: 'Create complex workflows with simple drag-and-drop interface. No coding required.',
+      highlights: ['Drag & Drop', 'Pre-built Templates', 'Industry Specific'],
+      demoTitle: 'Building Customer Onboarding Flow',
+      demoComponent: WorkflowBuilderDemo,
+      stats: [
+        { value: '50+', label: 'Templates' },
+        { value: '3 min', label: 'Avg Setup' },
+        { value: '94%', label: 'Success Rate' }
+      ]
+    },
+    {
+      icon: Bot,
+      title: 'AI-Powered Automation',
+      description: 'Integrate AI agents for document analysis, sentiment detection, and intelligent routing.',
+      highlights: ['LLMs Integration', 'Auto Classification', 'Smart Routing'],
+      demoTitle: 'AI Processing Customer Feedback',
+      demoComponent: AIAgentDemo,
+      stats: [
+        { value: '8 AI', label: 'Models' },
+        { value: '95%', label: 'Accuracy' },
+        { value: '10x', label: 'Faster' }
+      ]
+    },
+    {
+      icon: MessageSquare,
+      title: 'Integrated Team Chat',
+      description: 'Built-in communication keeps everyone aligned without switching between tools.',
+      highlights: ['Multi-Workspace', 'Task Context', 'File Sharing'],
+      demoTitle: 'Team Collaboration Hub',
+      demoComponent: ChatDemo,
+      stats: [
+        { value: '100+', label: 'Workspaces' },
+        { value: '5ms', label: 'Response' },
+        { value: '99.9%', label: 'Uptime' }
+      ]
+    },
+    {
+      icon: Users,
+      title: 'Multi-Role Management',
+      description: 'Flexible role system with granular permissions for admins, partners, and workers.',
+      highlights: ['Role-Based Access', 'Team Management', 'Workspace Switching'],
+      demoTitle: 'Role & Permission Management',
+      demoComponent: () => (
+        <div className="space-y-3">
+          {[
+            { role: 'Admin', permissions: 'Full System Access', count: 2, color: 'red' },
+            { role: 'Partner Admin', permissions: 'Workspace Management', count: 12, color: 'blue' },
+            { role: 'Worker', permissions: 'Task Execution', count: 156, color: 'green' }
+          ].map((item, index) => (
+            <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full bg-${item.color}-500`}></div>
+                <div>
+                  <div className="text-white text-sm font-medium">{item.role}</div>
+                  <div className="text-gray-400 text-xs">{item.permissions}</div>
+                </div>
+              </div>
+              <div className="text-white font-bold">{item.count}</div>
+            </div>
+          ))}
+        </div>
+      ),
+      stats: [
+        { value: '3', label: 'Role Types' },
+        { value: '170+', label: 'Users' },
+        { value: '99.8%', label: 'Security' }
+      ]
+    },
+    {
+      icon: Globe,
+      title: 'API Integrations',
+      description: 'Connect with 200+ popular tools and services through our extensive API library.',
+      highlights: ['200+ Integrations', 'Custom APIs', 'Webhook Support'],
+      demoTitle: 'Connected Services',
+      demoComponent: () => (
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-green-500/20 border border-green-500/30 rounded p-2">
-            <div className="text-green-400 text-xs font-medium">Sentiment: Positive</div>
-            <div className="text-white text-xs">Confidence: 94%</div>
-          </div>
-          <div className="bg-blue-500/20 border border-blue-500/30 rounded p-2">
-            <div className="text-blue-400 text-xs font-medium">Category: Support</div>
-            <div className="text-white text-xs">Priority: Medium</div>
-          </div>
-        </div>
-      </div>
-    );
-  
-    const ChatDemo = () => (
-      <div className="space-y-2">
-        <div className="bg-gray-800 rounded-lg p-3 max-w-xs">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white">SM</span>
+          {[
+            'Slack', 'Salesforce', 'Google Workspace', 'Microsoft 365',
+            'Stripe', 'HubSpot', 'Jira', 'GitHub'
+          ].map((service, index) => (
+            <div key={index} className="bg-gray-800 rounded p-2 text-center">
+              <div className="text-white text-sm font-medium">{service}</div>
+              <div className="text-green-400 text-xs">✓ Connected</div>
             </div>
-            <span className="text-sm text-gray-300">Sarah M.</span>
-            <span className="text-xs text-gray-500">2:34 PM</span>
-          </div>
-          <div className="text-white text-sm">Task review completed ✅</div>
+          ))}
         </div>
-        <div className="bg-blue-600 rounded-lg p-3 max-w-xs ml-auto">
-          <div className="text-white text-sm">Great! Moving to next step</div>
-          <div className="text-blue-200 text-xs mt-1">2:35 PM</div>
-        </div>
-        <div className="flex items-center gap-2 text-gray-400 text-xs">
-          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span>3 team members online</span>
-        </div>
-      </div>
-    );
+      ),
+      stats: [
+        { value: '200+', label: 'Integrations' },
+        { value: '5min', label: 'Setup' },
+        { value: '100%', label: 'Reliability' }
+      ]
+    }
+  ];
 
-    const features = [
-      {
-        icon: Workflow,
-        title: 'Visual Workflow Builder',
-        description: 'Create complex workflows with simple drag-and-drop interface. No coding required.',
-        highlights: ['Drag & Drop', 'Pre-built Templates', 'Industry Specific'],
-        demoTitle: 'Building Customer Onboarding Flow',
-        demoComponent: WorkflowBuilderDemo,
-        stats: [
-          { value: '50+', label: 'Templates' },
-          { value: '3 min', label: 'Avg Setup' },
-          { value: '94%', label: 'Success Rate' }
-        ]
-      },
-      {
-        icon: Bot,
-        title: 'AI-Powered Automation',
-        description: 'Integrate AI agents for document analysis, sentiment detection, and intelligent routing.',
-        highlights: ['LLMs Integration', 'Auto Classification', 'Smart Routing'],
-        demoTitle: 'AI Processing Customer Feedback',
-        demoComponent: AIAgentDemo,
-        stats: [
-          { value: '8 AI', label: 'Models' },
-          { value: '95%', label: 'Accuracy' },
-          { value: '10x', label: 'Faster' }
-        ]
-      },
-  
-      {
-        icon: MessageSquare,
-        title: 'Integrated Team Chat',
-        description: 'Built-in communication keeps everyone aligned without switching between tools.',
-        highlights: ['Multi-Workspace', 'Task Context', 'File Sharing'],
-        demoTitle: 'Team Collaboration Hub',
-        demoComponent: ChatDemo,
-        stats: [
-          { value: '100+', label: 'Workspaces' },
-          { value: '5ms', label: 'Response' },
-          { value: '99.9%', label: 'Uptime' }
-        ]
-      },
-      {
-        icon: Users,
-        title: 'Multi-Role Management',
-        description: 'Flexible role system with granular permissions for admins, partners, and workers.',
-        highlights: ['Role-Based Access', 'Team Management', 'Workspace Switching'],
-        demoTitle: 'Role & Permission Management',
-        demoComponent: () => (
-          <div className="space-y-3">
-            {[
-              { role: 'Admin', permissions: 'Full System Access', count: 2, color: 'red' },
-              { role: 'Partner Admin', permissions: 'Workspace Management', count: 12, color: 'blue' },
-              { role: 'Worker', permissions: 'Task Execution', count: 156, color: 'green' }
-            ].map((item, index) => (
-              <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full bg-${item.color}-500`}></div>
-                  <div>
-                    <div className="text-white text-sm font-medium">{item.role}</div>
-                    <div className="text-gray-400 text-xs">{item.permissions}</div>
-                  </div>
-                </div>
-                <div className="text-white font-bold">{item.count}</div>
-              </div>
-            ))}
-          </div>
-        ),
-        stats: [
-          { value: '3', label: 'Role Types' },
-          { value: '170+', label: 'Users' },
-          { value: '99.8%', label: 'Security' }
-        ]
-      },
-      {
-        icon: Globe,
-        title: 'API Integrations',
-        description: 'Connect with 200+ popular tools and services through our extensive API library.',
-        highlights: ['200+ Integrations', 'Custom APIs', 'Webhook Support'],
-        demoTitle: 'Connected Services',
-        demoComponent: () => (
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              'Slack', 'Salesforce', 'Google Workspace', 'Microsoft 365',
-              'Stripe', 'HubSpot', 'Jira', 'GitHub'
-            ].map((service, index) => (
-              <div key={index} className="bg-gray-800 rounded p-2 text-center">
-                <div className="text-white text-sm font-medium">{service}</div>
-                <div className="text-green-400 text-xs">✓ Connected</div>
-              </div>
-            ))}
-          </div>
-        ),
-        stats: [
-          { value: '200+', label: 'Integrations' },
-          { value: '5min', label: 'Setup' },
-          { value: '100%', label: 'Reliability' }
-        ]
-      }
-    ];
+  return (
+    <div className="bg-gradient-to-b from-white to-gray-50 py-20 px-4">
+      <div className="max-w-7xl mx-auto">
 
-    const FeatureCard = ({ feature, isActive, onClick }: {feature: any, isActive: boolean, onClick: () => void}) => (
-      <div 
-        className={`group cursor-pointer p-6 rounded-xl border transition-all duration-300 ${
-          isActive 
-            ? 'bg-white border-blue-200 shadow-lg ring-2 ring-blue-100' 
-            : 'bg-gray-50 border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-md'
-        }`}
-        onClick={onClick}
-      >
-        <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-lg transition-all duration-300 ${
-            isActive 
-              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg' 
-              : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-          }`}>
-            <feature.icon className="w-6 h-6" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-3">{feature.description}</p>
-            <div className="flex flex-wrap gap-2">
-              {feature.highlights.map((highlight: string, index: number) => (
-                <span 
-                  key={index}
-                  className={`text-xs px-2 py-1 rounded-full transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-                  }`}
+
+        {/* Features Grid */}
+        <div className="grid lg:grid-cols-5 gap-8 mb-12">
+          {/* Features List */}
+          <div className="space-y-4 lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Core Capabilities</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
                 >
-                  {highlight}
-                </span>
-              ))}
-            </div>
-          </div>
-          <ChevronRight className={`w-5 h-5 transition-all duration-300 ${
-            isActive ? 'text-blue-500 transform rotate-90' : 'text-gray-400 group-hover:text-gray-600'
-          }`} />
-        </div>
-      </div>
-    );
-  
-    const DemoVisualization = ({ feature }: {feature: any}) => (
-      <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-96 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-grid-pattern"></div>
-        </div>
-        
-        {/* Demo Content */}
-        <div className="relative z-10 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
-                <feature.icon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h4 className="text-white font-semibold">{feature.title}</h4>
-                <p className="text-gray-400 text-sm">{feature.demoTitle}</p>
+                  {isAutoPlaying ? (
+                    <>
+                      <Pause className="w-4 h-4" />
+                      Pause Demo
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      Play Demo
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-400 text-sm">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              Live Demo
-            </div>
-          </div>
-  
-          <div className="flex-1">
-            <feature.demoComponent />
-          </div>
-  
-          {/* Stats Bar */}
-          <div className="flex justify-between items-center pt-4 border-t border-gray-700">
-            {feature.stats.map((stat: any, index: number) => (
-              <div key={index} className="text-center">
-                <div className="text-lg font-bold text-white">{stat.value}</div>
-                <div className="text-xs text-gray-400">{stat.label}</div>
-              </div>
+
+            {features.map((feature, index) => (
+              <FeatureCard
+                key={index}
+                feature={feature}
+                isActive={activeFeature === index}
+                onClick={() => {
+                  setActiveFeature(index);
+                  setIsAutoPlaying(false);
+                }}
+              />
             ))}
           </div>
-        </div>
-      </div>
-    );
-  
-    return (
-      <div className="bg-gradient-to-b from-white to-gray-50 py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-  
-  
-          {/* Features Grid */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            {/* Features List */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Core Capabilities</h3>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    {isAutoPlaying ? (
-                      <>
-                        <Pause className="w-4 h-4" />
-                        Pause Demo
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4" />
-                        Play Demo
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-  
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={index}
-                  feature={feature}
-                  isActive={activeFeature === index}
-                  onClick={() => {
-                    setActiveFeature(index);
-                    setIsAutoPlaying(false);
-                  }}
-                />
-              ))}
-            </div>
-  
-            {/* Demo Visualization */}
-            <div className="lg:pl-8">
-              <DemoVisualization feature={features[activeFeature]} />
-            </div>
+
+          {/* Demo Visualization */}
+          <div className="lg:col-span-3">
+            <DemoVisualization feature={features[activeFeature]} />
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
 function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
@@ -501,8 +503,8 @@ function PricingSection() {
   );
 }
 
+
 export default function FlowOpsHomepage() {
-  const [workflowStep, setWorkflowStep] = useState(0);
   const [animatedText, setAnimatedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
@@ -539,15 +541,6 @@ export default function FlowOpsHomepage() {
     return () => clearTimeout(typingTimeout);
   }, [animatedText, isDeleting, loopNum]);
 
-
-  useEffect(() => {
-    const workflowInterval = setInterval(() => {
-      setWorkflowStep((prev) => (prev + 1) % 4);
-    }, 2000);
-    return () => {
-      clearInterval(workflowInterval);
-    };
-  }, []);
 
   return (
       <div className="min-h-screen bg-gray-50 text-gray-800">
@@ -667,6 +660,3 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
-
-
-    
