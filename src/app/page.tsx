@@ -13,8 +13,8 @@ import {
   Mail,
   Settings,
   Calendar,
-  ArrowDown,
 } from 'lucide-react';
+
 
 function OperationsProblemsSection() {
   const [activeFlow, setActiveFlow] = useState(0);
@@ -29,9 +29,9 @@ function OperationsProblemsSection() {
   const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
     <div className={`
       px-6 py-4 rounded-lg text-center transition-all duration-500 border text-sm font-medium
-      ${active
-        ? status === 'problem'
-          ? 'bg-red-50 border-red-200 text-red-900'
+      ${active 
+        ? status === 'problem' 
+          ? 'bg-red-50 border-red-200 text-red-900' 
           : status === 'slow'
           ? 'bg-orange-50 border-orange-200 text-orange-900'
           : 'bg-blue-50 border-blue-200 text-blue-900'
@@ -45,12 +45,18 @@ function OperationsProblemsSection() {
 
   const FlowArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
     <div className="flex justify-center items-center py-2">
-       <ArrowDown
-        className={`w-5 h-5 transition-opacity duration-500 ${
-          active ? 'text-gray-400 opacity-100' : 'text-gray-300 opacity-0'
-        }`}
-        style={{ transitionDelay: `${delay}ms` }}
-      />
+      <div className={`
+        w-px h-6 transition-all duration-500
+        ${active ? 'bg-gray-400' : 'bg-gray-300'}
+      `}
+      style={{ transitionDelay: `${delay}ms` }}>
+      </div>
+      <div className={`
+        w-2 h-2 border-b border-r border-gray-400 transform rotate-45 -mt-1 transition-all duration-500
+        ${active ? 'border-gray-400' : 'border-gray-300'}
+      `}
+      style={{ transitionDelay: `${delay + 100}ms` }}>
+      </div>
     </div>
   );
 
@@ -77,15 +83,15 @@ function OperationsProblemsSection() {
         <FlowArrow active={active} delay={300} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium text-center">Team Member A</div>
+            <div className="text-xs text-center text-gray-600 mb-2 font-medium">Team Member A</div>
             <ProcessNode active={active} delay={600} status="normal">Standard Approach</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium text-center">Team Member B</div>
+            <div className="text-xs text-center text-gray-600 mb-2 font-medium">Team Member B</div>
             <ProcessNode active={active} delay={800} status="slow">Alternative Method</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium text-center">Team Member C</div>
+            <div className="text-xs text-center text-gray-600 mb-2 font-medium">Team Member C</div>
             <ProcessNode active={active} delay={1000} status="problem">Custom Workaround</ProcessNode>
           </div>
         </div>
