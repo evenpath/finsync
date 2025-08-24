@@ -1,3 +1,4 @@
+
 // src/components/partner/team/TeamManagement.tsx
 "use client";
 
@@ -54,7 +55,6 @@ export default function TeamManagement() {
 
   // Get partner info from user's custom claims
   const partnerId = user?.customClaims?.partnerId;
-  const tenantId = user?.customClaims?.tenantId;
   const userRole = user?.customClaims?.role;
 
   const filteredMembers = useMemo(() => {
@@ -116,17 +116,19 @@ export default function TeamManagement() {
     return () => unsubscribe();
   }, [partnerId, authLoading, user]);
   
-  const handleRemoveMember = async (userIdToRemove: string) => {
+  const handleRemoveMember = async (memberToRemove: TeamMember) => {
+    const { id: userIdToRemove, tenantId } = memberToRemove;
+    
     if (!partnerId || !tenantId) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Cannot remove member: missing workspace context.",
+        description: "Cannot remove member: missing workspace or tenant context.",
       });
       return;
     }
     
-    if (window.confirm("Are you sure you want to remove this team member? This will revoke their access to the workspace.")) {
+    if (window.confirm(`Are you sure you want to remove ${memberToRemove.name}? This will revoke their access to the workspace.`)) {
         const result = await removeTeamMemberAction({ partnerId, userIdToRemove, tenantId });
         if (result.success) {
           toast({ title: "Success", description: result.message });
@@ -309,7 +311,7 @@ export default function TeamManagement() {
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                        onClick={() => handleRemoveMember(selectedMember.id!)}
+                                        onClick={() => handleRemoveMember(selectedMember)}
                                       >
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         <span>Remove Member</span>
@@ -370,19 +372,23 @@ export default function TeamManagement() {
       </Tabs>
 
       {/* Dialogs */}
-      <GenerateInviteCodeDialog
-        isOpen={isInviteDialogOpen}
-        onClose={() => setIsInviteDialogOpen(false)}
-        partnerId={partnerId!}
-        onInviteGenerated={handleInviteGenerated}
-      />
-      <TaskAssignmentModal
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        onTaskAssigned={handleTaskAssigned}
-        activeWorkspace={user?.customClaims}
-        teamMembers={teamMembers}
-      />
+      {partnerId && (
+        <GenerateInviteCodeDialog
+          isOpen={isInviteDialogOpen}
+          onClose={() => setIsInviteDialogOpen(false)}
+          partnerId={partnerId}
+          onInviteGenerated={handleInviteGenerated}
+        />
+      )}
+      {user?.customClaims && teamMembers && (
+        <TaskAssignmentModal
+            isOpen={isTaskModalOpen}
+            onClose={() => setIsTaskModalOpen(false)}
+            onTaskAssigned={handleTaskAssigned}
+            activeWorkspace={user.customClaims}
+            teamMembers={teamMembers}
+        />
+       )}
     </>
   );
 }
