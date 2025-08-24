@@ -198,22 +198,26 @@ export async function acceptInvitationByCode(input: {
       };
     }
 
-    // Check if user already exists in this workspace
-    const existingWorkspaceLink = await db
+    // Check if user already has an ACTIVE link to this workspace
+    const existingWorkspaceLinkQuery = await db
       .collection('userWorkspaceLinks')
       .where('userId', '==', input.uid)
       .where('partnerId', '==', invitation.partnerId)
       .limit(1)
       .get();
 
-    if (!existingWorkspaceLink.empty) {
-      return {
-        success: false,
-        message: 'You are already a member of this workspace'
-      };
+    if (!existingWorkspaceLinkQuery.empty) {
+        const existingLinkData = existingWorkspaceLinkQuery.docs[0].data();
+        if (existingLinkData.status === 'active') {
+            return {
+                success: false,
+                message: 'You are already an active member of this workspace.'
+            };
+        }
     }
 
-    // Create user workspace link
+
+    // Create or update user workspace link
     const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${input.uid}_${invitation.partnerId}`);
     const workspaceLink: UserWorkspaceLink = {
       userId: input.uid,
@@ -232,7 +236,7 @@ export async function acceptInvitationByCode(input: {
 
     await workspaceLinkRef.set(workspaceLink, { merge: true });
     
-    // Create Team Member document
+    // Create or update Team Member document
     const userRecord = await adminAuth.getUser(input.uid);
     const teamMemberRef = db.collection('teamMembers').doc(input.uid);
     const teamMemberData: Omit<TeamMember, 'id' | 'createdAt'> = {
@@ -267,14 +271,18 @@ export async function acceptInvitationByCode(input: {
         partnerName: invitation.partnerName,
         partnerAvatar: undefined,
     };
-    const updatedWorkspaces = [...(currentClaims.workspaces || []), newWorkspaceAccess];
+    
+    const existingWorkspaces = (currentClaims.workspaces || []).filter(
+        (ws: WorkspaceAccess) => ws.partnerId !== invitation.partnerId
+    );
+    const updatedWorkspaces = [...existingWorkspaces, newWorkspaceAccess];
 
     const updatedClaims = {
       ...currentClaims,
       role: invitation.role,
       partnerId: invitation.partnerId,
       tenantId: invitation.tenantId,
-      partnerIds: [...(currentClaims.partnerIds || []), invitation.partnerId],
+      partnerIds: [...new Set([...(currentClaims.partnerIds || []), invitation.partnerId])],
       workspaces: updatedWorkspaces,
       activePartnerId: invitation.partnerId,
       activeTenantId: invitation.tenantId
