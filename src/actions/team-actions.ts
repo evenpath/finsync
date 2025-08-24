@@ -34,9 +34,14 @@ export async function removeTeamMemberAction(input: {
     // This removes them from the team roster in the UI.
     // Note: In a multi-workspace team, you might want to remove the specific partnerId from a teamMember document
     // instead of deleting the whole document if the user belongs to multiple teams.
-    // For this implementation, we assume one team member document per user.
-    await db.collection('teamMembers').doc(input.userIdToRemove).delete();
-    console.log(`Deleted teamMember: ${input.userIdToRemove}`);
+    // For this implementation, we assume one team member document per user, per partner, so we delete it.
+    const teamMemberRef = db.collection('teamMembers').doc(input.userIdToRemove);
+    const teamMemberDoc = await teamMemberRef.get();
+
+    if (teamMemberDoc.exists && teamMemberDoc.data()?.partnerId === input.partnerId) {
+      await teamMemberRef.delete();
+      console.log(`Deleted teamMember document for user: ${input.userIdToRemove}`);
+    }
 
 
     // 3. Remove workspace access from the user's custom claims in Firebase Auth.

@@ -1,4 +1,3 @@
-
 // src/components/partner/team/TeamManagement.tsx
 "use client";
 
@@ -117,19 +116,19 @@ export default function TeamManagement() {
   }, [partnerId, authLoading, user]);
   
   const handleRemoveMember = async (memberToRemove: TeamMember) => {
-    const { id: userIdToRemove, tenantId } = memberToRemove;
+    const userIdToRemove = memberToRemove.id;
     
-    if (!partnerId || !tenantId) {
+    if (!partnerId) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Cannot remove member: missing workspace or tenant context.",
+        description: "Cannot remove member: missing workspace context.",
       });
       return;
     }
     
     if (window.confirm(`Are you sure you want to remove ${memberToRemove.name}? This will revoke their access to the workspace.`)) {
-        const result = await removeTeamMemberAction({ partnerId, userIdToRemove, tenantId });
+        const result = await removeTeamMemberAction({ partnerId, userIdToRemove });
         if (result.success) {
           toast({ title: "Success", description: result.message });
           if (selectedMember?.id === userIdToRemove) {
