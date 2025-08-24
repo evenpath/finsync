@@ -111,7 +111,7 @@ function FeaturesSection() {
       </div>
     </div>
   );
-
+  
   const features = [
     {
       icon: Workflow,
@@ -183,31 +183,6 @@ function FeaturesSection() {
         { value: '170+', label: 'Users' },
         { value: '99.8%', label: 'Security' }
       ]
-    },
-    {
-      icon: Globe,
-      title: 'API Integrations',
-      description: 'Connect with 200+ popular tools and services through our extensive API library.',
-      highlights: ['200+ Integrations', 'Custom APIs', 'Webhook Support'],
-      demoTitle: 'Connected Services',
-      demoComponent: () => (
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            'Slack', 'Salesforce', 'Google Workspace', 'Microsoft 365',
-            'Stripe', 'HubSpot', 'Jira', 'GitHub'
-          ].map((service, index) => (
-            <div key={index} className="bg-gray-800 rounded p-2 text-center">
-              <div className="text-white text-sm font-medium">{service}</div>
-              <div className="text-green-400 text-xs">✓ Connected</div>
-            </div>
-          ))}
-        </div>
-      ),
-      stats: [
-        { value: '200+', label: 'Integrations' },
-        { value: '5min', label: 'Setup' },
-        { value: '100%', label: 'Reliability' }
-      ]
     }
   ];
   
@@ -263,48 +238,9 @@ function FeaturesSection() {
     </div>
   );
 
-  const DemoVisualization = ({ feature }: { feature: any }) => (
-    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-full min-h-[30rem] overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-grid-pattern" style={{ maskImage: 'linear-gradient(to top, transparent, black)' }}></div>
-      </div>
-      
-      {/* Demo Content */}
-      <div className="relative z-10 h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
-              <feature.icon className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h4 className="text-white font-semibold">{feature.title}</h4>
-              <p className="text-gray-400 text-sm">{feature.demoTitle}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            Live Demo
-          </div>
-        </div>
+  const activeFeatureData = features[activeFeature];
+  const DemoComponent = activeFeatureData.demoComponent;
 
-        <div className="flex-1">
-          <feature.demoComponent />
-        </div>
-
-        {/* Stats Bar */}
-        <div className="flex justify-between items-center pt-4 border-t border-gray-700">
-          {feature.stats.map((stat: any, index: number) => (
-            <div key={index} className="text-center">
-              <div className="text-lg font-bold text-white">{stat.value}</div>
-              <div className="text-xs text-gray-400">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-  
   return (
     <div className="bg-gradient-to-b from-white to-gray-50 py-20 px-4">
       <div className="max-w-7xl mx-auto">
@@ -349,13 +285,45 @@ function FeaturesSection() {
 
           {/* Right Panel: Demo Visualization */}
           <div>
-            <DemoVisualization feature={features[activeFeature]} />
+              <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 h-full min-h-[30rem] overflow-hidden">
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0 bg-grid-pattern" style={{ maskImage: 'linear-gradient(to top, transparent, black)' }}></div>
+                </div>
+                
+                <div className="relative z-10 h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
+                        <activeFeatureData.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-white font-semibold">{activeFeatureData.title}</h4>
+                        <p className="text-gray-400 text-sm">{activeFeatureData.demoTitle}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1">
+                    <DemoComponent />
+                  </div>
+
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-700">
+                    {activeFeatureData.stats.map((stat: any, index: number) => (
+                      <div key={index} className="text-center">
+                        <div className="text-lg font-bold text-white">{stat.value}</div>
+                        <div className="text-xs text-gray-400">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
@@ -499,8 +467,7 @@ function PricingSection() {
   );
 }
 
-
-export default function FlowOpsHomepage() {
+function FlowOpsHomepage() {
   const [animatedText, setAnimatedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
@@ -656,3 +623,5 @@ export default function FlowOpsHomepage() {
     </div>
   );
 }
+
+export default FlowOpsHomepage;
