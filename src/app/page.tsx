@@ -29,9 +29,9 @@ function OperationsProblemsSection() {
   const ProcessNode = ({ children, active, delay = 0, status = 'normal' }: { children: React.ReactNode, active: boolean, delay?: number, status?: string }) => (
     <div className={`
       px-6 py-4 rounded-lg text-center transition-all duration-500 border text-sm font-medium
-      ${active 
-        ? status === 'problem' 
-          ? 'bg-red-50 border-red-200 text-red-900' 
+      ${active
+        ? status === 'problem'
+          ? 'bg-red-50 border-red-200 text-red-900'
           : status === 'slow'
           ? 'bg-orange-50 border-orange-200 text-orange-900'
           : 'bg-blue-50 border-blue-200 text-blue-900'
@@ -45,7 +45,7 @@ function OperationsProblemsSection() {
 
   const FlowArrow = ({ active, delay = 0 }: { active: boolean, delay?: number }) => (
     <div className="flex justify-center items-center py-2">
-      <ArrowDown
+       <ArrowDown
         className={`w-5 h-5 transition-opacity duration-500 ${
           active ? 'text-gray-400 opacity-100' : 'text-gray-300 opacity-0'
         }`}
@@ -54,56 +54,56 @@ function OperationsProblemsSection() {
     </div>
   );
 
-  const ChatWorkFlow = ({ active }: { active: boolean }) => (
+  const ManualWorkFlow = ({ active }: { active: boolean }) => (
     <div className="h-80 flex flex-col justify-center">
       <div className="space-y-4 max-w-sm mx-auto">
-        <ProcessNode active={active} delay={0}>💬 Task mentioned in chat</ProcessNode>
+        <ProcessNode active={active} delay={0}>Task Request Received</ProcessNode>
         <FlowArrow active={active} delay={300} />
-        <ProcessNode active={active} delay={600} status="slow">🔍 Scroll through 200+ messages</ProcessNode>
+        <ProcessNode active={active} delay={600} status="slow">Search Through Multiple Tools</ProcessNode>
         <FlowArrow active={active} delay={900} />
-        <ProcessNode active={active} delay={1200} status="slow">📱 Ping 5 people for status</ProcessNode>
+        <ProcessNode active={active} delay={1200} status="slow">Request Clarification & Wait</ProcessNode>
         <FlowArrow active={active} delay={1500} />
-        <ProcessNode active={active} delay={1800} status="problem">⏰ Deadline already passed</ProcessNode>
+        <ProcessNode active={active} delay={1800} status="problem">Rushed Completion Under Pressure</ProcessNode>
       </div>
     </div>
   );
 
-  const ChannelChaosFlow = ({ active }: { active: boolean }) => (
+  const InconsistentProcessFlow = ({ active }: { active: boolean }) => (
     <div className="h-80 flex flex-col justify-center">
       <div className="space-y-6">
         <div className="flex justify-center">
-          <ProcessNode active={active} delay={0}>📋 Same project discussion</ProcessNode>
+          <ProcessNode active={active} delay={0}>Identical Task Assignment</ProcessNode>
         </div>
         <FlowArrow active={active} delay={300} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium text-center">#general</div>
-            <ProcessNode active={active} delay={600} status="normal">💬 Initial mention</ProcessNode>
+            <div className="text-xs text-gray-600 mb-2 font-medium text-center">Team Member A</div>
+            <ProcessNode active={active} delay={600} status="normal">Standard Approach</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium text-center">#project-channel</div>
-            <ProcessNode active={active} delay={800} status="slow">📝 Detailed discussion</ProcessNode>
+            <div className="text-xs text-gray-600 mb-2 font-medium text-center">Team Member B</div>
+            <ProcessNode active={active} delay={800} status="slow">Alternative Method</ProcessNode>
           </div>
           <div>
-            <div className="text-xs text-gray-600 mb-2 font-medium text-center">DM threads</div>
-            <ProcessNode active={active} delay={1000} status="problem">🤫 Side conversations</ProcessNode>
+            <div className="text-xs text-gray-600 mb-2 font-medium text-center">Team Member C</div>
+            <ProcessNode active={active} delay={1000} status="problem">Custom Workaround</ProcessNode>
           </div>
         </div>
         <FlowArrow active={active} delay={1300} />
         <div className="flex justify-center">
-          <ProcessNode active={active} delay={1600} status="problem">🤷 Nobody has the full picture</ProcessNode>
+          <ProcessNode active={active} delay={1600} status="problem">Inconsistent Quality & Outcomes</ProcessNode>
         </div>
       </div>
     </div>
   );
 
-  const InformationBuriedFlow = ({ active }: { active: boolean }) => (
+  const VisibilityFlow = ({ active }: { active: boolean }) => (
     <div className="h-80 flex flex-col justify-center">
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-          <ProcessNode active={active} delay={0}>📊 Critical update shared</ProcessNode>
-          <ProcessNode active={active} delay={200}>📈 Progress reported</ProcessNode>
-          <ProcessNode active={active} delay={400}>🚨 Issue mentioned</ProcessNode>
+          <ProcessNode active={active} delay={0}>Project Alpha</ProcessNode>
+          <ProcessNode active={active} delay={200}>Project Beta</ProcessNode>
+          <ProcessNode active={active} delay={400}>Project Gamma</ProcessNode>
         </div>
         <FlowArrow active={active} delay={600} />
         <div className="flex justify-center">
@@ -112,13 +112,13 @@ function OperationsProblemsSection() {
             ${active ? 'border-gray-400 bg-gray-50' : 'border-gray-300 bg-gray-50'}
           `}
           style={{ transitionDelay: '800ms' }}>
-            <div className="text-lg font-medium text-gray-700 mb-1">💬 Lost in 500+ messages</div>
-            <div className="text-sm text-gray-500">Manager hasn't seen it</div>
+            <div className="text-lg font-medium text-gray-700 mb-1">Management View</div>
+            <div className="text-sm text-gray-500">Status Unknown</div>
           </div>
         </div>
         <FlowArrow active={active} delay={1200} />
         <div className="flex justify-center">
-          <ProcessNode active={active} delay={1500} status="problem">🔥 Emergency discovered in client call</ProcessNode>
+          <ProcessNode active={active} delay={1500} status="problem">Crisis Discovery During Client Review</ProcessNode>
         </div>
       </div>
     </div>
@@ -126,19 +126,19 @@ function OperationsProblemsSection() {
 
   const problems = [
     {
-      title: "Chat Coordination Chaos",
-      subtitle: "Important tasks get buried in endless message threads",
-      component: ChatWorkFlow,
+      title: "Manual Coordination",
+      subtitle: "Excessive time spent on routine task management",
+      component: ManualWorkFlow,
     },
     {
-      title: "Multi-Channel Confusion", 
-      subtitle: "Same project scattered across different channels and DMs",
-      component: ChannelChaosFlow,
+      title: "Process Inconsistency",
+      subtitle: "Different approaches leading to unpredictable results",
+      component: InconsistentProcessFlow,
     },
     {
-      title: "Critical Updates Buried",
-      subtitle: "Important status changes lost in message history",
-      component: InformationBuriedFlow,
+      title: "Limited Visibility",
+      subtitle: "Management operates without real-time project insights",
+      component: VisibilityFlow,
     }
   ];
 
@@ -148,10 +148,10 @@ function OperationsProblemsSection() {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Work Coordination Shouldn't Be This Messy
+            Your Operations Shouldn't Be This Inefficient
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Your team spends more time hunting for information in chat than actually getting work done.
+            Every day, your team loses valuable time on repetitive coordination that intelligent automation could eliminate.
           </p>
         </div>
 
