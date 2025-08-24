@@ -2,6 +2,8 @@
 'use server';
 
 import { db, adminAuth } from '@/lib/firebase-admin';
+import type { UserWorkspaceLink, MultiWorkspaceCustomClaims } from '@/lib/types';
+
 
 /**
  * Server action to remove a team member from a workspace.
@@ -10,7 +12,6 @@ import { db, adminAuth } from '@/lib/firebase-admin';
 export async function removeTeamMemberAction(input: {
   partnerId: string;
   userIdToRemove: string;
-  tenantId: string;
 }): Promise<{ success: boolean; message: string }> {
 
   if (!db || !adminAuth) {
@@ -22,19 +23,26 @@ export async function removeTeamMemberAction(input: {
     // to perform this action (e.g., check if they are a partner_admin for this partnerId).
     // This is omitted here for simplicity but is critical for security.
 
-    // 1. Delete the teamMembers document
-    // This removes them from the team roster in the UI.
-    await db.collection('teamMembers').doc(input.userIdToRemove).delete();
-
-    // 2. Delete the userWorkspaceLinks document
+    // 1. Delete the userWorkspaceLinks document
     // This is the key step that revokes access. The useMultiWorkspaceAuth hook
     // relies on this collection to determine which workspaces a user can access.
-    await db.collection('userWorkspaceLinks').doc(`${input.userIdToRemove}_${input.partnerId}`).delete();
+    const linkId = `${input.userIdToRemove}_${input.partnerId}`;
+    await db.collection('userWorkspaceLinks').doc(linkId).delete();
+    console.log(`Deleted userWorkspaceLink: ${linkId}`);
+
+    // 2. Delete the teamMembers document
+    // This removes them from the team roster in the UI.
+    // Note: In a multi-workspace team, you might want to remove the specific partnerId from a teamMember document
+    // instead of deleting the whole document if the user belongs to multiple teams.
+    // For this implementation, we assume one team member document per user.
+    await db.collection('teamMembers').doc(input.userIdToRemove).delete();
+    console.log(`Deleted teamMember: ${input.userIdToRemove}`);
+
 
     // 3. Remove workspace access from the user's custom claims in Firebase Auth.
     // This ensures that even if the client has a cached token, new tokens will not grant access.
     const user = await adminAuth.getUser(input.userIdToRemove);
-    const claims = user.customClaims || {};
+    const claims = (user.customClaims || {}) as MultiWorkspaceCustomClaims;
     
     // Filter out the workspace that is being removed.
     const updatedWorkspaces = (claims.workspaces || []).filter(
@@ -51,11 +59,13 @@ export async function removeTeamMemberAction(input: {
     if (claims.activePartnerId === input.partnerId) {
       if (updatedWorkspaces.length > 0) {
         // Set the first remaining workspace as the new active one.
-        updatedClaims.activePartnerId = updatedWorkspaces[0].partnerId;
-        updatedClaims.activeTenantId = updatedWorkspaces[0].tenantId;
-        updatedClaims.role = updatedWorkspaces[0].role;
-        updatedClaims.partnerId = updatedWorkspaces[0].partnerId;
-        updatedClaims.tenantId = updatedWorkspaces[0].tenantId;
+        const newActiveWorkspace = updatedWorkspaces[0];
+        updatedClaims.activePartnerId = newActiveWorkspace.partnerId;
+        updatedClaims.activeTenantId = newActiveWorkspace.tenantId;
+        updatedClaims.role = newActiveWorkspace.role;
+        updatedClaims.partnerId = newActiveWorkspace.partnerId; // Legacy support
+        updatedClaims.tenantId = newActiveWorkspace.tenantId;   // Legacy support
+        console.log(`Set new active workspace to ${newActiveWorkspace.partnerName} (${newActiveWorkspace.partnerId})`);
       } else {
         // If no workspaces are left, clear all partner-related claims.
         delete updatedClaims.activePartnerId;
@@ -63,17 +73,17 @@ export async function removeTeamMemberAction(input: {
         delete updatedClaims.partnerId;
         delete updatedClaims.tenantId;
         delete updatedClaims.role;
+        console.log(`User has no workspaces left. Clearing all workspace claims.`);
       }
     }
 
     await adminAuth.setCustomUserClaims(input.userIdToRemove, updatedClaims);
+    console.log(`Updated custom claims for user: ${input.userIdToRemove}`);
     
     // 4. Optional: Delete the user from the Firebase Auth tenant if they have no other roles in it.
     // This is a more complex operation and depends on specific business logic (e.g., if a user
     // can belong to multiple workspaces within the same tenant under different roles).
     // For now, we leave the user in the tenant to avoid unintended side effects.
-    // const tenantAuth = adminAuth.tenantManager().authForTenant(input.tenantId);
-    // await tenantAuth.deleteUser(input.userIdToRemove);
 
 
     return { success: true, message: 'Team member removed successfully.' };

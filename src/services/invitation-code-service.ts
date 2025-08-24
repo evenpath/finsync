@@ -199,26 +199,18 @@ export async function acceptInvitationByCode(input: {
     }
 
     // Check if user already has an ACTIVE link to this workspace
-    const existingWorkspaceLinkQuery = await db
-      .collection('userWorkspaceLinks')
-      .where('userId', '==', input.uid)
-      .where('partnerId', '==', invitation.partnerId)
-      .limit(1)
-      .get();
+    const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${input.uid}_${invitation.partnerId}`);
+    const existingWorkspaceLinkDoc = await workspaceLinkRef.get();
 
-    if (!existingWorkspaceLinkQuery.empty) {
-        const existingLinkData = existingWorkspaceLinkQuery.docs[0].data();
-        if (existingLinkData.status === 'active') {
-            return {
-                success: false,
-                message: 'You are already an active member of this workspace.'
-            };
-        }
+    if (existingWorkspaceLinkDoc.exists && existingWorkspaceLinkDoc.data()?.status === 'active') {
+        return {
+            success: false,
+            message: 'You are already an active member of this workspace.'
+        };
     }
 
 
-    // Create or update user workspace link
-    const workspaceLinkRef = db.collection('userWorkspaceLinks').doc(`${input.uid}_${invitation.partnerId}`);
+    // Create or update user workspace link (this will reactivate a removed user)
     const workspaceLink: UserWorkspaceLink = {
       userId: input.uid,
       partnerId: invitation.partnerId,

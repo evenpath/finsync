@@ -82,7 +82,7 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
     // Get user's workspace access using admin SDK
     const workspacesQuery = await db.collection('userWorkspaceLinks')
       .where('userId', '==', uid)
-      .where('status', 'in', ['active', 'invited']).get();
+      .where('status', '==', 'active').get(); // Only get ACTIVE links
     
     const workspaceLinks = workspacesQuery.docs.map(doc => ({
       id: doc.id,
@@ -92,7 +92,7 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
     if (workspaceLinks.length === 0) {
       return {
         success: false,
-        message: 'No workspace access found. Please contact your organization admin to get invited.'
+        message: 'No workspace access found. Please join a workspace using an invitation code.'
       };
     }
 
@@ -106,23 +106,27 @@ export async function handlePhoneAuthUser(phoneNumber: string, uid: string): Pro
       partnerName: link.partnerName,
       partnerAvatar: link.partnerAvatar || undefined
     }));
+    
+    // Get the user's active workspace context if it exists
+    const userContextRef = db.collection('userWorkspaceContexts').doc(uid);
+    const userContextDoc = await userContextRef.get();
+    
+    let activePartnerId = null;
+    if (userContextDoc.exists) {
+        activePartnerId = userContextDoc.data()?.activePartnerId;
+    }
 
-    // Update Firebase Auth custom claims
-    const activeWorkspace = workspaces.find(w => w.status === 'active') || workspaces[0];
+    // Determine the active workspace for the claims
+    let activeWorkspace = workspaces.find(w => w.partnerId === activePartnerId) || workspaces[0];
     const partnerIds = workspaces.map(w => w.partnerId);
 
+    // Update Firebase Auth custom claims with the correct, verified data from Firestore
     await adminAuth.setCustomUserClaims(uid, {
       role: activeWorkspace.role,
-      partnerId: activeWorkspace.partnerId,
-      tenantId: activeWorkspace.tenantId,
+      partnerId: activeWorkspace.partnerId, // Legacy
+      tenantId: activeWorkspace.tenantId,   // Legacy
       partnerIds,
-      workspaces: workspaces.map(w => ({
-        partnerId: w.partnerId,
-        tenantId: w.tenantId,
-        role: w.role,
-        permissions: w.permissions,
-        status: w.status
-      })),
+      workspaces,
       activePartnerId: activeWorkspace.partnerId,
       activeTenantId: activeWorkspace.tenantId
     });
