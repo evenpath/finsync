@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/card';
@@ -29,41 +29,25 @@ export default function EmployeeLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = getAuth(app);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
-    initializeRecaptcha();
-    
-    return () => {
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = undefined;
-      }
-    };
-  }, []);
-
-  const initializeRecaptcha = () => {
-    try {
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-      }
-
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: (response: any) => {
-          console.log("reCAPTCHA solved:", response);
-          setRecaptchaError(null);
-        },
-        'expired-callback': () => {
-          setRecaptchaError("reCAPTCHA expired. Please try again.");
-        },
-        'error-callback': (error: any) => {
-          setRecaptchaError("reCAPTCHA failed. Please refresh and try again.");
-        }
-      });
-    } catch (error: any) {
-      setRecaptchaError("Failed to initialize reCAPTCHA. Please refresh the page.");
+    if (!recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response: any) => {
+                console.log("reCAPTCHA solved, automatically submitting form.");
+            },
+            'expired-callback': () => {
+                setRecaptchaError("reCAPTCHA token expired. Please try sending the code again.");
+            }
+        });
     }
-  };
+    return () => {
+      recaptchaVerifierRef.current?.clear();
+    };
+  }, [auth]);
+
 
   const formatPhoneNumber = (phone: string): string => {
     const cleaned = phone.replace(/\D/g, '');
@@ -76,38 +60,6 @@ export default function EmployeeLoginPage() {
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^\+[1-9]\d{7,14}$/;
     return phoneRegex.test(phone);
-  };
-
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setRecaptchaError(null);
-
-    try {
-      auth.tenantId = null;
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-      if (!validatePhoneNumber(formattedPhone)) {
-        throw new Error("Please enter a valid phone number with country code (e.g., +1234567890)");
-      }
-
-      if (!window.recaptchaVerifier) {
-        initializeRecaptcha();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      if (!window.recaptchaVerifier) {
-        throw new Error("reCAPTCHA not initialized. Please refresh and try again.");
-      }
-
-      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
-      window.confirmationResult = confirmationResult;
-      setOtpSent(true);
-      setPhoneNumber(formattedPhone);
-      toast({ title: "OTP Sent! 📱", description: "Please check your phone for the verification code." });
-    } catch (error: any) {
-      handleAuthError(error);
-    } finally {
-      setIsLoading(false);
-    }
   };
   
   const handleAuthError = (error: any) => {
@@ -126,9 +78,8 @@ export default function EmployeeLoginPage() {
         description = "Phone authentication is not enabled for this project. Please contact your administrator.";
         break;
       case 'auth/captcha-check-failed':
-        description = "reCAPTCHA verification failed. Please try again.";
-        setRecaptchaError("reCAPTCHA failed. Reinitializing...");
-        setTimeout(() => initializeRecaptcha(), 1000);
+        description = "reCAPTCHA verification failed. Please try again. If this issue persists, your domain may not be authorized.";
+        setRecaptchaError(description);
         break;
       default:
         description = error.message || "An unexpected error occurred.";
@@ -138,6 +89,51 @@ export default function EmployeeLoginPage() {
   };
 
 
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setRecaptchaError(null);
+
+    const appVerifier = recaptchaVerifierRef.current;
+    if (!appVerifier) {
+        toast({ variant: 'destructive', title: "Error", description: "reCAPTCHA not initialized. Please refresh." });
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+      auth.tenantId = null;
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      if (!validatePhoneNumber(formattedPhone)) {
+        throw new Error("Please enter a valid phone number with country code (e.g., +1234567890)");
+      }
+
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      window.confirmationResult = confirmationResult;
+      setOtpSent(true);
+      setPhoneNumber(formattedPhone);
+      toast({ title: "OTP Sent! 📱", description: "Please check your phone for the verification code." });
+    } catch (error: any) {
+        handleAuthError(error);
+        // Fallback for certain environments where invisible reCAPTCHA fails.
+        if (error.code === 'auth/captcha-check-failed') {
+            try {
+                const widgetId = await appVerifier.render();
+                appVerifier.verify(widgetId).then(async (response) => {
+                    const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+                    window.confirmationResult = confirmationResult;
+                    setOtpSent(true);
+                    toast({ title: "reCAPTCHA Verified!", description: "OTP sent. Please check your phone." });
+                });
+            } catch (renderError) {
+                console.error("reCAPTCHA render fallback failed", renderError);
+            }
+        }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -173,7 +169,6 @@ export default function EmployeeLoginPage() {
     setOtpSent(false);
     setOtp('');
     setRecaptchaError(null);
-    setTimeout(() => initializeRecaptcha(), 500);
   };
   
   return (
