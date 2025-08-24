@@ -7,8 +7,19 @@ import { AuthProvider } from '../../../hooks/use-auth';
 import { useMultiWorkspaceAuth } from '../../../hooks/use-multi-workspace-auth';
 import type { MultiWorkspaceAuthState } from '../../../lib/types';
 
+// 1. Create the context with a default value (or null)
 const MultiWorkspaceContext = createContext<MultiWorkspaceAuthState | null>(null);
 
+// 2. Create a custom hook to consume the context
+export function useMultiWorkspaceContext() {
+  const context = useContext(MultiWorkspaceContext);
+  if (!context) {
+    throw new Error('useMultiWorkspaceContext must be used within a MultiWorkspaceProvider');
+  }
+  return context;
+}
+
+// 3. Create the provider component
 function MultiWorkspaceProvider({ children }: { children: React.ReactNode }) {
   const multiWorkspaceAuth = useMultiWorkspaceAuth();
   
@@ -19,14 +30,7 @@ function MultiWorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useMultiWorkspaceContext() {
-  const context = useContext(MultiWorkspaceContext);
-  if (!context) {
-    throw new Error('useMultiWorkspaceContext must be used within MultiWorkspaceProvider');
-  }
-  return context;
-}
-
+// 4. Use the provider to wrap the layout
 export default function ProtectedPartnerLayout({
   children,
 }: {
