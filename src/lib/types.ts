@@ -1584,3 +1584,91 @@ export type PhoneAuthResult = {
     workspaces?: WorkspaceAccess[];
     hasMultipleWorkspaces?: boolean;
 };
+// Add these types to src/lib/types.ts if they don't exist or are incomplete
+
+// Chat-related interfaces (only add if missing from existing types.ts)
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  sender?: UserProfile;
+  type: 'text' | 'file' | 'image' | 'system' | 'workflow_update';
+  content: string;
+  attachments?: MessageAttachment[];
+  metadata?: any;
+  isEdited: boolean;
+  editedAt?: Date;
+  reactions?: MessageReaction[];
+  replyToId?: string;
+  mentions?: string[];
+  createdAt: any; // Firebase Timestamp
+}
+
+export interface Conversation {
+  id: string;
+  partnerId: string;
+  type: 'general' | 'workflow_specific' | 'support' | 'direct_message' | 'direct' | 'group';
+  title: string;
+  description?: string;
+  participants: ConversationParticipant[] | string[]; // Allow both formats
+  workflowId?: string;
+  isActive: boolean;
+  lastMessageAt?: any; // Firebase Timestamp
+  messageCount: number;
+  createdBy: string;
+  createdAt: any; // Firebase Timestamp
+}
+
+export interface ConversationParticipant {
+  userId: string;
+  user?: UserProfile;
+  role: 'admin' | 'member' | 'observer';
+  joinedAt: Date;
+  lastReadAt?: Date;
+  isActive: boolean;
+}
+
+export interface MessageAttachment {
+  id: string;
+  type: 'file' | 'image' | 'document';
+  name: string;
+  url: string;
+  size: number;
+  mimeType: string;
+}
+
+export interface MessageReaction {
+  emoji: string;
+  users: string[];
+  count: number;
+}
+
+export interface TeamMember {
+  id: string;
+  partnerId: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  phoneNumber?: string;
+  avatar?: string;
+  joinedAt: any; // Firebase Timestamp
+  lastActiveAt?: any; // Firebase Timestamp
+  permissions?: string[];
+}
+
+// Ensure UserProfile exists
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName?: string;
+  name?: string;
+  phoneNumber?: string;
+  avatar?: string;
+  role?: string;
+  status?: 'active' | 'inactive';
+  partnerId?: string;
+  workspaces?: WorkspaceAccess[];
+}

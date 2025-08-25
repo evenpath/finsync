@@ -3,17 +3,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { ScrollArea } from '../ui/scroll-area';
 import { 
   ArrowLeft, 
   Send, 
   Paperclip, 
-  Smile, 
   MoreVertical,
   Users,
-  CheckSquare,
-  Plus,
-  Hash,
   MessageSquare,
   Phone,
   Video
@@ -25,74 +22,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '../ui/dropdown-menu';
-import TaskAssignmentModal from './TaskAssignmentModal';
 import { cn } from '../../lib/utils';
-
-interface Message {
-  id: string;
-  content: string;
-  sender: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  timestamp: Date;
-  type: 'text' | 'task' | 'system';
-  taskData?: {
-    title: string;
-    assignee: string;
-    priority: 'low' | 'medium' | 'high';
-    dueDate?: Date;
-  };
-}
+import { ChatService } from '../../lib/chat-service';
+import { ChatMessage, Conversation } from '../../lib/types';
 
 interface ChatInterfaceProps {
-  chat: any;
+  chat: Conversation | null;
   onBack?: () => void;
   activeWorkspace: any;
 }
 
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    content: 'Hey team! How is everyone doing with their current tasks?',
-    sender: { id: '1', name: 'Sarah Chen' },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60),
-    type: 'text'
-  },
-  {
-    id: '2',
-    content: 'I just completed the UI mockups for the new feature.',
-    sender: { id: '2', name: 'Mike Johnson' },
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    type: 'text'
-  },
-  {
-    id: '3',
-    content: 'Review website mockups',
-    sender: { id: '1', name: 'Sarah Chen' },
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-    type: 'task',
-    taskData: {
-      title: 'Review website mockups',
-      assignee: 'Mike Johnson',
-      priority: 'high',
-      dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2)
-    }
-  },
-  {
-    id: '4',
-    content: 'Perfect! I\'ll get on that right away.',
-    sender: { id: '2', name: 'Mike Johnson' },
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    type: 'text'
-  }
-];
-
 export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInterfaceProps) {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -104,19 +48,43 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  useEffect(() => {
+    if (chat?.id) {
+      // Set up real-time listener for messages
+      const unsubscribe = ChatService.subscribeToMessages(
+        chat.id,
+        (newMessages) => {
+          setMessages(newMessages);
+        }
+      );
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: message,
-      sender: { id: 'current-user', name: 'You' },
-      timestamp: new Date(),
-      type: 'text'
-    };
+      return () => unsubscribe();
+    } else {
+      setMessages([]);
+    }
+  }, [chat?.id]);
 
-    setMessages(prev => [...prev, newMessage]);
+  const handleSendMessage = async () => {
+    if (!message.trim() || !chat?.id || !activeWorkspace?.userId || isSending) return;
+
+    const messageContent = message.trim();
     setMessage('');
+    setIsSending(true);
+
+    try {
+      await ChatService.sendMessage(
+        chat.id,
+        activeWorkspace.userId,
+        messageContent,
+        activeWorkspace.partnerId
+      );
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Restore message if sending failed
+      setMessage(messageContent);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -126,227 +94,250 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
     }
   };
 
-  const handleTaskAssigned = (taskData: any) => {
-    const taskMessage: Message = {
-      id: Date.now().toString(),
-      content: `Task assigned: ${taskData.title}`,
-      sender: { id: 'current-user', name: 'You' },
-      timestamp: new Date(),
-      type: 'task',
-      taskData
-    };
-
-    setMessages(prev => [...prev, taskMessage]);
-    setIsTaskModalOpen(false);
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch {
+      return '';
+    }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatMessageDate = (timestamp: any) => {
+    if (!timestamp) return '';
+    
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      
+      if (messageDate.getTime() === today.getTime()) {
+        return 'Today';
+      } else if (messageDate.getTime() === today.getTime() - 24 * 60 * 60 * 1000) {
+        return 'Yesterday';
+      } else {
+        return date.toLocaleDateString([], { 
+          month: 'short', 
+          day: 'numeric',
+          year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+        });
+      }
+    } catch {
+      return '';
+    }
   };
 
   const getChatIcon = () => {
-    return chat.type === 'group' ? Hash : MessageSquare;
+    return chat?.type === 'group' ? Users : MessageSquare;
   };
 
-  const renderMessage = (msg: Message) => {
-    const isCurrentUser = msg.sender.id === 'current-user';
-
-    if (msg.type === 'task') {
-      return (
-        <div className={cn(
-          "max-w-sm p-3 rounded-lg border bg-card",
-          isCurrentUser ? "ml-auto" : "mr-auto"
-        )}>
-          <div className="flex items-center gap-2 mb-2">
-            <CheckSquare className="w-4 h-4 text-blue-600" />
-            <span className="font-medium text-sm">Task Assigned</span>
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium text-foreground">{msg.taskData?.title}</h4>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Assigned to: {msg.taskData?.assignee}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={
-                msg.taskData?.priority === 'high' ? 'destructive' :
-                msg.taskData?.priority === 'medium' ? 'default' : 'secondary'
-              }>
-                {msg.taskData?.priority} priority
-              </Badge>
-              {msg.taskData?.dueDate && (
-                <span className="text-xs text-muted-foreground">
-                  Due: {new Date(msg.taskData.dueDate).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
+  const renderMessage = (msg: ChatMessage, index: number) => {
+    const isCurrentUser = msg.senderId === activeWorkspace?.userId;
+    const prevMessage = index > 0 ? messages[index - 1] : null;
+    const showDateSeparator = !prevMessage || 
+      formatMessageDate(msg.createdAt) !== formatMessageDate(prevMessage.createdAt);
 
     return (
-      <div className={cn(
-        "max-w-xs lg:max-w-md xl:max-w-lg p-3 rounded-lg",
-        isCurrentUser
-          ? "ml-auto bg-blue-600 text-white"
-          : "mr-auto bg-muted"
-      )}>
-        <p className="text-sm">{msg.content}</p>
+      <div key={msg.id}>
+        {/* Date Separator */}
+        {showDateSeparator && (
+          <div className="flex items-center justify-center my-4">
+            <div className="bg-muted px-3 py-1 rounded-full text-xs text-muted-foreground">
+              {formatMessageDate(msg.createdAt)}
+            </div>
+          </div>
+        )}
+
+        {/* Message */}
+        <div className={cn(
+          "flex gap-3 mb-4",
+          isCurrentUser ? "justify-end" : "justify-start"
+        )}>
+          {!isCurrentUser && (
+            <Avatar className="h-8 w-8 mt-1">
+              <AvatarFallback className="text-xs">
+                {msg.sender?.name?.slice(0, 2).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          )}
+          
+          <div className={cn(
+            "max-w-[70%] space-y-1",
+            isCurrentUser ? "items-end" : "items-start"
+          )}>
+            {!isCurrentUser && chat?.type === 'group' && (
+              <p className="text-xs text-muted-foreground font-medium px-1">
+                {msg.sender?.name || 'Unknown User'}
+              </p>
+            )}
+            
+            <div className={cn(
+              "rounded-lg p-3 break-words",
+              isCurrentUser 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-muted"
+            )}>
+              <p className="text-sm">{msg.content}</p>
+            </div>
+            
+            <p className={cn(
+              "text-xs text-muted-foreground px-1",
+              isCurrentUser ? "text-right" : "text-left"
+            )}>
+              {formatTimestamp(msg.createdAt)}
+              {msg.isEdited && " (edited)"}
+            </p>
+          </div>
+        </div>
       </div>
     );
   };
 
+  if (!chat) {
+    return (
+      <div className="h-full flex items-center justify-center bg-muted/20">
+        <div className="text-center">
+          <MessageSquare className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h2 className="text-xl font-semibold text-muted-foreground mb-2">
+            Select a conversation
+          </h2>
+          <p className="text-muted-foreground">
+            Choose a chat from the sidebar to start messaging
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const ChatIcon = getChatIcon();
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="p-4 border-b bg-card">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          )}
-          
-          <div className="flex items-center gap-3 flex-1">
-            <div className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center",
-              chat.type === 'group' ? 'bg-purple-100' : 'bg-blue-100'
-            )}>
-              {React.createElement(getChatIcon(), {
-                className: cn(
-                  "w-5 h-5",
-                  chat.type === 'group' ? 'text-purple-600' : 'text-blue-600'
-                )
-              })}
-            </div>
-            
-            <div className="flex-1">
-              <h2 className="font-semibold text-foreground">{chat.name}</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {chat.type === 'group' && (
-                  <>
-                    <Users className="w-4 h-4" />
-                    <span>{chat.participants} members</span>
-                  </>
-                )}
-                <span className="text-green-600">● Online</span>
-              </div>
-            </div>
+      <div className="flex items-center gap-3 p-4 border-b bg-background">
+        {onBack && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="md:hidden"
+            onClick={onBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
+        
+        <div className="flex-shrink-0">
+          <div className={cn(
+            "w-10 h-10 rounded-full flex items-center justify-center",
+            chat.type === 'group' ? 'bg-purple-100' : 'bg-blue-100'
+          )}>
+            <ChatIcon className={cn(
+              "w-5 h-5",
+              chat.type === 'group' ? 'text-purple-600' : 'text-blue-600'
+            )} />
           </div>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold truncate">
+            {chat.title}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {chat.type === 'group' 
+              ? `${chat.participants?.length || 0} members`
+              : chat.isActive ? 'Active' : 'Offline'
+            }
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+            <Video className="h-4 w-4" />
+          </Button>
           
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
-              <Phone className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Video className="w-5 h-5" />
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsTaskModalOpen(true)}>
-                  <CheckSquare className="w-4 h-4 mr-2" />
-                  Assign Task
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Users className="w-4 h-4 mr-2" />
-                  View Members
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Mute Notifications
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">
-                  Leave Chat
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>View Profile</DropdownMenuItem>
+              <DropdownMenuItem>Search Messages</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {chat.type === 'group' && (
+                <>
+                  <DropdownMenuItem>Group Settings</DropdownMenuItem>
+                  <DropdownMenuItem>Leave Group</DropdownMenuItem>
+                </>
+              )}
+              {chat.type === 'direct' && (
+                <DropdownMenuItem>Block User</DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div key={msg.id} className="space-y-2">
-            {msg.sender.id !== 'current-user' && (
-              <div className="text-xs text-muted-foreground">
-                {msg.sender.name} • {formatTimestamp(msg.timestamp)}
-              </div>
-            )}
-            {renderMessage(msg)}
-            {msg.sender.id === 'current-user' && (
-              <div className="text-xs text-muted-foreground text-right">
-                {formatTimestamp(msg.timestamp)}
-              </div>
-            )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-1">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading messages...</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-2">No messages yet</p>
+              <p className="text-sm text-muted-foreground">
+                Start the conversation by sending a message below
+              </p>
+            </div>
+          ) : (
+            messages.map((msg, index) => renderMessage(msg, index))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
-      {/* Message Input */}
-      <div className="p-4 border-t bg-card">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <Paperclip className="w-5 h-5" />
+      {/* Input Area */}
+      <div className="p-4 border-t bg-background">
+        <div className="flex items-end gap-2">
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
+            <Paperclip className="h-4 w-4" />
           </Button>
           
           <div className="flex-1 relative">
             <Input
               ref={inputRef}
-              placeholder="Type a message..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="pr-10"
+              placeholder="Type a message..."
+              disabled={isSending}
+              className="pr-12"
             />
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="absolute right-1 top-1/2 transform -translate-y-1/2"
+            <Button
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isSending}
+              size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
             >
-              <Smile className="w-5 h-5" />
+              <Send className="h-3 w-3" />
             </Button>
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Plus className="w-5 h-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsTaskModalOpen(true)}>
-                <CheckSquare className="w-4 h-4 mr-2" />
-                Assign Task
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Paperclip className="w-4 h-4 mr-2" />
-                Attach File
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button onClick={handleSendMessage} disabled={!message.trim()}>
-            <Send className="w-5 h-5" />
-          </Button>
         </div>
       </div>
-
-      {/* Task Assignment Modal */}
-      <TaskAssignmentModal
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        onTaskAssigned={handleTaskAssigned}
-        activeWorkspace={activeWorkspace}
-      />
     </div>
   );
 }
