@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -30,7 +31,7 @@ interface ChatSidebarProps {
   onChatSelect: (chat: Conversation) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  activeWorkspace: any;
+  activeWorkspace: any & { userId?: string }; // Ensure userId is available
 }
 
 export default function ChatSidebar({
@@ -108,7 +109,10 @@ export default function ChatSidebar({
   };
 
   const handleNewDirectChat = async (member: TeamMember) => {
-    if (!activeWorkspace?.partnerId) return;
+    if (!activeWorkspace?.partnerId || !activeWorkspace?.userId) {
+      console.error("Missing partnerId or userId in activeWorkspace");
+      return;
+    }
     
     try {
       setIsLoading(true);

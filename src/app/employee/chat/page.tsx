@@ -1,3 +1,4 @@
+
 // src/app/employee/chat/page.tsx
 "use client";
 
@@ -8,8 +9,9 @@ import ChatSidebar from '../../../components/chat/ChatSidebar';
 import ChatInterface from '../../../components/chat/ChatInterface';
 import EmployeeWorkspaceSwitcher from '../../../components/employee/EmployeeWorkspaceSwitcher';
 import BottomNavigation from '../../../components/navigation/BottomNavigation';
-import { MessageSquare, Loader2 } from 'lucide-react';
+import { MessageSquare, Loader2, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '../../../components/ui/card';
+import { Alert, AlertDescription } from '../../../components/ui/alert';
 import { ChatService } from '../../../lib/chat-service';
 import { Conversation } from '../../../lib/types';
 
@@ -29,23 +31,60 @@ export default function EmployeeChatPage() {
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Employee Chat Debug:', {
+      user: user?.uid,
+      currentWorkspace: currentWorkspace?.partnerId,
+      userRole: user?.customClaims?.role,
+      userClaims: user?.customClaims
+    });
+  }, [user, currentWorkspace]);
+
   // Set up real-time conversations listener
   useEffect(() => {
-    if (!user || !currentWorkspace?.partnerId) {
-      setConversations([]);
-      setSelectedChat(null);
+    // Clear previous state
+    setConversations([]);
+    setSelectedChat(null);
+    setChatError(null);
+
+    // Validate required data
+    if (!user?.uid) {
+      console.log('User not authenticated, skipping chat setup');
       return;
     }
 
+    if (!currentWorkspace?.partnerId) {
+      console.log('No current workspace, skipping chat setup');
+      setChatError('No workspace selected. Please select a workspace to access chat.');
+      return;
+    }
+
+    // Validate workspace access
+    const hasWorkspaceAccess = user.customClaims?.partnerId === currentWorkspace.partnerId ||
+                              user.customClaims?.partnerIds?.includes(currentWorkspace.partnerId);
+
+    if (!hasWorkspaceAccess) {
+      console.warn('User does not have access to current workspace');
+      setChatError('You do not have access to this workspace.');
+      return;
+    }
+
+    console.log('Setting up conversations listener for:', {
+      partnerId: currentWorkspace.partnerId,
+      userId: user.uid
+    });
+
     setIsLoadingChats(true);
-    setChatError(null);
 
     const unsubscribe = ChatService.subscribeToConversations(
       currentWorkspace.partnerId,
       user.uid,
       (newConversations) => {
+        console.log('Received conversations update:', newConversations.length);
         setConversations(newConversations);
         setIsLoadingChats(false);
+        setChatError(null);
         
         // If we have a selected chat, update it with the latest data
         if (selectedChat) {
@@ -61,10 +100,11 @@ export default function EmployeeChatPage() {
     );
 
     return () => {
+      console.log('Cleaning up conversations listener');
       unsubscribe();
       setIsLoadingChats(false);
     };
-  }, [user, currentWorkspace?.partnerId]);
+  }, [user?.uid, currentWorkspace?.partnerId, user?.customClaims]);
 
   // Filter chats by current workspace and search term
   const filteredChats = conversations.filter(chat => {
@@ -101,15 +141,63 @@ export default function EmployeeChatPage() {
     );
   }
 
-  // No workspace selected
-  if (!user || !currentWorkspace) {
+  // No user or workspace
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Authentication required. Please log in to access chat.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!currentWorkspace) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h2 className="text-xl font-semibold text-gray-600 mb-2">No Workspace Selected</h2>
           <p className="text-gray-500">Please select a workspace to access chat.</p>
+          {availableWorkspaces.length > 0 && (
+            <div className="mt-4">
+              <EmployeeWorkspaceSwitcher
+                workspaces={availableWorkspaces}
+                currentWorkspace={null}
+                onWorkspaceSwitch={switchWorkspace}
+              />
+            </div>
+          )}
         </div>
+      </div>
+    );
+  }
+  
+  // Create an enhanced active workspace object that includes the user's ID
+  const activeWorkspaceWithUser = {
+    ...currentWorkspace,
+    userId: user.uid
+  };
+
+  // Chat error state
+  if (chatError) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <EmployeeWorkspaceSwitcher
+          workspaces={availableWorkspaces}
+          currentWorkspace={currentWorkspace}
+          onWorkspaceSwitch={switchWorkspace}
+        />
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Alert variant="destructive" className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{chatError}</AlertDescription>
+          </Alert>
+        </div>
+        {isMobile && <BottomNavigation userRole={currentWorkspace.role} />}
       </div>
     );
   }
@@ -122,7 +210,7 @@ export default function EmployeeChatPage() {
           <ChatInterface
             chat={selectedChat}
             onBack={() => setSelectedChat(null)}
-            activeWorkspace={currentWorkspace}
+            activeWorkspace={activeWorkspaceWithUser}
           />
         ) : (
           <>
@@ -139,14 +227,6 @@ export default function EmployeeChatPage() {
                     <p className="text-muted-foreground">Loading conversations...</p>
                   </div>
                 </div>
-              ) : chatError ? (
-                <div className="flex items-center justify-center h-full p-4">
-                  <div className="text-center">
-                    <MessageSquare className="w-16 h-16 mx-auto mb-4 text-red-300" />
-                    <h3 className="text-lg font-semibold text-red-600 mb-2">Chat Error</h3>
-                    <p className="text-red-500 mb-4">{chatError}</p>
-                  </div>
-                </div>
               ) : (
                 <ChatSidebar
                   chats={filteredChats}
@@ -154,7 +234,7 @@ export default function EmployeeChatPage() {
                   onChatSelect={setSelectedChat}
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
-                  activeWorkspace={currentWorkspace}
+                  activeWorkspace={activeWorkspaceWithUser}
                 />
               )}
             </div>
@@ -179,14 +259,7 @@ export default function EmployeeChatPage() {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading...</p>
-            </div>
-          </div>
-        ) : chatError ? (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="text-center">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-red-300" />
-              <p className="text-red-500 text-sm">{chatError}</p>
+              <p className="text-muted-foreground">Loading conversations...</p>
             </div>
           </div>
         ) : (
@@ -196,7 +269,7 @@ export default function EmployeeChatPage() {
             onChatSelect={setSelectedChat}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            activeWorkspace={currentWorkspace}
+            activeWorkspace={activeWorkspaceWithUser}
           />
         )}
       </div>
@@ -204,7 +277,7 @@ export default function EmployeeChatPage() {
       <div className="flex-1">
         <ChatInterface
           chat={selectedChat}
-          activeWorkspace={currentWorkspace}
+          activeWorkspace={activeWorkspaceWithUser}
         />
       </div>
     </div>
