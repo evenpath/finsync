@@ -13,7 +13,8 @@ import {
   Users,
   MessageSquare,
   Phone,
-  Video
+  Video,
+  Info
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [inputHeight, setInputHeight] = useState(60); // Dynamic input area height
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,17 +52,20 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
 
   useEffect(() => {
     if (chat?.id) {
+      setIsLoading(true);
       // Set up real-time listener for messages
       const unsubscribe = ChatService.subscribeToMessages(
         chat.id,
         (newMessages) => {
           setMessages(newMessages);
+          setIsLoading(false);
         }
       );
 
       return () => unsubscribe();
     } else {
       setMessages([]);
+      setIsLoading(false);
     }
   }, [chat?.id]);
 
@@ -156,11 +161,11 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
 
         {/* Message */}
         <div className={cn(
-          "flex gap-3 mb-4",
+          "flex gap-3 mb-4 px-4",
           isCurrentUser ? "justify-end" : "justify-start"
         )}>
           {!isCurrentUser && (
-            <Avatar className="h-8 w-8 mt-1">
+            <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
               <AvatarFallback className="text-xs">
                 {msg.sender?.name?.slice(0, 2).toUpperCase() || 'U'}
               </AvatarFallback>
@@ -168,7 +173,7 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
           )}
           
           <div className={cn(
-            "max-w-[70%] space-y-1",
+            "max-w-[85%] md:max-w-[70%] space-y-1",
             isCurrentUser ? "items-end" : "items-start"
           )}>
             {!isCurrentUser && chat?.type === 'group' && (
@@ -178,12 +183,12 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
             )}
             
             <div className={cn(
-              "rounded-lg p-3 break-words",
+              "rounded-lg p-3 break-words shadow-sm",
               isCurrentUser 
-                ? "bg-primary text-primary-foreground" 
+                ? "bg-primary text-primary-foreground ml-auto" 
                 : "bg-muted"
             )}>
-              <p className="text-sm">{msg.content}</p>
+              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
             </div>
             
             <p className={cn(
@@ -202,7 +207,7 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
   if (!chat) {
     return (
       <div className="h-full flex items-center justify-center bg-muted/20">
-        <div className="text-center">
+        <div className="text-center p-4">
           <MessageSquare className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-xl font-semibold text-muted-foreground mb-2">
             Select a conversation
@@ -220,15 +225,15 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-background">
+      <div className="flex items-center gap-3 p-4 border-b bg-background z-10 flex-shrink-0">
         {onBack && (
           <Button 
             variant="ghost" 
             size="sm" 
-            className="md:hidden"
+            className="md:hidden h-9 w-9 p-0"
             onClick={onBack}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         )}
         
@@ -256,11 +261,11 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hidden sm:flex">
             <Phone className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hidden sm:flex">
             <Video className="h-4 w-4" />
           </Button>
           
@@ -271,70 +276,99 @@ export default function ChatInterface({ chat, onBack, activeWorkspace }: ChatInt
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Profile</DropdownMenuItem>
-              <DropdownMenuItem>Search Messages</DropdownMenuItem>
+              <DropdownMenuItem>
+                <Info className="h-4 w-4 mr-2" />
+                Conversation Info
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Search Messages
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {chat.type === 'group' && (
                 <>
-                  <DropdownMenuItem>Group Settings</DropdownMenuItem>
-                  <DropdownMenuItem>Leave Group</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Users className="h-4 w-4 mr-2" />
+                    Group Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-600">
+                    Leave Group
+                  </DropdownMenuItem>
                 </>
               )}
               {chat.type === 'direct' && (
-                <DropdownMenuItem>Block User</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">
+                  Block User
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-1">
-          {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading messages...</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground mb-2">No messages yet</p>
-              <p className="text-sm text-muted-foreground">
-                Start the conversation by sending a message below
-              </p>
-            </div>
-          ) : (
-            messages.map((msg, index) => renderMessage(msg, index))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+      {/* Messages Area - Fixed height calculation for mobile */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <ScrollArea className="flex-1">
+          <div className="py-4">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <p className="text-muted-foreground text-sm">Loading messages...</p>
+                </div>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground mb-2">No messages yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Start the conversation by sending a message below
+                </p>
+              </div>
+            ) : (
+              messages.map((msg, index) => renderMessage(msg, index))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </div>
 
-      {/* Input Area */}
-      <div className="p-4 border-t bg-background">
-        <div className="flex items-end gap-2">
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex-1 relative">
-            <Input
-              ref={inputRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
-              disabled={isSending}
-              className="pr-12"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isSending}
-              size="sm"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+      {/* Input Area - Fixed positioning for mobile */}
+      <div className="border-t bg-background flex-shrink-0">
+        <div className="p-4 pb-safe">
+          <div className="flex items-end gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-9 w-9 p-0 flex-shrink-0"
             >
-              <Send className="h-3 w-3" />
+              <Paperclip className="h-4 w-4" />
             </Button>
+            
+            <div className="flex-1 relative">
+              <Input
+                ref={inputRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..."
+                disabled={isSending}
+                className="pr-12 resize-none"
+                style={{ minHeight: '40px' }}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!message.trim() || isSending}
+                size="sm"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 rounded-full"
+              >
+                {isSending ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-foreground"></div>
+                ) : (
+                  <Send className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

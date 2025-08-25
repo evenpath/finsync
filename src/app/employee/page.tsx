@@ -2,18 +2,22 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/use-auth';
-import EmployeeDashboard from '../../components/employee/EmployeeDashboard';
+import { useMultiWorkspaceAuth } from '../../hooks/use-multi-workspace-auth';
 import { Card, CardContent } from '../../components/ui/card';
 import { Loader2 } from 'lucide-react';
 
 export default function EmployeePage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useMultiWorkspaceAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        // Redirect to chat as the default page
+        router.push('/employee/chat');
+      }
     }
   }, [user, loading, router]);
 
@@ -30,9 +34,15 @@ export default function EmployeePage() {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to login
-  }
-
-  return <EmployeeDashboard />;
+  // Show loading while redirecting
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Redirecting to chat...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
