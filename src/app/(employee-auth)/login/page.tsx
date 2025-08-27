@@ -74,8 +74,9 @@ export default function EmployeeLoginPage() {
         description = "Too many requests. Please wait a moment and try again.";
         break;
       case 'auth/internal-error':
+      case 'auth/missing-client-identifier': // This often indicates a config issue
         title = "Configuration Error";
-        description = "Phone authentication is not enabled for this project. Please contact your administrator.";
+        description = "Phone authentication is not enabled for this project. Please go to your Firebase Console -> Authentication -> Sign-in method -> and enable the Phone provider.";
         break;
       case 'auth/captcha-check-failed':
         description = "reCAPTCHA verification failed. Please try again. If this issue persists, your domain may not be authorized.";
