@@ -40,7 +40,11 @@ import GenerateInviteCodeDialog from "./GenerateInviteCodeDialog";
 import InvitationManagement from "./InvitationManagement";
 import TaskAssignmentModal from "../../chat/TaskAssignmentModal"; // Import the modal
 
-export default function TeamManagement() {
+interface TeamManagementProps {
+  roleToShow: 'employee' | 'partner_admin';
+}
+
+export default function TeamManagement({ roleToShow }: TeamManagementProps) {
   const { user, loading: authLoading } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
@@ -57,13 +61,14 @@ export default function TeamManagement() {
   const userRole = user?.customClaims?.role;
 
   const filteredMembers = useMemo(() => {
-    if (!searchTerm) return teamMembers;
-    return teamMembers.filter(member =>
-      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [teamMembers, searchTerm]);
+    return teamMembers.filter(member => {
+      const matchesRole = member.role === roleToShow;
+      const matchesSearch = !searchTerm ||
+                           member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           member.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesRole && matchesSearch;
+    });
+  }, [teamMembers, searchTerm, roleToShow]);
 
   useEffect(() => {
     if (authLoading) {
@@ -73,12 +78,7 @@ export default function TeamManagement() {
 
     if (!partnerId || !db) {
       setFirestoreError(
-        `Could not identify your organization. Please ensure you are logged in correctly.
-        
-        Debug info:
-        - Partner ID: ${partnerId || 'missing'}
-        - User: ${user?.email || 'not found'}
-        - Role: ${user?.customClaims?.role || 'none'}`
+        `Could not identify your organization. Please ensure you are logged in correctly.`
       );
       setIsLoading(false);
       return;
@@ -188,6 +188,10 @@ export default function TeamManagement() {
     );
   }
 
+  const pageTitle = roleToShow === 'employee' ? 'Employees' : 'Admins';
+  const pageDescription = roleToShow === 'employee' ? 'Manage your team members and their roles.' : 'Manage users with administrative access to this workspace.';
+  const memberType = roleToShow === 'employee' ? 'employee' : 'admin';
+
   return (
     <>
       <Tabs defaultValue="members" className="space-y-6">
@@ -195,7 +199,7 @@ export default function TeamManagement() {
           <TabsList>
             <TabsTrigger value="members" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Team Members ({teamMembers.length})
+              {pageTitle} ({filteredMembers.length})
             </TabsTrigger>
             <TabsTrigger value="invitations" className="flex items-center gap-2">
               <QrCode className="w-4 h-4" />
@@ -215,8 +219,9 @@ export default function TeamManagement() {
           <Card>
             <CardHeader>
               <CardTitle className="text-xl font-semibold font-headline">
-                Active Team Members ({teamMembers.length})
+                {pageTitle}
               </CardTitle>
+              <CardDescription>{pageDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -224,7 +229,7 @@ export default function TeamManagement() {
                   <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
-                      placeholder="Search members..."
+                      placeholder={`Search ${memberType}s...`}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
@@ -234,7 +239,7 @@ export default function TeamManagement() {
                      {isLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <RefreshCw className="animate-spin h-6 w-6 text-muted-foreground mr-2" />
-                        <span className="text-sm text-muted-foreground">Loading team members...</span>
+                        <span className="text-sm text-muted-foreground">Loading...</span>
                       </div>
                     ) : filteredMembers.length > 0 ? filteredMembers.map((member) => (
                       <div
@@ -251,7 +256,6 @@ export default function TeamManagement() {
                           <div>
                             <h4 className="font-medium text-sm">{member.name}</h4>
                             <div className="flex items-center gap-1 mt-1">
-                              {getRoleBadge(member.role)}
                               {getStatusBadge(member.status)}
                             </div>
                           </div>
@@ -261,7 +265,7 @@ export default function TeamManagement() {
                     )) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No team members found</p>
+                        <p>No {memberType}s found</p>
                         {userRole === 'partner_admin' && (
                           <Button 
                             variant="outline" 
