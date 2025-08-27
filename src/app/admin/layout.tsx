@@ -3,12 +3,15 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import AdminSidebar from "../../components/admin/AdminSidebar";
 import { useAuth, AuthProvider } from '../../hooks/use-auth';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import { ShieldAlert } from "lucide-react";
 import Link from 'next/link';
+
+// Import the new unified sidebar system
+import { SidebarProvider } from '../../components/ui/sidebar';
+import UnifiedAdminSidebar from '../../components/navigation/UnifiedAdminSidebar';
 
 function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading, isAuthenticated } = useAuth();
@@ -50,33 +53,41 @@ function AdminAuthWrapper({ children }: { children: React.ReactNode }) {
   // After loading, if user is authenticated but not authorized, show access denied message.
   if (isAuthenticated && !isAuthorized) {
     return (
-        <div className="flex h-screen bg-secondary/30 text-foreground">
-          <AdminSidebar />
-          <div className="flex-1 flex flex-col items-center justify-center overflow-hidden p-6">
-            <Card className="border-destructive w-full max-w-lg">
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                    <ShieldAlert />
-                    Access Restricted
-                </CardTitle>
-                </CardHeader>
-                <CardContent>
-                <p className="text-destructive mb-4">
-                    You do not have the required permissions to access this page. This area is for Super Admins only.
-                </p>
-                <Link href="/" className="text-primary hover:underline">
-                    Go to Homepage
-                </Link>
-                </CardContent>
-            </Card>
-          </div>
+      <div className="flex h-screen bg-secondary/30 text-foreground">
+        {/* We still show the sidebar for consistent layout */}
+        <UnifiedAdminSidebar />
+        <div className="flex-1 flex flex-col items-center justify-center overflow-hidden p-6">
+          <Card className="border-destructive w-full max-w-lg">
+              <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                  <ShieldAlert />
+                  Access Restricted
+              </CardTitle>
+              </CardHeader>
+              <CardContent>
+              <p className="text-destructive mb-4">
+                  You do not have the required permissions to access this page. This area is for Super Admins only.
+              </p>
+              <Link href="/" className="text-primary hover:underline">
+                  Go to Homepage
+              </Link>
+              </CardContent>
+          </Card>
         </div>
+      </div>
     )
   }
   
-  // If authorized, render the children.
+  // If authorized, render the main layout with the new sidebar
   if (isAuthenticated && isAuthorized) {
-    return children;
+    return (
+      <div className="flex h-screen bg-secondary/30 text-foreground">
+        <UnifiedAdminSidebar />
+        <main className="flex-1 flex flex-col overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    );
   }
   
   // Fallback for when not authenticated (will be redirected by useEffect)
@@ -91,14 +102,11 @@ export default function AdminLayout({
 }) {
   return (
     <AuthProvider>
-        <div className="flex h-screen bg-secondary/30 text-foreground">
-            <AdminAuthWrapper>
-                <AdminSidebar />
-                <div className="flex-1 flex flex-col overflow-y-auto">
-                    {children}
-                </div>
-            </AdminAuthWrapper>
-        </div>
+      <SidebarProvider>
+        <AdminAuthWrapper>
+            {children}
+        </AdminAuthWrapper>
+      </SidebarProvider>
     </AuthProvider>
   );
 }

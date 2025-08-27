@@ -1,11 +1,16 @@
+// src/app/partner/(protected)/layout.tsx
 "use client";
 
 import { createContext, useContext } from 'react';
-import PartnerSidebar from "../../../components/partner/PartnerSidebar";
-import PartnerAuthWrapper from "../../../components/partner/PartnerAuthWrapper";
 import { AuthProvider } from '../../../hooks/use-auth';
 import { useMultiWorkspaceAuth } from '../../../hooks/use-multi-workspace-auth';
 import type { MultiWorkspaceAuthState } from '../../../lib/types';
+import PartnerAuthWrapper from '../../../components/partner/PartnerAuthWrapper';
+
+// Import the new unified sidebar system
+import { SidebarProvider } from '../../../components/ui/sidebar';
+import UnifiedPartnerSidebar from '../../../components/navigation/UnifiedPartnerSidebar';
+
 
 // 1. Create the context with a default value (or null)
 const MultiWorkspaceContext = createContext<MultiWorkspaceAuthState | null>(null);
@@ -39,14 +44,16 @@ export default function ProtectedPartnerLayout({
   return (
     <AuthProvider>
       <MultiWorkspaceProvider>
-        <PartnerAuthWrapper>
-          <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-            <PartnerSidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {children}
+        <SidebarProvider>
+          <PartnerAuthWrapper>
+            <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+              <UnifiedPartnerSidebar />
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {children}
+              </div>
             </div>
-          </div>
-        </PartnerAuthWrapper>
+          </PartnerAuthWrapper>
+        </SidebarProvider>
       </MultiWorkspaceProvider>
     </AuthProvider>
   );

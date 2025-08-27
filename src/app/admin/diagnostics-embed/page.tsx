@@ -1,5 +1,4 @@
-
-// src/app/admin/diagnostics/page.tsx
+// src/app/admin/diagnostics-embed/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -23,7 +22,6 @@ export default function FirebaseDiagnosticsPage() {
   const [projectId, setProjectId] = useState('');
   const [serviceAccountEmail, setServiceAccountEmail] = useState('');
   const [appHostingAgentEmail, setAppHostingAgentEmail] = useState('');
-
 
   const runDiagnostics = async () => {
     setIsRunning(true);
@@ -118,6 +116,11 @@ export default function FirebaseDiagnosticsPage() {
       setIsRunning(false);
     }
   };
+  
+  // Run diagnostics on component mount
+  useEffect(() => {
+    runDiagnostics();
+  }, []);
 
   const getStatusIcon = (status: DiagnosticResult['status']) => {
     switch (status) {
@@ -129,14 +132,7 @@ export default function FirebaseDiagnosticsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Firebase Diagnostics</h1>
-        <p className="text-muted-foreground">
-          Test your Firebase Admin SDK and Multi-Tenancy configuration.
-        </p>
-      </div>
-
+    <div className="p-6 space-y-6 bg-background">
        <Card className="border-blue-500/50 bg-blue-500/5">
         <CardHeader>
           <CardTitle className="text-blue-800">Quick Setup Guide</CardTitle>
@@ -194,7 +190,7 @@ export default function FirebaseDiagnosticsPage() {
           <Button onClick={runDiagnostics} disabled={isRunning} className="w-full">
             {isRunning ? (
               <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Running Diagnostics...</>
-            ) : 'Run Diagnostics'}
+            ) : 'Re-run Diagnostics'}
           </Button>
 
           {results.length > 0 && (
