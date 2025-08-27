@@ -93,7 +93,7 @@ export default function PromptWorkflowGenerator({
     const createNode = (type: string, subType: string, name: string, description: string, icon: string, color: string, x: number, y: number, config: any = {}) => {
       const node: WorkflowBuilderNode = {
         id: `generated_${nodeCounter++}_${Date.now()}`,
-        type: type as any,
+        type: type,
         subType,
         name,
         description,

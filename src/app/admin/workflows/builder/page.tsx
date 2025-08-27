@@ -12,9 +12,6 @@ import {
   ArrowLeft,
   Sparkles,
   Layers,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
   Settings
 } from 'lucide-react';
 import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
@@ -42,11 +39,13 @@ export default function WorkflowBuilderPage() {
   const [showPropertyPanel, setShowPropertyPanel] = useState(false);
   const [showPromptGenerator, setShowPromptGenerator] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [canvasZoom, setCanvasZoom] = useState(1);
-  const [canvasPan, setCanvasPan] = useState({ x: 0, y: 0 });
 
   const generateId = useCallback(() => 
     `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, []
+  );
+
+  const generateConnectionId = useCallback((sourceId: string, targetId: string) => 
+    `conn_${sourceId}_${targetId}_${Date.now()}`, []
   );
 
   const handleGenerateWorkflow = useCallback(async (generatedNodes: WorkflowBuilderNode[], generatedConnections: NodeConnection[]) => {
@@ -57,8 +56,8 @@ export default function WorkflowBuilderPage() {
       const positionedNodes = generatedNodes.map((node, index) => ({
         ...node,
         position: {
-          x: 100 + (index * 300), // Left-to-right layout
-          y: 200 + (Math.sin(index * 0.3) * 100) // Slight vertical variation
+          x: 50 + (index * 350), // Left-to-right layout with more space
+          y: 100 + (Math.sin(index * 0.5) * 80) // Slight vertical variation
         }
       }));
       
@@ -69,7 +68,7 @@ export default function WorkflowBuilderPage() {
       
       toast({
         title: "Workflow Generated",
-        description: `Created ${generatedNodes.length} nodes with intelligent connections`,
+        description: `Created ${generatedNodes.length} nodes with ${generatedConnections.length} connections`,
       });
     } catch (error) {
       toast({
@@ -84,24 +83,40 @@ export default function WorkflowBuilderPage() {
 
   const handleNodeDrop = useCallback((nodeTypeId: string, position: { x: number; y: number }) => {
     const nodeTypes: NodeTypeDefinition[] = [
+      // Triggers
       { id: 'manual-trigger', name: 'Manual Start', description: 'Start workflow manually', icon: '▶️', color: 'bg-emerald-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
       { id: 'form-submission', name: 'Form Trigger', description: 'Form submission trigger', icon: '📝', color: 'bg-blue-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'webhook', name: 'Webhook', description: 'HTTP webhook endpoint', icon: '🌐', color: 'bg-indigo-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'scheduled-trigger', name: 'Schedule', description: 'Time-based automation', icon: '⏰', color: 'bg-purple-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      
+      // AI Processing
       { id: 'ai-analyzer', name: 'AI Agent', description: 'AI processing agent', icon: '🤖', color: 'bg-purple-500', category: 'ai_processing', configSchema: {}, defaultConfig: { model: 'gpt-4', provider: 'OpenAI' } },
+      { id: 'text-classifier', name: 'Text Classifier', description: 'Categorize and tag content', icon: '🏷️', color: 'bg-indigo-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
+      { id: 'sentiment-analyzer', name: 'Sentiment Analysis', description: 'Analyze emotional tone', icon: '😊', color: 'bg-pink-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
+      { id: 'content-generator', name: 'Content Generator', description: 'Generate text content', icon: '✍️', color: 'bg-violet-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
+      
+      // Human Actions
       { id: 'human-task', name: 'Human Task', description: 'Manual task assignment', icon: '👤', color: 'bg-orange-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
       { id: 'approval-gate', name: 'Approval Gate', description: 'Approval checkpoint', icon: '✅', color: 'bg-yellow-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      { id: 'review-task', name: 'Review Task', description: 'Content review and validation', icon: '👁️', color: 'bg-amber-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      
+      // Communication
       { id: 'notification', name: 'Notification', description: 'Send notification', icon: '🔔', color: 'bg-pink-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      { id: 'email-send', name: 'Email', description: 'Send email message', icon: '📧', color: 'bg-red-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      { id: 'slack-message', name: 'Slack Message', description: 'Post to Slack channel', icon: '💬', color: 'bg-green-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      
+      // Data Integration
       { id: 'api-call', name: 'API Integration', description: 'External API call', icon: '🌐', color: 'bg-cyan-500', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      { id: 'database-query', name: 'Database', description: 'Query database records', icon: '🗄️', color: 'bg-gray-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      { id: 'file-processor', name: 'File Processor', description: 'Process uploaded files', icon: '📄', color: 'bg-blue-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      
+      // Logic & Control
       { id: 'condition-check', name: 'Condition', description: 'Conditional logic', icon: '🔀', color: 'bg-teal-500', category: 'condition', configSchema: {}, defaultConfig: {} },
+      { id: 'delay', name: 'Delay', description: 'Wait before continuing', icon: '⏱️', color: 'bg-gray-500', category: 'condition', configSchema: {}, defaultConfig: {} },
     ];
     
     const nodeTypeDef = nodeTypes.find(nt => nt.id === nodeTypeId);
     if (!nodeTypeDef) return;
-
-    // Auto-position new nodes in left-to-right flow
-    const rightmostX = nodes.length > 0 ? Math.max(...nodes.map(n => n.position.x)) : 0;
-    const newPosition = nodes.length > 0 
-      ? { x: rightmostX + 300, y: position.y } 
-      : position;
 
     const newNode: WorkflowBuilderNode = {
       id: generateId(),
@@ -109,7 +124,7 @@ export default function WorkflowBuilderPage() {
       subType: nodeTypeId,
       name: nodeTypeDef.name,
       description: nodeTypeDef.description,
-      position: newPosition,
+      position,
       config: { ...nodeTypeDef.defaultConfig },
       icon: nodeTypeDef.icon,
       color: nodeTypeDef.color,
@@ -120,11 +135,22 @@ export default function WorkflowBuilderPage() {
     setNodes(prev => [...prev, newNode]);
     setSelectedNodeIds([newNode.id]);
     setShowPropertyPanel(true);
-  }, [generateId, currentWorkspace?.partnerId, nodes]);
+
+    toast({
+      title: "Node Added",
+      description: `${nodeTypeDef.name} added to workflow`,
+    });
+  }, [generateId, currentWorkspace?.partnerId, toast]);
 
   const handleNodeSelect = useCallback((nodeIds: string[]) => {
     setSelectedNodeIds(nodeIds);
     setShowPropertyPanel(nodeIds.length === 1);
+  }, []);
+
+  const handleNodeMove = useCallback((nodeId: string, position: { x: number; y: number }) => {
+    setNodes(prev => prev.map(node => 
+      node.id === nodeId ? { ...node, position } : node
+    ));
   }, []);
 
   const handleNodeUpdate = useCallback((nodeId: string, updates: Partial<WorkflowBuilderNode>) => {
@@ -141,12 +167,60 @@ export default function WorkflowBuilderPage() {
       ...node,
       id: generateId(),
       name: `${node.name} (Copy)`,
-      position: { x: node.position.x + 20, y: node.position.y + 20 }
+      position: { x: node.position.x + 50, y: node.position.y + 50 }
     };
 
     setNodes(prev => [...prev, duplicatedNode]);
     setSelectedNodeIds([duplicatedNode.id]);
-  }, [nodes, generateId]);
+
+    toast({
+      title: "Node Duplicated",
+      description: `${node.name} has been duplicated`,
+    });
+  }, [nodes, generateId, toast]);
+
+  const handleNodeDelete = useCallback((nodeId: string) => {
+    setNodes(prev => prev.filter(node => node.id !== nodeId));
+    setConnections(prev => prev.filter(conn => 
+      conn.source !== nodeId && conn.target !== nodeId
+    ));
+    setSelectedNodeIds(prev => prev.filter(id => id !== nodeId));
+
+    toast({
+      title: "Node Deleted",
+      description: "Node removed from workflow",
+    });
+  }, [toast]);
+
+  const handleNodesConnect = useCallback((sourceId: string, targetId: string) => {
+    // Check if connection already exists
+    const existingConnection = connections.find(
+      conn => conn.source === sourceId && conn.target === targetId
+    );
+    
+    if (existingConnection) {
+      toast({
+        variant: "destructive",
+        title: "Connection Exists",
+        description: "These nodes are already connected",
+      });
+      return;
+    }
+
+    const newConnection: NodeConnection = {
+      id: generateConnectionId(sourceId, targetId),
+      source: sourceId,
+      target: targetId,
+      label: ''
+    };
+
+    setConnections(prev => [...prev, newConnection]);
+
+    toast({
+      title: "Nodes Connected",
+      description: "Connection created successfully",
+    });
+  }, [connections, generateConnectionId, toast]);
 
   const handleSaveWorkflow = useCallback(async () => {
     if (nodes.length === 0) {
@@ -158,7 +232,6 @@ export default function WorkflowBuilderPage() {
       return;
     }
 
-    // Auto-generate metadata
     const workflowName = nodes.length > 0 ? `${nodes[0].name} Workflow` : 'Custom Workflow';
     
     toast({
@@ -199,7 +272,7 @@ export default function WorkflowBuilderPage() {
             AI Generate
           </Button>
           
-          <Button variant="outline" onClick={() => {}} disabled={nodes.length === 0} className="border-slate-600 text-slate-300">
+          <Button variant="outline" disabled={nodes.length === 0} className="border-slate-600 text-slate-300">
             <Play className="w-4 h-4 mr-2" />
             Test
           </Button>
@@ -220,7 +293,7 @@ export default function WorkflowBuilderPage() {
         {/* Node Library */}
         <NodeLibrary
           isOpen={showNodeLibrary}
-          onToggle={() => setShowNodeLibrary(false)}
+          onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
           onNodeDragStart={() => {}}
         />
 
@@ -231,37 +304,19 @@ export default function WorkflowBuilderPage() {
             connections={connections}
             selectedNodeIds={selectedNodeIds}
             onNodeSelect={handleNodeSelect}
-            onNodeMove={(nodeId, position) => {
-              setNodes(prev => prev.map(node => 
-                node.id === nodeId ? { ...node, position } : node
-              ));
-            }}
-            onNodeDelete={(nodeId) => {
-              setNodes(prev => prev.filter(node => node.id !== nodeId));
-              setConnections(prev => prev.filter(conn => 
-                conn.source !== nodeId && conn.target !== nodeId
-              ));
-              setSelectedNodeIds(prev => prev.filter(id => id !== nodeId));
-            }}
-            onNodesConnect={(sourceId, targetId) => {
-              const newConnection: NodeConnection = {
-                id: `conn_${sourceId}_${targetId}`,
-                source: sourceId,
-                target: targetId,
-                label: ''
-              };
-              setConnections(prev => [...prev, newConnection]);
-            }}
+            onNodeMove={handleNodeMove}
+            onNodeDelete={handleNodeDelete}
+            onNodesConnect={handleNodesConnect}
             onCanvasDrop={handleNodeDrop}
-            zoom={canvasZoom}
-            pan={canvasPan}
-            onZoomChange={setCanvasZoom}
-            onPanChange={setCanvasPan}
+            zoom={1}
+            pan={{ x: 0, y: 0 }}
+            onZoomChange={() => {}}
+            onPanChange={() => {}}
           />
 
           {/* Floating Controls */}
-          <div className="absolute top-4 right-4 flex flex-col gap-2">
-            {!showNodeLibrary && (
+          {!showNodeLibrary && (
+            <div className="absolute top-4 right-4">
               <Button 
                 size="sm" 
                 variant="outline" 
@@ -271,42 +326,12 @@ export default function WorkflowBuilderPage() {
                 <Layers className="w-4 h-4 mr-2" />
                 Nodes
               </Button>
-            )}
-            
-            <div className="flex flex-col gap-1 bg-slate-800 rounded-lg p-1 border border-slate-600">
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className="text-slate-300 hover:text-white hover:bg-slate-700"
-                onClick={() => setCanvasZoom(prev => Math.min(prev * 1.2, 3))}
-              >
-                <ZoomIn className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className="text-slate-300 hover:text-white hover:bg-slate-700"
-                onClick={() => setCanvasZoom(prev => Math.max(prev / 1.2, 0.3))}
-              >
-                <ZoomOut className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className="text-slate-300 hover:text-white hover:bg-slate-700"
-                onClick={() => {
-                  setCanvasZoom(1);
-                  setCanvasPan({ x: 0, y: 0 });
-                }}
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
             </div>
-          </div>
+          )}
 
           {/* Status Bar */}
           <div className="absolute bottom-4 left-4 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300">
-            {nodes.length} nodes • {connections.length} connections • {Math.round(canvasZoom * 100)}%
+            {nodes.length} nodes • {connections.length} connections
           </div>
 
           {/* Clear Button */}
@@ -319,6 +344,7 @@ export default function WorkflowBuilderPage() {
                   setNodes([]);
                   setConnections([]);
                   setSelectedNodeIds([]);
+                  setShowPropertyPanel(false);
                 }}
                 className="bg-slate-800 border-slate-600 text-red-400 hover:bg-red-950 hover:border-red-600"
               >
@@ -334,13 +360,7 @@ export default function WorkflowBuilderPage() {
           isOpen={showPropertyPanel}
           onClose={() => setShowPropertyPanel(false)}
           onNodeUpdate={handleNodeUpdate}
-          onNodeDelete={(nodeId) => {
-            setNodes(prev => prev.filter(node => node.id !== nodeId));
-            setConnections(prev => prev.filter(conn => 
-              conn.source !== nodeId && conn.target !== nodeId
-            ));
-            setSelectedNodeIds(prev => prev.filter(id => id !== nodeId));
-          }}
+          onNodeDelete={handleNodeDelete}
           onNodeDuplicate={handleNodeDuplicate}
         />
       </div>

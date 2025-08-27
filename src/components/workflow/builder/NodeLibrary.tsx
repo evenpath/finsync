@@ -422,12 +422,10 @@ function NodeItem({ node, onDragStart, isReadOnly }: NodeItemProps) {
 
       {/* Drag indicator */}
       {!isReadOnly && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-50 transition-opacity">
+        <div className="absolute absolute right-3 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-50 transition-opacity">
           <div className="w-6 h-4 flex flex-col justify-center gap-0.5">
             <div className="w-full h-0.5 bg-slate-500 rounded"></div>
             <div className="w-full h-0.5 bg-slate-500 rounded"></div>
-            <div className="w-full h-4 flex flex-col justify-center gap-0.5">
-            </div>
           </div>
         </div>
       )}
