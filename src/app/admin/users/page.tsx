@@ -10,7 +10,10 @@ import { ShieldAlert } from "lucide-react";
 export default function AdminUsersPage() {
   const { user } = useAuth();
 
-  if (user?.customClaims?.role !== 'Super Admin') {
+  // A user is a Super Admin if their role is set OR if they use the primary admin email.
+  const isAuthorized = user?.customClaims?.role === 'Super Admin' || user?.email === 'core@suupe.com';
+
+  if (!isAuthorized) {
     return (
       <>
         <AdminHeader
