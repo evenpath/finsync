@@ -3,7 +3,6 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { X, Copy, Trash2, Lock } from 'lucide-react';
+import { X, Settings, Trash2, Copy } from 'lucide-react';
 import type { WorkflowBuilderNode } from '@/lib/types/workflow-builder';
 
 interface PropertyPanelProps {
@@ -50,66 +49,114 @@ export default function PropertyPanel({
   };
 
   return (
-    <Card className="w-96 h-full border-l rounded-none">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Node Configuration</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+    <div className="w-96 h-full border-l border-slate-700 bg-slate-800 flex flex-col">
+      {/* Header */}
+      <div className="flex-shrink-0 p-4 border-b border-slate-700">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-slate-200">Configure Node</h3>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-400 hover:text-slate-200">
             <X className="w-4 h-4" />
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{selectedNode.icon}</span>
-          <span className="font-medium">{selectedNode.name}</span>
-          <Badge variant="outline" className="text-xs">
-            {selectedNode.category.replace('_', ' ')}
-          </Badge>
-          {selectedNode.locked && (
-            <Badge variant="secondary" className="text-xs">
-              <Lock className="w-3 h-3 mr-1" />
-              Locked
-            </Badge>
-          )}
+        
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 ${selectedNode.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+            <span className="text-lg">{selectedNode.icon}</span>
+          </div>
+          <div className="flex-1">
+            <h4 className="font-medium text-slate-200">{selectedNode.name}</h4>
+            <p className="text-xs text-slate-400">{selectedNode.description}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline" className="text-xs border-slate-600 text-slate-300">
+                {selectedNode.category.replace('_', ' ')}
+              </Badge>
+              {selectedNode.locked && (
+                <Badge variant="secondary" className="text-xs bg-slate-700 text-slate-300">
+                  Locked
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
         {isReadOnly && (
-          <Badge variant="outline" className="text-xs w-fit">
+          <Badge variant="outline" className="text-xs w-fit mt-2 border-slate-600 text-slate-400">
             Read-only mode
           </Badge>
         )}
-      </CardHeader>
+      </div>
 
-      <CardContent className="flex-1 overflow-y-auto">
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="basic">Basic</TabsTrigger>
-            <TabsTrigger value="config">Config</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+      {/* Configuration Tabs */}
+      <div className="flex-1 overflow-y-auto">
+        <Tabs defaultValue="config" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-slate-700 border-slate-600 m-4">
+            <TabsTrigger value="config" className="data-[state=active]:bg-slate-600 text-slate-300">
+              Configuration
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className="data-[state=active]:bg-slate-600 text-slate-300">
+              Advanced
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="basic" className="space-y-4">
-            <div className="space-y-3">
+          <TabsContent value="config" className="p-4 space-y-4">
+            <div className="space-y-4">
+              {/* Basic Node Info */}
               <div>
-                <Label>Node Name</Label>
+                <Label className="text-slate-300">Node Name</Label>
                 <Input
                   value={selectedNode.name}
                   onChange={(e) => handleBasicUpdate('name', e.target.value)}
-                  className="mt-1"
+                  className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
                   disabled={isReadOnly || selectedNode.locked}
                 />
               </div>
+
               <div>
-                <Label>Description</Label>
+                <Label className="text-slate-300">Description</Label>
                 <Textarea
                   value={selectedNode.description}
                   onChange={(e) => handleBasicUpdate('description', e.target.value)}
-                  className="mt-1"
-                  rows={3}
+                  className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+                  rows={2}
                   disabled={isReadOnly || selectedNode.locked}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+
+              {/* Node-specific configuration */}
+              {renderNodeSpecificConfig(selectedNode, handleConfigUpdate, isReadOnly)}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="advanced" className="p-4 space-y-4">
+            <div className="space-y-4">
+              {/* Node Settings */}
+              {!isReadOnly && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox"
+                      checked={selectedNode.locked || false}
+                      onChange={(e) => handleBasicUpdate('locked', e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <Label className="text-slate-300">Lock Node (Prevent modifications)</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox"
+                      checked={selectedNode.required || false}
+                      onChange={(e) => handleBasicUpdate('required', e.target.checked)}
+                      disabled={isReadOnly || selectedNode.locked}
+                      className="h-4 w-4"
+                    />
+                    <Label className="text-slate-300">Required in all instances</Label>
+                  </div>
+                </div>
+              )}
+
+              {/* Position Controls */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Position X</Label>
+                  <Label className="text-slate-300">X Position</Label>
                   <Input
                     type="number"
                     value={selectedNode.position.x}
@@ -117,12 +164,12 @@ export default function PropertyPanel({
                       ...selectedNode.position, 
                       x: parseInt(e.target.value) || 0 
                     })}
-                    className="mt-1"
+                    className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
                     disabled={isReadOnly || selectedNode.locked}
                   />
                 </div>
                 <div>
-                  <Label>Position Y</Label>
+                  <Label className="text-slate-300">Y Position</Label>
                   <Input
                     type="number"
                     value={selectedNode.position.y}
@@ -130,71 +177,41 @@ export default function PropertyPanel({
                       ...selectedNode.position, 
                       y: parseInt(e.target.value) || 0 
                     })}
-                    className="mt-1"
+                    className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
                     disabled={isReadOnly || selectedNode.locked}
                   />
                 </div>
               </div>
-              <div>
-                <Label>Category</Label>
-                <Badge variant="outline" className="mt-1 text-xs">
-                  {selectedNode.category.replace('_', ' ')}
-                </Badge>
-              </div>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="config" className="space-y-4">
-            {/* Dynamic configuration based on node type */}
-            {renderNodeSpecificConfig(selectedNode, handleConfigUpdate, isReadOnly)}
-          </TabsContent>
-
-          <TabsContent value="advanced" className="space-y-4">
-            <div className="space-y-3">
-              {!isReadOnly && (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox"
-                    checked={selectedNode.locked || false}
-                    onChange={(e) => handleBasicUpdate('locked', e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <Label>Lock Node (Prevent Partner Modifications)</Label>
+              {/* Node Metadata */}
+              <div className="space-y-3 pt-4 border-t border-slate-700">
+                <div className="text-xs text-slate-400">
+                  <strong className="text-slate-300">Node ID:</strong> {selectedNode.id}
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <input 
-                  type="checkbox"
-                  checked={selectedNode.required || false}
-                  onChange={(e) => handleBasicUpdate('required', e.target.checked)}
-                  disabled={isReadOnly || selectedNode.locked}
-                  className="h-4 w-4"
-                />
-                <Label>Required in All Customizations</Label>
-              </div>
-              
-              {/* Node metadata */}
-              <div className="pt-2 border-t space-y-2">
-                <div className="text-xs text-gray-600">
-                  <strong>Node ID:</strong> {selectedNode.id}
+                <div className="text-xs text-slate-400">
+                  <strong className="text-slate-300">Type:</strong> {selectedNode.type}
                 </div>
-                <div className="text-xs text-gray-600">
-                  <strong>Type:</strong> {selectedNode.type}
+                <div className="text-xs text-slate-400">
+                  <strong className="text-slate-300">Sub-type:</strong> {selectedNode.subType}
                 </div>
-                <div className="text-xs text-gray-600">
-                  <strong>Sub-type:</strong> {selectedNode.subType}
+                <div className="text-xs text-slate-400">
+                  <strong className="text-slate-300">Category:</strong> {selectedNode.category}
+                </div>
+                <div className="text-xs text-slate-400">
+                  <strong className="text-slate-300">Workspace:</strong> {selectedNode.workspaceId || 'global'}
                 </div>
               </div>
             </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
+      </div>
 
+      {/* Actions */}
       {!isReadOnly && (
-        <div className="p-4 border-t space-y-2">
+        <div className="flex-shrink-0 p-4 border-t border-slate-700 space-y-2">
           <Button 
             variant="outline" 
-            className="w-full text-sm"
+            className="w-full bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
             onClick={() => onNodeDuplicate(selectedNode.id)}
             disabled={selectedNode.locked}
           >
@@ -203,7 +220,7 @@ export default function PropertyPanel({
           </Button>
           <Button 
             variant="outline" 
-            className="w-full text-sm text-red-600 border-red-200 hover:bg-red-50"
+            className="w-full border-red-600 text-red-400 hover:bg-red-950 hover:border-red-500"
             onClick={() => onNodeDelete(selectedNode.id)}
             disabled={selectedNode.locked || selectedNode.required}
           >
@@ -212,11 +229,11 @@ export default function PropertyPanel({
           </Button>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
-// Helper function for node-specific configuration UI
+// Node-specific configuration UI
 function renderNodeSpecificConfig(
   node: WorkflowBuilderNode, 
   onUpdate: (field: string, value: any) => void,
@@ -227,24 +244,24 @@ function renderNodeSpecificConfig(
   switch (node.subType) {
     case 'manual-trigger':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>Trigger Button Label</Label>
+            <Label className="text-slate-300">Trigger Button Label</Label>
             <Input
-              value={node.config.triggerLabel || 'Start Workflow'}
+              value={node.config?.triggerLabel || 'Start Workflow'}
               onChange={(e) => onUpdate('triggerLabel', e.target.value)}
-              className="mt-1"
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
               disabled={disabled}
             />
           </div>
           <div>
-            <Label>Description for Users</Label>
+            <Label className="text-slate-300">User Instructions</Label>
             <Textarea
-              value={node.config.userDescription || ''}
+              value={node.config?.userDescription || ''}
               onChange={(e) => onUpdate('userDescription', e.target.value)}
-              className="mt-1"
-              rows={2}
-              placeholder="Explain when users should trigger this workflow..."
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+              rows={3}
+              placeholder="Instructions for users when triggering this workflow..."
               disabled={disabled}
             />
           </div>
@@ -253,82 +270,112 @@ function renderNodeSpecificConfig(
 
     case 'ai-analyzer':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>AI Model</Label>
+            <Label className="text-slate-300">AI Provider</Label>
             <Select 
-              value={node.config.aiModel || 'gpt-4'} 
-              onValueChange={(value) => onUpdate('aiModel', value)}
+              value={node.config?.provider || 'OpenAI'} 
+              onValueChange={(value) => onUpdate('provider', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-4">GPT-4 (Most Capable)</SelectItem>
-                <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Fast & Capable)</SelectItem>
-                <SelectItem value="claude-3">Claude 3 (Alternative)</SelectItem>
-                <SelectItem value="gemini-pro">Gemini Pro (Google)</SelectItem>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="OpenAI">OpenAI</SelectItem>
+                <SelectItem value="Anthropic">Anthropic (Claude)</SelectItem>
+                <SelectItem value="Google">Google (Gemini)</SelectItem>
+                <SelectItem value="Microsoft">Azure OpenAI</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          
           <div>
-            <Label>Analysis Instructions</Label>
-            <Textarea
-              value={node.config.prompt || ''}
-              onChange={(e) => onUpdate('prompt', e.target.value)}
-              className="mt-1"
-              rows={4}
-              placeholder="Provide detailed instructions for the AI analysis task..."
+            <Label className="text-slate-300">Model</Label>
+            <Select 
+              value={node.config?.model || 'gpt-4'} 
+              onValueChange={(value) => onUpdate('model', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="gpt-4">GPT-4</SelectItem>
+                <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
+                <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-slate-300">Temperature</Label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="2"
+              value={node.config?.temperature || 0.7}
+              onChange={(e) => onUpdate('temperature', parseFloat(e.target.value) || 0.7)}
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
               disabled={disabled}
             />
           </div>
+
           <div>
-            <Label>Expected Output Format</Label>
-            <Select 
-              value={node.config.outputFormat || 'text'} 
-              onValueChange={(value) => onUpdate('outputFormat', value)}
+            <Label className="text-slate-300">System Prompt</Label>
+            <Textarea
+              value={node.config?.systemPrompt || ''}
+              onChange={(e) => onUpdate('systemPrompt', e.target.value)}
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+              rows={4}
+              placeholder="Enter system instructions for the AI agent..."
               disabled={disabled}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Plain Text</SelectItem>
-                <SelectItem value="json">Structured JSON</SelectItem>
-                <SelectItem value="markdown">Markdown</SelectItem>
-                <SelectItem value="summary">Executive Summary</SelectItem>
-              </SelectContent>
-            </Select>
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-300">Max Tokens</Label>
+            <Input
+              type="number"
+              value={node.config?.maxTokens || 1000}
+              onChange={(e) => onUpdate('maxTokens', parseInt(e.target.value) || 1000)}
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+              disabled={disabled}
+            />
           </div>
         </div>
       );
 
     case 'human-task':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>Task Instructions</Label>
+            <Label className="text-slate-300">Task Instructions</Label>
             <Textarea
-              value={node.config.instructions || ''}
+              value={node.config?.instructions || ''}
               onChange={(e) => onUpdate('instructions', e.target.value)}
-              className="mt-1"
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
               rows={4}
               placeholder="Detailed instructions for the person executing this task..."
               disabled={disabled}
             />
           </div>
+          
           <div>
-            <Label>Assignment Method</Label>
+            <Label className="text-slate-300">Assignment Method</Label>
             <Select 
-              value={node.config.assignmentMethod || 'manual'} 
+              value={node.config?.assignmentMethod || 'manual'} 
               onValueChange={(value) => onUpdate('assignmentMethod', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="manual">Manual Assignment</SelectItem>
                 <SelectItem value="auto">Auto-assign to Available</SelectItem>
                 <SelectItem value="round-robin">Round Robin</SelectItem>
@@ -337,28 +384,18 @@ function renderNodeSpecificConfig(
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label>Estimated Duration (minutes)</Label>
-            <Input
-              type="number"
-              value={node.config.estimatedDuration || ''}
-              onChange={(e) => onUpdate('estimatedDuration', parseInt(e.target.value) || 0)}
-              className="mt-1"
-              placeholder="30"
-              disabled={disabled}
-            />
-          </div>
-          <div>
-            <Label>Priority Level</Label>
+            <Label className="text-slate-300">Priority</Label>
             <Select 
-              value={node.config.priority || 'medium'} 
+              value={node.config?.priority || 'medium'} 
               onValueChange={(value) => onUpdate('priority', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="low">Low Priority</SelectItem>
                 <SelectItem value="medium">Medium Priority</SelectItem>
                 <SelectItem value="high">High Priority</SelectItem>
@@ -366,23 +403,35 @@ function renderNodeSpecificConfig(
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label className="text-slate-300">Estimated Duration (minutes)</Label>
+            <Input
+              type="number"
+              value={node.config?.estimatedDuration || ''}
+              onChange={(e) => onUpdate('estimatedDuration', parseInt(e.target.value) || 0)}
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+              placeholder="30"
+              disabled={disabled}
+            />
+          </div>
         </div>
       );
 
     case 'approval-gate':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>Approval Type</Label>
+            <Label className="text-slate-300">Approval Type</Label>
             <Select 
-              value={node.config.approvalType || 'single'} 
+              value={node.config?.approvalType || 'single'} 
               onValueChange={(value) => onUpdate('approvalType', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="single">Any Single Approver</SelectItem>
                 <SelectItem value="all">All Approvers Required</SelectItem>
                 <SelectItem value="majority">Majority Approval</SelectItem>
@@ -391,11 +440,11 @@ function renderNodeSpecificConfig(
             </Select>
           </div>
           <div>
-            <Label>Approval Instructions</Label>
+            <Label className="text-slate-300">Approval Instructions</Label>
             <Textarea
-              value={node.config.approvalInstructions || ''}
+              value={node.config?.approvalInstructions || ''}
               onChange={(e) => onUpdate('approvalInstructions', e.target.value)}
-              className="mt-1"
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
               rows={3}
               placeholder="What should approvers review and consider?"
               disabled={disabled}
@@ -404,63 +453,66 @@ function renderNodeSpecificConfig(
           <div className="flex items-center gap-2">
             <input 
               type="checkbox"
-              checked={node.config.allowDelegation || false}
+              checked={node.config?.allowDelegation || false}
               onChange={(e) => onUpdate('allowDelegation', e.target.checked)}
               disabled={disabled}
               className="h-4 w-4"
             />
-            <Label>Allow Approvers to Delegate</Label>
+            <Label className="text-slate-300">Allow Approvers to Delegate</Label>
           </div>
         </div>
       );
 
     case 'notification':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>Notification Channel</Label>
+            <Label className="text-slate-300">Notification Channel</Label>
             <Select 
-              value={node.config.channel || 'email'} 
+              value={node.config?.channel || 'email'} 
               onValueChange={(value) => onUpdate('channel', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="chat">In-App Chat</SelectItem>
-                <SelectItem value="push">Push Notification</SelectItem>
-                <SelectItem value="sms">SMS (if configured)</SelectItem>
+                <SelectItem value="slack">Slack</SelectItem>
+                <SelectItem value="teams">Microsoft Teams</SelectItem>
+                <SelectItem value="webhook">Webhook</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label>Message Template</Label>
+            <Label className="text-slate-300">Message Template</Label>
             <Textarea
-              value={node.config.template || ''}
+              value={node.config?.template || ''}
               onChange={(e) => onUpdate('template', e.target.value)}
-              className="mt-1"
-              rows={3}
-              placeholder="Enter your message template..."
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+              rows={4}
+              placeholder="Enter your notification message template..."
               disabled={disabled}
             />
           </div>
+
           <div>
-            <Label>Recipients</Label>
+            <Label className="text-slate-300">Recipients</Label>
             <Select 
-              value={node.config.recipients || 'assigned'} 
+              value={node.config?.recipients || 'assigned'} 
               onValueChange={(value) => onUpdate('recipients', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="assigned">Task Assignee</SelectItem>
                 <SelectItem value="manager">Manager</SelectItem>
                 <SelectItem value="team">Entire Team</SelectItem>
-                <SelectItem value="custom">Custom List</SelectItem>
+                <SelectItem value="custom">Custom Recipients</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -469,28 +521,29 @@ function renderNodeSpecificConfig(
 
     case 'api-call':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>API Endpoint URL</Label>
+            <Label className="text-slate-300">API Endpoint URL</Label>
             <Input
-              value={node.config.url || ''}
+              value={node.config?.url || ''}
               onChange={(e) => onUpdate('url', e.target.value)}
-              className="mt-1"
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
               placeholder="https://api.example.com/endpoint"
               disabled={disabled}
             />
           </div>
+
           <div>
-            <Label>HTTP Method</Label>
+            <Label className="text-slate-300">HTTP Method</Label>
             <Select 
-              value={node.config.method || 'GET'} 
+              value={node.config?.method || 'GET'} 
               onValueChange={(value) => onUpdate('method', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="GET">GET</SelectItem>
                 <SelectItem value="POST">POST</SelectItem>
                 <SelectItem value="PUT">PUT</SelectItem>
@@ -499,25 +552,26 @@ function renderNodeSpecificConfig(
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label>Request Headers (JSON)</Label>
+            <Label className="text-slate-300">Headers (JSON)</Label>
             <Textarea
-              value={node.config.headers || '{}'}
+              value={node.config?.headers || '{\n  "Content-Type": "application/json"\n}'}
               onChange={(e) => onUpdate('headers', e.target.value)}
-              className="mt-1"
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
               rows={3}
-              placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
               disabled={disabled}
             />
           </div>
+
           <div>
-            <Label>Request Body (for POST/PUT)</Label>
+            <Label className="text-slate-300">Request Body</Label>
             <Textarea
-              value={node.config.body || ''}
+              value={node.config?.body || ''}
               onChange={(e) => onUpdate('body', e.target.value)}
-              className="mt-1"
-              rows={3}
-              placeholder="Request body content..."
+              className="mt-1 bg-slate-700 border-slate-600 text-slate-200"
+              rows={4}
+              placeholder="Request body for POST/PUT requests..."
               disabled={disabled}
             />
           </div>
@@ -526,9 +580,10 @@ function renderNodeSpecificConfig(
 
     default:
       return (
-        <div className="text-sm text-gray-500 text-center py-8">
-          <p>No specific configuration available</p>
-          <p className="text-xs mt-1">Use the Basic tab to modify general properties</p>
+        <div className="text-center py-8 text-slate-400">
+          <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No specific configuration available</p>
+          <p className="text-xs mt-1">This node type doesn't require additional settings</p>
         </div>
       );
   }

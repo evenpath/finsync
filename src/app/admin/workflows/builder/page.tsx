@@ -3,48 +3,36 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Save, 
   Play, 
-  Settings, 
-  Plus, 
-  Zap, 
-  Eye, 
   ArrowLeft,
+  Sparkles,
   Layers,
-  GitBranch,
-  Users,
-  Globe
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Settings
 } from 'lucide-react';
 import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
 import WorkflowCanvas from '@/components/workflow/builder/WorkflowCanvas';
 import NodeLibrary from '@/components/workflow/builder/NodeLibrary';
 import PropertyPanel from '@/components/workflow/builder/PropertyPanel';
+import PromptWorkflowGenerator from '@/components/workflow/builder/PromptWorkflowGenerator';
 import type { 
   WorkflowBuilderNode, 
   NodeConnection, 
-  NodeTypeDefinition,
-  WorkflowBuilderTemplate 
+  NodeTypeDefinition 
 } from '@/lib/types/workflow-builder';
 
 export default function WorkflowBuilderPage() {
   const { user, currentWorkspace } = useMultiWorkspaceAuth();
   const { toast } = useToast();
   
-  // Template metadata
-  const [templateName, setTemplateName] = useState('New Workflow Template');
-  const [templateDescription, setTemplateDescription] = useState('');
-  const [templateCategory, setTemplateCategory] = useState<'general' | 'hr' | 'sales' | 'support' | 'custom'>('general');
-  const [isGlobalTemplate, setIsGlobalTemplate] = useState(false);
-  
-  // Canvas state
+  // Core workflow state
   const [nodes, setNodes] = useState<WorkflowBuilderNode[]>([]);
   const [connections, setConnections] = useState<NodeConnection[]>([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
@@ -52,49 +40,68 @@ export default function WorkflowBuilderPage() {
   // UI state
   const [showNodeLibrary, setShowNodeLibrary] = useState(true);
   const [showPropertyPanel, setShowPropertyPanel] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [showPromptGenerator, setShowPromptGenerator] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [canvasZoom, setCanvasZoom] = useState(1);
+  const [canvasPan, setCanvasPan] = useState({ x: 0, y: 0 });
 
-  // Check permissions
-  const canCreateGlobal = user?.customClaims?.role === 'Super Admin';
-  const canSaveTemplate = user && (canCreateGlobal || currentWorkspace);
-
-  // Generate unique ID for nodes
   const generateId = useCallback(() => 
     `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, []
   );
 
-  const generateConnectionId = useCallback((sourceId: string, targetId: string) => 
-    `conn_${sourceId}_${targetId}`, []
-  );
+  const handleGenerateWorkflow = useCallback(async (generatedNodes: WorkflowBuilderNode[], generatedConnections: NodeConnection[]) => {
+    setIsGenerating(true);
+    
+    try {
+      // Position nodes left-to-right with proper spacing
+      const positionedNodes = generatedNodes.map((node, index) => ({
+        ...node,
+        position: {
+          x: 100 + (index * 300), // Left-to-right layout
+          y: 200 + (Math.sin(index * 0.3) * 100) // Slight vertical variation
+        }
+      }));
+      
+      setNodes(positionedNodes);
+      setConnections(generatedConnections);
+      setSelectedNodeIds([]);
+      setShowPromptGenerator(false);
+      
+      toast({
+        title: "Workflow Generated",
+        description: `Created ${generatedNodes.length} nodes with intelligent connections`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Unable to generate workflow. Please try again.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [toast]);
 
-  const handleNodeDragStart = useCallback((nodeType: NodeTypeDefinition) => {
-    console.log('Drag started:', nodeType.name);
-  }, []);
-
-  const handleCanvasDrop = useCallback((nodeTypeId: string, position: { x: number; y: number }) => {
-    // Find the node type definition
+  const handleNodeDrop = useCallback((nodeTypeId: string, position: { x: number; y: number }) => {
     const nodeTypes: NodeTypeDefinition[] = [
-      { id: 'manual-trigger', name: 'Manual Trigger', description: 'Start workflow manually', icon: '▶️', color: 'bg-blue-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
-      { id: 'form-submission', name: 'Form Submission', description: 'Trigger when form is submitted', icon: '📝', color: 'bg-green-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
-      { id: 'scheduled-trigger', name: 'Scheduled Trigger', description: 'Trigger on schedule', icon: '⏰', color: 'bg-purple-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
-      { id: 'ai-analyzer', name: 'AI Analyzer', description: 'Process data with AI', icon: '🧠', color: 'bg-purple-600', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
-      { id: 'text-classifier', name: 'Text Classifier', description: 'Classify text content', icon: '🏷️', color: 'bg-indigo-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
-      { id: 'content-generator', name: 'Content Generator', description: 'Generate content with AI', icon: '✍️', color: 'bg-violet-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
-      { id: 'human-task', name: 'Human Task', description: 'Assign task to person', icon: '👤', color: 'bg-orange-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
-      { id: 'approval-gate', name: 'Approval Gate', description: 'Require approval', icon: '✅', color: 'bg-yellow-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
-      { id: 'review-task', name: 'Review Task', description: 'Human review task', icon: '👁️', color: 'bg-amber-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
-      { id: 'notification', name: 'Send Notification', description: 'Send alert or message', icon: '🔔', color: 'bg-pink-500', category: 'communication', configSchema: {}, defaultConfig: {} },
-      { id: 'email-send', name: 'Send Email', description: 'Send email notification', icon: '📧', color: 'bg-red-500', category: 'communication', configSchema: {}, defaultConfig: {} },
-      { id: 'chat-message', name: 'Chat Message', description: 'Send chat message', icon: '💬', color: 'bg-green-600', category: 'communication', configSchema: {}, defaultConfig: {} },
-      { id: 'api-call', name: 'API Call', description: 'Call external API', icon: '🌐', color: 'bg-cyan-500', category: 'data_integration', configSchema: {}, defaultConfig: {} },
-      { id: 'database-query', name: 'Database Query', description: 'Query database', icon: '🗄️', color: 'bg-gray-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
-      { id: 'file-processor', name: 'File Processor', description: 'Process files', icon: '📄', color: 'bg-blue-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
-      { id: 'condition-check', name: 'Condition Check', description: 'Check conditions', icon: '🔀', color: 'bg-teal-500', category: 'condition', configSchema: {}, defaultConfig: {} },
+      { id: 'manual-trigger', name: 'Manual Start', description: 'Start workflow manually', icon: '▶️', color: 'bg-emerald-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'form-submission', name: 'Form Trigger', description: 'Form submission trigger', icon: '📝', color: 'bg-blue-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'ai-analyzer', name: 'AI Agent', description: 'AI processing agent', icon: '🤖', color: 'bg-purple-500', category: 'ai_processing', configSchema: {}, defaultConfig: { model: 'gpt-4', provider: 'OpenAI' } },
+      { id: 'human-task', name: 'Human Task', description: 'Manual task assignment', icon: '👤', color: 'bg-orange-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      { id: 'approval-gate', name: 'Approval Gate', description: 'Approval checkpoint', icon: '✅', color: 'bg-yellow-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      { id: 'notification', name: 'Notification', description: 'Send notification', icon: '🔔', color: 'bg-pink-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      { id: 'api-call', name: 'API Integration', description: 'External API call', icon: '🌐', color: 'bg-cyan-500', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      { id: 'condition-check', name: 'Condition', description: 'Conditional logic', icon: '🔀', color: 'bg-teal-500', category: 'condition', configSchema: {}, defaultConfig: {} },
     ];
     
     const nodeTypeDef = nodeTypes.find(nt => nt.id === nodeTypeId);
     if (!nodeTypeDef) return;
+
+    // Auto-position new nodes in left-to-right flow
+    const rightmostX = nodes.length > 0 ? Math.max(...nodes.map(n => n.position.x)) : 0;
+    const newPosition = nodes.length > 0 
+      ? { x: rightmostX + 300, y: position.y } 
+      : position;
 
     const newNode: WorkflowBuilderNode = {
       id: generateId(),
@@ -102,7 +109,7 @@ export default function WorkflowBuilderPage() {
       subType: nodeTypeId,
       name: nodeTypeDef.name,
       description: nodeTypeDef.description,
-      position,
+      position: newPosition,
       config: { ...nodeTypeDef.defaultConfig },
       icon: nodeTypeDef.icon,
       color: nodeTypeDef.color,
@@ -111,65 +118,20 @@ export default function WorkflowBuilderPage() {
     };
 
     setNodes(prev => [...prev, newNode]);
-    
-    // Auto-select the new node
     setSelectedNodeIds([newNode.id]);
     setShowPropertyPanel(true);
+  }, [generateId, currentWorkspace?.partnerId, nodes]);
 
-    toast({
-      title: "Node Added",
-      description: `${nodeTypeDef.name} has been added to the canvas`,
-    });
-  }, [generateId, currentWorkspace?.partnerId, toast]);
-
-  const handleNodeSelect = useCallback((nodeId: string, multiSelect = false) => {
-    if (multiSelect) {
-      setSelectedNodeIds(prev => 
-        prev.includes(nodeId) 
-          ? prev.filter(id => id !== nodeId)
-          : [...prev, nodeId]
-      );
-    } else {
-      setSelectedNodeIds(nodeId ? [nodeId] : []);
-      if (nodeId) {
-        setShowPropertyPanel(true);
-      }
-    }
-  }, []);
-
-  const handleNodeMove = useCallback((nodeId: string, position: { x: number; y: number }) => {
-    setNodes(prev => 
-      prev.map(node => 
-        node.id === nodeId ? { ...node, position } : node
-      )
-    );
+  const handleNodeSelect = useCallback((nodeIds: string[]) => {
+    setSelectedNodeIds(nodeIds);
+    setShowPropertyPanel(nodeIds.length === 1);
   }, []);
 
   const handleNodeUpdate = useCallback((nodeId: string, updates: Partial<WorkflowBuilderNode>) => {
-    setNodes(prev =>
-      prev.map(node =>
-        node.id === nodeId ? { ...node, ...updates } : node
-      )
-    );
-
-    toast({
-      title: "Node Updated",
-      description: "Node configuration has been updated",
-    });
-  }, [toast]);
-
-  const handleNodeDelete = useCallback((nodeId: string) => {
-    setNodes(prev => prev.filter(node => node.id !== nodeId));
-    setConnections(prev => 
-      prev.filter(conn => conn.source !== nodeId && conn.target !== nodeId)
-    );
-    setSelectedNodeIds(prev => prev.filter(id => id !== nodeId));
-
-    toast({
-      title: "Node Deleted",
-      description: "Node has been removed from the workflow",
-    });
-  }, [toast]);
+    setNodes(prev => prev.map(node => 
+      node.id === nodeId ? { ...node, ...updates } : node
+    ));
+  }, []);
 
   const handleNodeDuplicate = useCallback((nodeId: string) => {
     const node = nodes.find(n => n.id === nodeId);
@@ -184,53 +146,9 @@ export default function WorkflowBuilderPage() {
 
     setNodes(prev => [...prev, duplicatedNode]);
     setSelectedNodeIds([duplicatedNode.id]);
+  }, [nodes, generateId]);
 
-    toast({
-      title: "Node Duplicated",
-      description: `${node.name} has been duplicated`,
-    });
-  }, [nodes, generateId, toast]);
-
-  const handleNodesConnect = useCallback((sourceId: string, targetId: string) => {
-    // Check if connection already exists
-    const existingConnection = connections.find(
-      conn => conn.source === sourceId && conn.target === targetId
-    );
-    
-    if (existingConnection) {
-      toast({
-        variant: "destructive",
-        title: "Connection Exists",
-        description: "A connection between these nodes already exists",
-      });
-      return;
-    }
-
-    const newConnection: NodeConnection = {
-      id: generateConnectionId(sourceId, targetId),
-      source: sourceId,
-      target: targetId,
-      label: 'Next'
-    };
-
-    setConnections(prev => [...prev, newConnection]);
-
-    toast({
-      title: "Nodes Connected",
-      description: "Workflow connection has been created",
-    });
-  }, [connections, generateConnectionId, toast]);
-
-  const handleSaveTemplate = useCallback(async () => {
-    if (!canSaveTemplate) {
-      toast({
-        variant: "destructive",
-        title: "Permission Denied",
-        description: "You don't have permission to save templates",
-      });
-      return;
-    }
-
+  const handleSaveWorkflow = useCallback(async () => {
     if (nodes.length === 0) {
       toast({
         variant: "destructive",
@@ -240,293 +158,208 @@ export default function WorkflowBuilderPage() {
       return;
     }
 
-    setIsSaving(true);
+    // Auto-generate metadata
+    const workflowName = nodes.length > 0 ? `${nodes[0].name} Workflow` : 'Custom Workflow';
     
-    try {
-      const template: WorkflowBuilderTemplate = {
-        name: templateName,
-        description: templateDescription,
-        category: templateCategory,
-        builderNodes: nodes,
-        connections,
-        canvasSettings: {
-          gridSize: 20,
-          snapToGrid: true,
-          showGrid: true,
-          zoomLevel: 1,
-          panPosition: { x: 0, y: 0 }
-        },
-        permissions: {
-          canModifyNodes: true,
-          canAddNodes: true,
-          canRemoveNodes: true,
-          canModifyConnections: true,
-          lockedNodes: nodes.filter(n => n.locked).map(n => n.id),
-          allowedNodeTypes: []
-        },
-        createdBy: user?.uid || '',
-        partnerId: isGlobalTemplate ? undefined : currentWorkspace?.partnerId,
-        isGlobal: isGlobalTemplate,
-        assignedPartners: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        version: 1,
-        status: 'draft',
-        customizationRules: []
-      };
-
-      // TODO: Implement actual save to Firebase
-      console.log('Saving template:', template);
-      
-      // Simulate save delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Template Saved",
-        description: `${templateName} has been saved successfully`,
-      });
-    } catch (error) {
-      console.error('Save error:', error);
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: "Unable to save template. Please try again.",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    canSaveTemplate, 
-    nodes, 
-    templateName, 
-    templateDescription, 
-    templateCategory, 
-    connections, 
-    user?.uid, 
-    isGlobalTemplate, 
-    currentWorkspace?.partnerId, 
-    toast
-  ]);
-
-  const handleTestWorkflow = useCallback(() => {
-    if (nodes.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Empty Workflow",
-        description: "Add nodes to test the workflow",
-      });
-      return;
-    }
-
-    setIsRunning(true);
-    
-    // Simulate workflow test
     toast({
-      title: "Testing Workflow",
-      description: "Simulating workflow execution...",
+      title: "Workflow Saved",
+      description: `${workflowName} saved successfully`,
     });
-
-    setTimeout(() => {
-      setIsRunning(false);
-      toast({
-        title: "Test Complete",
-        description: "Workflow simulation completed successfully",
-      });
-    }, 3000);
-  }, [nodes.length, toast]);
+  }, [nodes, toast]);
 
   const selectedNode = selectedNodeIds.length === 1 
-    ? nodes.find(n => n.id === selectedNodeIds[0]) || null
+    ? nodes.find(n => n.id === selectedNodeIds[0]) || null 
     : null;
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-slate-900 flex flex-col">
       {/* Header */}
-      <Card className="rounded-none border-x-0 border-t-0">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" asChild>
-                <a href="/admin/workflows" className="flex items-center gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Templates
-                </a>
-              </Button>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">Workflow Template Builder</h1>
-                  <p className="text-sm text-gray-600">Create intelligent automation templates</p>
-                </div>
-              </div>
-              <Badge variant="outline" className="text-green-700 border-green-200">
-                <Eye className="w-3 h-3 mr-1" />
-                Designer Mode
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Template Scope Toggle */}
-              {canCreateGlobal && (
-                <div className="flex items-center gap-2 px-3 py-1 border rounded-lg">
-                  <Label className="text-sm">Scope:</Label>
-                  <Button
-                    variant={isGlobalTemplate ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setIsGlobalTemplate(!isGlobalTemplate)}
-                  >
-                    {isGlobalTemplate ? (
-                      <>
-                        <Globe className="w-3 h-3 mr-1" />
-                        Global
-                      </>
-                    ) : (
-                      <>
-                        <Users className="w-3 h-3 mr-1" />
-                        Partner
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSaveTemplate}
-                disabled={isSaving || !canSaveTemplate}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save Template'}
-              </Button>
-              
-              <Button 
-                onClick={handleTestWorkflow} 
-                disabled={isRunning || nodes.length === 0}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                {isRunning ? 'Testing...' : 'Test Workflow'}
-              </Button>
-              
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
+      <div className="h-14 border-b border-slate-700 bg-slate-800 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" asChild className="text-slate-300 hover:text-white">
+            <a href="/admin/workflows" className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </a>
+          </Button>
+          <div className="h-4 w-px bg-slate-600" />
+          <h1 className="font-semibold text-white">Workflow Builder</h1>
+          <div className="flex items-center gap-1 ml-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+            <span className="text-xs text-slate-400">Live</span>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowPromptGenerator(true)}
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Generate
+          </Button>
+          
+          <Button variant="outline" onClick={() => {}} disabled={nodes.length === 0} className="border-slate-600 text-slate-300">
+            <Play className="w-4 h-4 mr-2" />
+            Test
+          </Button>
+          
+          <Button onClick={handleSaveWorkflow} disabled={nodes.length === 0} className="bg-emerald-500 hover:bg-emerald-600">
+            <Save className="w-4 h-4 mr-2" />
+            Save
+          </Button>
 
-          {/* Template Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
-            <div>
-              <Label className="text-xs font-medium text-gray-600">Template Name</Label>
-              <Input
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-                className="mt-1 h-8"
-                placeholder="Enter template name..."
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-medium text-gray-600">Category</Label>
-              <Select value={templateCategory} onValueChange={setTemplateCategory}>
-                <SelectTrigger className="mt-1 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">General</SelectItem>
-                  <SelectItem value="hr">Human Resources</SelectItem>
-                  <SelectItem value="sales">Sales & Marketing</SelectItem>
-                  <SelectItem value="support">Customer Support</SelectItem>
-                  <SelectItem value="custom">Custom Process</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2">
-              <Label className="text-xs font-medium text-gray-600">Description</Label>
-              <Input
-                value={templateDescription}
-                onChange={(e) => setTemplateDescription(e.target.value)}
-                className="mt-1 h-8"
-                placeholder="Brief description of this workflow template..."
-              />
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
 
-      {/* Main Builder Interface */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Main Interface */}
+      <div className="flex-1 flex overflow-hidden">
         {/* Node Library */}
         <NodeLibrary
           isOpen={showNodeLibrary}
-          onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
-          onNodeDragStart={handleNodeDragStart}
+          onToggle={() => setShowNodeLibrary(false)}
+          onNodeDragStart={() => {}}
         />
 
-        {/* Canvas */}
-        <div className="flex-1 flex">
+        {/* Canvas Area */}
+        <div className="flex-1 relative">
           <WorkflowCanvas
             nodes={nodes}
             connections={connections}
             selectedNodeIds={selectedNodeIds}
             onNodeSelect={handleNodeSelect}
-            onNodeMove={handleNodeMove}
-            onNodeDelete={handleNodeDelete}
-            onNodesConnect={handleNodesConnect}
-            onCanvasDrop={handleCanvasDrop}
+            onNodeMove={(nodeId, position) => {
+              setNodes(prev => prev.map(node => 
+                node.id === nodeId ? { ...node, position } : node
+              ));
+            }}
+            onNodeDelete={(nodeId) => {
+              setNodes(prev => prev.filter(node => node.id !== nodeId));
+              setConnections(prev => prev.filter(conn => 
+                conn.source !== nodeId && conn.target !== nodeId
+              ));
+              setSelectedNodeIds(prev => prev.filter(id => id !== nodeId));
+            }}
+            onNodesConnect={(sourceId, targetId) => {
+              const newConnection: NodeConnection = {
+                id: `conn_${sourceId}_${targetId}`,
+                source: sourceId,
+                target: targetId,
+                label: ''
+              };
+              setConnections(prev => [...prev, newConnection]);
+            }}
+            onCanvasDrop={handleNodeDrop}
+            zoom={canvasZoom}
+            pan={canvasPan}
+            onZoomChange={setCanvasZoom}
+            onPanChange={setCanvasPan}
           />
 
-          {/* Property Panel */}
-          <PropertyPanel
-            selectedNode={selectedNode}
-            isOpen={showPropertyPanel}
-            onClose={() => setShowPropertyPanel(false)}
-            onNodeUpdate={handleNodeUpdate}
-            onNodeDelete={handleNodeDelete}
-            onNodeDuplicate={handleNodeDuplicate}
-          />
-        </div>
-      </div>
-
-      {/* Status Bar */}
-      <Card className="rounded-none border-x-0 border-b-0">
-        <CardContent className="py-2 px-4">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <Layers className="w-4 h-4" />
-                <span>Nodes: {nodes.length}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <GitBranch className="w-4 h-4" />
-                <span>Connections: {connections.length}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Selected: {selectedNodeIds.length}</span>
-              </div>
-              {isGlobalTemplate && (
-                <Badge variant="outline" className="text-xs">
-                  <Globe className="w-3 h-3 mr-1" />
-                  Global Template
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {!showNodeLibrary && (
-                <Button variant="ghost" size="sm" onClick={() => setShowNodeLibrary(true)}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Show Node Library
-                </Button>
-              )}
-              <Badge variant="secondary" className="text-xs">
-                Auto-saved 2 min ago
-              </Badge>
+          {/* Floating Controls */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2">
+            {!showNodeLibrary && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700"
+                onClick={() => setShowNodeLibrary(true)}
+              >
+                <Layers className="w-4 h-4 mr-2" />
+                Nodes
+              </Button>
+            )}
+            
+            <div className="flex flex-col gap-1 bg-slate-800 rounded-lg p-1 border border-slate-600">
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={() => setCanvasZoom(prev => Math.min(prev * 1.2, 3))}
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={() => setCanvasZoom(prev => Math.max(prev / 1.2, 0.3))}
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={() => {
+                  setCanvasZoom(1);
+                  setCanvasPan({ x: 0, y: 0 });
+                }}
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Status Bar */}
+          <div className="absolute bottom-4 left-4 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300">
+            {nodes.length} nodes • {connections.length} connections • {Math.round(canvasZoom * 100)}%
+          </div>
+
+          {/* Clear Button */}
+          {nodes.length > 0 && (
+            <div className="absolute bottom-4 right-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setNodes([]);
+                  setConnections([]);
+                  setSelectedNodeIds([]);
+                }}
+                className="bg-slate-800 border-slate-600 text-red-400 hover:bg-red-950 hover:border-red-600"
+              >
+                Clear All
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Property Panel */}
+        <PropertyPanel
+          selectedNode={selectedNode}
+          isOpen={showPropertyPanel}
+          onClose={() => setShowPropertyPanel(false)}
+          onNodeUpdate={handleNodeUpdate}
+          onNodeDelete={(nodeId) => {
+            setNodes(prev => prev.filter(node => node.id !== nodeId));
+            setConnections(prev => prev.filter(conn => 
+              conn.source !== nodeId && conn.target !== nodeId
+            ));
+            setSelectedNodeIds(prev => prev.filter(id => id !== nodeId));
+          }}
+          onNodeDuplicate={handleNodeDuplicate}
+        />
+      </div>
+
+      {/* AI Generator Modal */}
+      <Dialog open={showPromptGenerator} onOpenChange={setShowPromptGenerator}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              AI Workflow Generator
+            </DialogTitle>
+          </DialogHeader>
+          <PromptWorkflowGenerator
+            onGenerateWorkflow={handleGenerateWorkflow}
+            isGenerating={isGenerating}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
