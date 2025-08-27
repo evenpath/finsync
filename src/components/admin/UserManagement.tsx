@@ -77,12 +77,23 @@ export default function UserManagement() {
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
-    // Super Admins can manage anyone except themselves
-    if (currentUser?.customClaims?.role === 'Super Admin' || currentUser?.email === 'core@suupe.com') {
-      return users;
-    }
+
+    const isPrimarySuperAdmin = currentUser.email === 'core@suupe.com';
+    const isSuperAdmin = currentUser.customClaims?.role === 'Super Admin' || isPrimarySuperAdmin;
+    
     // Admins can manage no one.
-    return [];
+    if (!isSuperAdmin) {
+        return [];
+    }
+
+    // The primary super admin can see everyone.
+    if (isPrimarySuperAdmin) {
+        return users;
+    }
+    
+    // Other super admins can see everyone except the primary super admin.
+    return users.filter(user => user.email !== 'core@suupe.com');
+
   }, [currentUser, users]);
 
   useEffect(() => {
