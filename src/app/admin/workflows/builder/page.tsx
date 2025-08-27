@@ -1,8 +1,9 @@
 // src/app/admin/workflows/builder/page.tsx
+// Updated to use @dnd-kit instead of HTML5 drag and drop
 
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,21 @@ import {
   Settings
 } from 'lucide-react';
 import { useMultiWorkspaceAuth } from '@/hooks/use-multi-workspace-auth';
+import { 
+  DndContext, 
+  DragOverlay, 
+  useSensors, 
+  useSensor, 
+  PointerSensor, 
+  KeyboardSensor,
+  DragStartEvent,
+  DragEndEvent,
+  closestCenter
+} from '@dnd-kit/core';
+import { 
+  sortableKeyboardCoordinates,
+  restrictToWindowEdges
+} from '@dnd-kit/sortable';
 import WorkflowCanvas from '@/components/workflow/builder/WorkflowCanvas';
 import NodeLibrary from '@/components/workflow/builder/NodeLibrary';
 import PropertyPanel from '@/components/workflow/builder/PropertyPanel';
@@ -28,6 +44,7 @@ import type {
 export default function WorkflowBuilderPage() {
   const { user, currentWorkspace } = useMultiWorkspaceAuth();
   const { toast } = useToast();
+  const canvasRef = useRef<HTMLDivElement>(null);
   
   // Core workflow state
   const [nodes, setNodes] = useState<WorkflowBuilderNode[]>([]);
@@ -39,6 +56,21 @@ export default function WorkflowBuilderPage() {
   const [showPropertyPanel, setShowPropertyPanel] = useState(false);
   const [showPromptGenerator, setShowPromptGenerator] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Drag and drop state
+  const [activeDragItem, setActiveDragItem] = useState<NodeTypeDefinition | null>(null);
+
+  // Configure sensors for better drag experience
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before starting drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const generateId = useCallback(() => 
     `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, []
@@ -56,8 +88,8 @@ export default function WorkflowBuilderPage() {
       const positionedNodes = generatedNodes.map((node, index) => ({
         ...node,
         position: {
-          x: 50 + (index * 350), // Left-to-right layout with more space
-          y: 100 + (Math.sin(index * 0.5) * 80) // Slight vertical variation
+          x: 50 + (index * 350),
+          y: 100 + (Math.sin(index * 0.5) * 80)
         }
       }));
       
@@ -81,38 +113,87 @@ export default function WorkflowBuilderPage() {
     }
   }, [toast]);
 
+  // Handle drag start
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const dragData = event.active.data.current;
+    if (dragData?.type === 'workflow-node') {
+      setActiveDragItem(dragData.nodeType);
+    }
+  }, []);
+
+  // Handle drag end with proper coordinate transformation
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over, delta } = event;
+    
+    setActiveDragItem(null);
+    
+    if (!over || over.id !== 'workflow-canvas') {
+      return;
+    }
+
+    const dragData = active.data.current;
+    if (dragData?.type !== 'workflow-node') {
+      return;
+    }
+
+    const nodeType = dragData.nodeType as NodeTypeDefinition;
+    const canvasElement = canvasRef.current;
+    
+    if (!canvasElement) {
+      console.error('Canvas ref not found');
+      return;
+    }
+
+    // Get canvas bounds
+    const canvasRect = canvasElement.getBoundingClientRect();
+    
+    // Calculate position relative to canvas
+    const position = {
+      x: event.activatorEvent.clientX - canvasRect.left - 130, // Offset to center node
+      y: event.activatorEvent.clientY - canvasRect.top - 50
+    };
+
+    // Ensure position is within reasonable bounds
+    const clampedPosition = {
+      x: Math.max(50, Math.min(position.x, canvasRect.width - 300)),
+      y: Math.max(50, Math.min(position.y, canvasRect.height - 150))
+    };
+
+    handleNodeDrop(nodeType.id, clampedPosition);
+  }, []);
+
   const handleNodeDrop = useCallback((nodeTypeId: string, position: { x: number; y: number }) => {
     const nodeTypes: NodeTypeDefinition[] = [
       // Triggers
-      { id: 'manual-trigger', name: 'Manual Start', description: 'Start workflow manually', icon: '▶️', color: 'bg-emerald-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
-      { id: 'form-submission', name: 'Form Trigger', description: 'Form submission trigger', icon: '📝', color: 'bg-blue-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
-      { id: 'webhook', name: 'Webhook', description: 'HTTP webhook endpoint', icon: '🌐', color: 'bg-indigo-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
-      { id: 'scheduled-trigger', name: 'Schedule', description: 'Time-based automation', icon: '⏰', color: 'bg-purple-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'manual-trigger', name: 'Manual Start', description: 'Start workflow manually', icon: 'Play', color: 'bg-emerald-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'form-submission', name: 'Form Trigger', description: 'Form submission trigger', icon: 'FileText', color: 'bg-blue-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'webhook', name: 'Webhook', description: 'HTTP webhook endpoint', icon: 'Webhook', color: 'bg-indigo-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
+      { id: 'scheduled-trigger', name: 'Schedule', description: 'Time-based automation', icon: 'Clock', color: 'bg-purple-500', category: 'trigger', configSchema: {}, defaultConfig: {} },
       
       // AI Processing
-      { id: 'ai-analyzer', name: 'AI Agent', description: 'AI processing agent', icon: '🤖', color: 'bg-purple-500', category: 'ai_processing', configSchema: {}, defaultConfig: { model: 'gpt-4', provider: 'OpenAI' } },
-      { id: 'text-classifier', name: 'Text Classifier', description: 'Categorize and tag content', icon: '🏷️', color: 'bg-indigo-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
-      { id: 'sentiment-analyzer', name: 'Sentiment Analysis', description: 'Analyze emotional tone', icon: '😊', color: 'bg-pink-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
-      { id: 'content-generator', name: 'Content Generator', description: 'Generate text content', icon: '✍️', color: 'bg-violet-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
+      { id: 'ai-analyzer', name: 'AI Agent', description: 'AI processing agent', icon: 'Bot', color: 'bg-purple-500', category: 'ai_processing', configSchema: {}, defaultConfig: { model: 'gpt-4', provider: 'OpenAI' } },
+      { id: 'text-classifier', name: 'Text Classifier', description: 'Categorize and tag content', icon: 'Target', color: 'bg-indigo-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
+      { id: 'sentiment-analyzer', name: 'Sentiment Analysis', description: 'Analyze emotional tone', icon: 'MessageSquare', color: 'bg-pink-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
+      { id: 'content-generator', name: 'Content Generator', description: 'Generate text content', icon: 'FileText', color: 'bg-violet-500', category: 'ai_processing', configSchema: {}, defaultConfig: {} },
       
       // Human Actions
-      { id: 'human-task', name: 'Human Task', description: 'Manual task assignment', icon: '👤', color: 'bg-orange-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
-      { id: 'approval-gate', name: 'Approval Gate', description: 'Approval checkpoint', icon: '✅', color: 'bg-yellow-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
-      { id: 'review-task', name: 'Review Task', description: 'Content review and validation', icon: '👁️', color: 'bg-amber-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      { id: 'human-task', name: 'Human Task', description: 'Manual task assignment', icon: 'Users', color: 'bg-orange-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      { id: 'approval-gate', name: 'Approval Gate', description: 'Approval checkpoint', icon: 'CheckCircle', color: 'bg-yellow-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
+      { id: 'review-task', name: 'Review Task', description: 'Content review and validation', icon: 'Search', color: 'bg-amber-500', category: 'human_action', configSchema: {}, defaultConfig: {} },
       
       // Communication
-      { id: 'notification', name: 'Notification', description: 'Send notification', icon: '🔔', color: 'bg-pink-500', category: 'communication', configSchema: {}, defaultConfig: {} },
-      { id: 'email-send', name: 'Email', description: 'Send email message', icon: '📧', color: 'bg-red-500', category: 'communication', configSchema: {}, defaultConfig: {} },
-      { id: 'slack-message', name: 'Slack Message', description: 'Post to Slack channel', icon: '💬', color: 'bg-green-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      { id: 'notification', name: 'Notification', description: 'Send notification', icon: 'MessageSquare', color: 'bg-pink-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      { id: 'email-send', name: 'Email', description: 'Send email message', icon: 'Mail', color: 'bg-red-500', category: 'communication', configSchema: {}, defaultConfig: {} },
+      { id: 'slack-message', name: 'Slack Message', description: 'Post to Slack channel', icon: 'MessageSquare', color: 'bg-green-500', category: 'communication', configSchema: {}, defaultConfig: {} },
       
       // Data Integration
-      { id: 'api-call', name: 'API Integration', description: 'External API call', icon: '🌐', color: 'bg-cyan-500', category: 'data_integration', configSchema: {}, defaultConfig: {} },
-      { id: 'database-query', name: 'Database', description: 'Query database records', icon: '🗄️', color: 'bg-gray-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
-      { id: 'file-processor', name: 'File Processor', description: 'Process uploaded files', icon: '📄', color: 'bg-blue-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      { id: 'api-call', name: 'API Integration', description: 'External API call', icon: 'Globe', color: 'bg-cyan-500', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      { id: 'database-query', name: 'Database', description: 'Query database records', icon: 'Database', color: 'bg-gray-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
+      { id: 'file-processor', name: 'File Processor', description: 'Process uploaded files', icon: 'FileText', color: 'bg-blue-600', category: 'data_integration', configSchema: {}, defaultConfig: {} },
       
       // Logic & Control
-      { id: 'condition-check', name: 'Condition', description: 'Conditional logic', icon: '🔀', color: 'bg-teal-500', category: 'condition', configSchema: {}, defaultConfig: {} },
-      { id: 'delay', name: 'Delay', description: 'Wait before continuing', icon: '⏱️', color: 'bg-gray-500', category: 'condition', configSchema: {}, defaultConfig: {} },
+      { id: 'condition-check', name: 'Condition', description: 'Conditional logic', icon: 'Target', color: 'bg-teal-500', category: 'condition', configSchema: {}, defaultConfig: {} },
+      { id: 'delay', name: 'Delay', description: 'Wait before continuing', icon: 'Clock', color: 'bg-gray-500', category: 'condition', configSchema: {}, defaultConfig: {} },
     ];
     
     const nodeTypeDef = nodeTypes.find(nt => nt.id === nodeTypeId);
@@ -193,7 +274,6 @@ export default function WorkflowBuilderPage() {
   }, [toast]);
 
   const handleNodesConnect = useCallback((sourceId: string, targetId: string) => {
-    // Check if connection already exists
     const existingConnection = connections.find(
       conn => conn.source === sourceId && conn.target === targetId
     );
@@ -245,141 +325,169 @@ export default function WorkflowBuilderPage() {
     : null;
 
   return (
-    <div className="h-screen bg-slate-900 flex flex-col">
-      {/* Header */}
-      <div className="h-14 border-b border-slate-700 bg-slate-800 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild className="text-slate-300 hover:text-white">
-            <a href="/admin/workflows" className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </a>
-          </Button>
-          <div className="h-4 w-px bg-slate-600" />
-          <h1 className="font-semibold text-white">Workflow Builder</h1>
-          <div className="flex items-center gap-1 ml-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            <span className="text-xs text-slate-400">Live</span>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="h-screen bg-slate-900 flex flex-col">
+        {/* Header */}
+        <div className="h-14 border-b border-slate-700 bg-slate-800 flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" asChild className="text-slate-300 hover:text-white">
+              <a href="/admin/workflows" className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </a>
+            </Button>
+            <div className="h-4 w-px bg-slate-600" />
+            <h1 className="font-semibold text-white">Workflow Builder</h1>
+            <div className="flex items-center gap-1 ml-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <span className="text-xs text-slate-400">Live</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowPromptGenerator(true)}
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Generate
+            </Button>
+            
+            <Button variant="outline" disabled={nodes.length === 0} className="border-slate-600 text-slate-300">
+              <Play className="w-4 h-4 mr-2" />
+              Test
+            </Button>
+            
+            <Button onClick={handleSaveWorkflow} disabled={nodes.length === 0} className="bg-emerald-500 hover:bg-emerald-600">
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+
+            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+              <Settings className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setShowPromptGenerator(true)}
-            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            AI Generate
-          </Button>
-          
-          <Button variant="outline" disabled={nodes.length === 0} className="border-slate-600 text-slate-300">
-            <Play className="w-4 h-4 mr-2" />
-            Test
-          </Button>
-          
-          <Button onClick={handleSaveWorkflow} disabled={nodes.length === 0} className="bg-emerald-500 hover:bg-emerald-600">
-            <Save className="w-4 h-4 mr-2" />
-            Save
-          </Button>
 
-          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-            <Settings className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+        {/* Main Interface */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Node Library */}
+          <NodeLibrary
+            isOpen={showNodeLibrary}
+            onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
+            onNodeDragStart={() => {}} // @dnd-kit handles this
+          />
 
-      {/* Main Interface */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Node Library */}
-        <NodeLibrary
-          isOpen={showNodeLibrary}
-          onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
-          onNodeDragStart={() => {}}
-        />
+          {/* Canvas Area */}
+          <div className="flex-1 relative" ref={canvasRef}>
+            <WorkflowCanvas
+              nodes={nodes}
+              connections={connections}
+              selectedNodeIds={selectedNodeIds}
+              onNodeSelect={handleNodeSelect}
+              onNodeMove={handleNodeMove}
+              onNodeDelete={handleNodeDelete}
+              onNodesConnect={handleNodesConnect}
+              onCanvasDrop={handleNodeDrop}
+              zoom={1}
+              pan={{ x: 0, y: 0 }}
+              onZoomChange={() => {}}
+              onPanChange={() => {}}
+            />
 
-        {/* Canvas Area */}
-        <div className="flex-1 relative">
-          <WorkflowCanvas
-            nodes={nodes}
-            connections={connections}
-            selectedNodeIds={selectedNodeIds}
-            onNodeSelect={handleNodeSelect}
-            onNodeMove={handleNodeMove}
+            {/* Floating Controls */}
+            {!showNodeLibrary && (
+              <div className="absolute top-4 right-4">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700"
+                  onClick={() => setShowNodeLibrary(true)}
+                >
+                  <Layers className="w-4 h-4 mr-2" />
+                  Nodes
+                </Button>
+              </div>
+            )}
+
+            {/* Status Bar */}
+            <div className="absolute bottom-4 left-4 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300">
+              {nodes.length} nodes • {connections.length} connections
+            </div>
+
+            {/* Clear Button */}
+            {nodes.length > 0 && (
+              <div className="absolute bottom-4 right-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setNodes([]);
+                    setConnections([]);
+                    setSelectedNodeIds([]);
+                    setShowPropertyPanel(false);
+                  }}
+                  className="bg-slate-800 border-slate-600 text-red-400 hover:bg-red-950 hover:border-red-600"
+                >
+                  Clear All
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Property Panel */}
+          <PropertyPanel
+            selectedNode={selectedNode}
+            isOpen={showPropertyPanel}
+            onClose={() => setShowPropertyPanel(false)}
+            onNodeUpdate={handleNodeUpdate}
             onNodeDelete={handleNodeDelete}
-            onNodesConnect={handleNodesConnect}
-            onCanvasDrop={handleNodeDrop}
-            zoom={1}
-            pan={{ x: 0, y: 0 }}
-            onZoomChange={() => {}}
-            onPanChange={() => {}}
+            onNodeDuplicate={handleNodeDuplicate}
           />
-
-          {/* Floating Controls */}
-          {!showNodeLibrary && (
-            <div className="absolute top-4 right-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700"
-                onClick={() => setShowNodeLibrary(true)}
-              >
-                <Layers className="w-4 h-4 mr-2" />
-                Nodes
-              </Button>
-            </div>
-          )}
-
-          {/* Status Bar */}
-          <div className="absolute bottom-4 left-4 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300">
-            {nodes.length} nodes • {connections.length} connections
-          </div>
-
-          {/* Clear Button */}
-          {nodes.length > 0 && (
-            <div className="absolute bottom-4 right-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setNodes([]);
-                  setConnections([]);
-                  setSelectedNodeIds([]);
-                  setShowPropertyPanel(false);
-                }}
-                className="bg-slate-800 border-slate-600 text-red-400 hover:bg-red-950 hover:border-red-600"
-              >
-                Clear All
-              </Button>
-            </div>
-          )}
         </div>
 
-        {/* Property Panel */}
-        <PropertyPanel
-          selectedNode={selectedNode}
-          isOpen={showPropertyPanel}
-          onClose={() => setShowPropertyPanel(false)}
-          onNodeUpdate={handleNodeUpdate}
-          onNodeDelete={handleNodeDelete}
-          onNodeDuplicate={handleNodeDuplicate}
-        />
+        {/* AI Generator Modal */}
+        <Dialog open={showPromptGenerator} onOpenChange={setShowPromptGenerator}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                AI Workflow Generator
+              </DialogTitle>
+            </DialogHeader>
+            <PromptWorkflowGenerator
+              onGenerateWorkflow={handleGenerateWorkflow}
+              isGenerating={isGenerating}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* AI Generator Modal */}
-      <Dialog open={showPromptGenerator} onOpenChange={setShowPromptGenerator}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-              AI Workflow Generator
-            </DialogTitle>
-          </DialogHeader>
-          <PromptWorkflowGenerator
-            onGenerateWorkflow={handleGenerateWorkflow}
-            isGenerating={isGenerating}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {activeDragItem && (
+          <div className="p-2.5 rounded-lg border border-emerald-400 bg-slate-700 shadow-lg">
+            <div className="flex items-start gap-2.5">
+              <div className={`w-8 h-8 ${activeDragItem.color} rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-md`}>
+                <activeDragItem.icon className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-medium text-emerald-300">
+                  {activeDragItem.name}
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-tight">
+                  {activeDragItem.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }

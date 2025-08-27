@@ -10,6 +10,8 @@ import { Search, X, ChevronDown, ChevronRight,
          Database, FileText, CheckCircle, Clock, 
          Filter, Phone, MessageSquare, Calendar,
          Webhook, Play } from 'lucide-react';
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import type { NodeTypeDefinition } from '@/lib/types/workflow-builder';
 
 interface NodeLibraryProps {
@@ -21,22 +23,21 @@ interface NodeLibraryProps {
 
 export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadOnly = false }: NodeLibraryProps) {
   const [searchFilter, setSearchFilter] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['trigger', 'ai_processing', 'human_action', 'communication'])
-  );
+  // All categories closed by default
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Node categories with Lucide icons instead of emojis
+  // Node categories with Lucide icons and improved typography
   const nodeCategories = {
     trigger: {
       name: 'Triggers',
       icon: Play,
-      description: 'Start your workflow',
+      description: 'Start workflows',
       color: 'text-emerald-400',
       nodes: [
         {
           id: 'manual-trigger',
           name: 'Manual Start',
-          description: 'Manually trigger workflow execution',
+          description: 'Manually trigger execution',
           icon: Play,
           color: 'bg-emerald-500',
           category: 'trigger' as const,
@@ -46,7 +47,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'form-submission',
           name: 'Form Trigger',
-          description: 'Trigger on form submission',
+          description: 'Form submission trigger',
           icon: FileText,
           color: 'bg-blue-500',
           category: 'trigger' as const,
@@ -78,13 +79,13 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
     ai_processing: {
       name: 'AI Agents',
       icon: Bot,
-      description: 'AI-powered processing',
+      description: 'AI processing',
       color: 'text-purple-400',
       nodes: [
         {
           id: 'ai-analyzer',
           name: 'AI Agent',
-          description: 'Custom AI processing agent',
+          description: 'Custom AI processing',
           icon: Bot,
           color: 'bg-purple-500',
           category: 'ai_processing' as const,
@@ -94,7 +95,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'text-classifier',
           name: 'Text Classifier',
-          description: 'Categorize and tag content',
+          description: 'Categorize content',
           icon: Target,
           color: 'bg-indigo-500',
           category: 'ai_processing' as const,
@@ -126,13 +127,13 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
     human_action: {
       name: 'Human Tasks',
       icon: Users,
-      description: 'Human involvement required',
+      description: 'Human involvement',
       color: 'text-orange-400',
       nodes: [
         {
           id: 'human-task',
           name: 'Human Task',
-          description: 'Assign task to team member',
+          description: 'Assign to team member',
           icon: Users,
           color: 'bg-orange-500',
           category: 'human_action' as const,
@@ -142,7 +143,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'approval-gate',
           name: 'Approval Gate',
-          description: 'Require manual approval',
+          description: 'Require approval',
           icon: CheckCircle,
           color: 'bg-yellow-500',
           category: 'human_action' as const,
@@ -152,7 +153,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'review-task',
           name: 'Review Task',
-          description: 'Content review and validation',
+          description: 'Content review',
           icon: Search,
           color: 'bg-amber-500',
           category: 'human_action' as const,
@@ -164,13 +165,13 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
     communication: {
       name: 'Communication',
       icon: MessageSquare,
-      description: 'Notifications and messages',
+      description: 'Messages & alerts',
       color: 'text-blue-400',
       nodes: [
         {
           id: 'notification',
           name: 'Notification',
-          description: 'Send in-app notification',
+          description: 'Send notification',
           icon: MessageSquare,
           color: 'bg-blue-500',
           category: 'communication' as const,
@@ -190,7 +191,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'slack-message',
           name: 'Slack Message',
-          description: 'Post to Slack channel',
+          description: 'Post to Slack',
           icon: MessageSquare,
           color: 'bg-green-500',
           category: 'communication' as const,
@@ -200,15 +201,15 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
       ]
     },
     data_integration: {
-      name: 'Data & Integration',
+      name: 'Data & APIs',
       icon: Database,
       description: 'External systems',
       color: 'text-cyan-400',
       nodes: [
         {
           id: 'api-call',
-          name: 'API Integration',
-          description: 'Call external REST API',
+          name: 'API Call',
+          description: 'Call external API',
           icon: Globe,
           color: 'bg-cyan-500',
           category: 'data_integration' as const,
@@ -218,7 +219,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'database-query',
           name: 'Database',
-          description: 'Query database records',
+          description: 'Query database',
           icon: Database,
           color: 'bg-gray-600',
           category: 'data_integration' as const,
@@ -228,7 +229,7 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         {
           id: 'file-processor',
           name: 'File Processor',
-          description: 'Process uploaded files',
+          description: 'Process files',
           icon: FileText,
           color: 'bg-blue-600',
           category: 'data_integration' as const,
@@ -238,15 +239,15 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
       ]
     },
     condition: {
-      name: 'Logic & Control',
+      name: 'Logic & Flow',
       icon: Zap,
-      description: 'Flow control',
+      description: 'Control flow',
       color: 'text-teal-400',
       nodes: [
         {
           id: 'condition-check',
           name: 'Condition',
-          description: 'If/then logic branching',
+          description: 'If/then logic',
           icon: Target,
           color: 'bg-teal-500',
           category: 'condition' as const,
@@ -287,68 +288,64 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
     setExpandedCategories(newExpanded);
   };
 
-  const handleDragStart = (node: NodeTypeDefinition, e: React.DragEvent) => {
-    if (isReadOnly) return;
-    // Fixed drag data format to match what WorkflowCanvas expects
-    e.dataTransfer.setData('application/workflow-node', node.id);
-    e.dataTransfer.setData('text/plain', JSON.stringify(node));
-    e.dataTransfer.effectAllowed = 'copy';
-    onNodeDragStart(node);
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="w-80 h-full border-r border-slate-700 bg-slate-800 flex flex-col">
-      {/* Header - Reduced padding and font sizes */}
-      <div className="flex-shrink-0 p-3 border-b border-slate-700">
+    <div className="w-72 h-full border-r border-slate-700 bg-slate-800 flex flex-col">
+      {/* Header - Improved spacing and typography */}
+      <div className="flex-shrink-0 p-4 border-b border-slate-700">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-slate-200">Node Library</h3>
-          <Button variant="ghost" size="sm" onClick={onToggle} className="text-slate-400 hover:text-slate-200 h-6 w-6 p-0">
-            <X className="w-3 h-3" />
+          <div>
+            <h3 className="text-base font-semibold text-slate-100">Node Library</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Drag to add nodes</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onToggle} className="text-slate-400 hover:text-slate-200 h-7 w-7 p-0">
+            <X className="w-4 h-4" />
           </Button>
         </div>
         
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 w-3 h-3" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           <Input
             placeholder="Search nodes..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="pl-8 h-8 bg-slate-700 border-slate-600 text-slate-200 placeholder:text-slate-400 text-xs"
+            className="pl-9 h-9 bg-slate-700 border-slate-600 text-slate-200 placeholder:text-slate-400 text-sm"
           />
         </div>
       </div>
 
-      {/* Node List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Node List - No scroll, fixed height */}
+      <div className="flex-1 p-3">
         {filteredNodes ? (
           // Search Results
-          <div className="p-2">
-            <div className="text-xs font-medium text-slate-400 mb-2 px-2">
-              {filteredNodes.length} results
+          <div>
+            <div className="text-xs font-medium text-slate-400 mb-3 px-1">
+              {filteredNodes.length} result{filteredNodes.length !== 1 ? 's' : ''}
             </div>
-            {filteredNodes.map(node => (
-              <NodeItem key={node.id} node={node} onDragStart={handleDragStart} isReadOnly={isReadOnly} />
-            ))}
+            <div className="space-y-2">
+              {filteredNodes.map(node => (
+                <DraggableNodeItem key={node.id} node={node} onDragStart={onNodeDragStart} isReadOnly={isReadOnly} />
+              ))}
+            </div>
           </div>
         ) : (
           // Categories
-          <div className="p-2 space-y-1">
+          <div className="space-y-1">
             {Object.entries(nodeCategories).map(([categoryId, category]) => (
               <div key={categoryId}>
-                {/* Category Header - Reduced sizes */}
+                {/* Category Header - Improved typography */}
                 <button
                   onClick={() => toggleCategory(categoryId)}
-                  className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-slate-700 transition-colors group"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-700 transition-colors group"
                 >
                   {expandedCategories.has(categoryId) ? (
-                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
                   ) : (
-                    <ChevronRight className="w-3 h-3 text-slate-400" />
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                   )}
-                  <category.icon className={`w-4 h-4 ${category.color}`} />
+                  <category.icon className={`w-5 h-5 ${category.color}`} />
                   <div className="flex-1 text-left">
                     <div className={`text-sm font-medium ${category.color}`}>
                       {category.name}
@@ -357,16 +354,16 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
                       {category.description}
                     </div>
                   </div>
-                  <div className="text-xs text-slate-500 bg-slate-700 px-1.5 py-0.5 rounded text-[10px]">
+                  <div className="text-xs text-slate-500 bg-slate-700 px-2 py-1 rounded-md">
                     {category.nodes.length}
                   </div>
                 </button>
 
                 {/* Category Nodes */}
                 {expandedCategories.has(categoryId) && (
-                  <div className="ml-5 mt-1 space-y-1">
+                  <div className="ml-8 mt-2 space-y-1">
                     {category.nodes.map(node => (
-                      <NodeItem key={node.id} node={node} onDragStart={handleDragStart} isReadOnly={isReadOnly} />
+                      <DraggableNodeItem key={node.id} node={node} onDragStart={onNodeDragStart} isReadOnly={isReadOnly} />
                     ))}
                   </div>
                 )}
@@ -376,16 +373,16 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
         )}
       </div>
 
-      {/* Footer */}
-      <div className="flex-shrink-0 p-2 border-t border-slate-700 bg-slate-900">
+      {/* Footer - Improved typography */}
+      <div className="flex-shrink-0 p-3 border-t border-slate-700 bg-slate-900">
         <div className="text-xs text-slate-500 text-center">
           {isReadOnly ? (
-            <span>View-only mode</span>
+            <span>Read-only mode</span>
           ) : (
-            <>
-              <span className="text-emerald-400">Drag</span> nodes to canvas or use{' '}
-              <span className="text-purple-400">AI Generator</span>
-            </>
+            <span>
+              <span className="text-emerald-400 font-medium">Drag</span> nodes to canvas or use{' '}
+              <span className="text-purple-400 font-medium">AI Generator</span>
+            </span>
           )}
         </div>
       </div>
@@ -393,47 +390,77 @@ export default function NodeLibrary({ isOpen, onToggle, onNodeDragStart, isReadO
   );
 }
 
-// Individual Node Item Component - Reduced sizes and improved layout
-interface NodeItemProps {
+// Draggable Node Item Component - Improved typography
+interface DraggableNodeItemProps {
   node: NodeTypeDefinition;
-  onDragStart: (node: NodeTypeDefinition, e: React.DragEvent) => void;
+  onDragStart: (node: NodeTypeDefinition) => void;
   isReadOnly: boolean;
 }
 
-function NodeItem({ node, onDragStart, isReadOnly }: NodeItemProps) {
+function DraggableNodeItem({ node, onDragStart, isReadOnly }: DraggableNodeItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: `node-${node.id}`,
+    data: {
+      nodeType: node,
+      type: 'workflow-node'
+    },
+    disabled: isReadOnly
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   const IconComponent = node.icon;
   
   return (
     <div
-      className={`group relative p-2.5 rounded-lg border border-transparent transition-all ${
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`group relative p-3 rounded-lg border border-transparent transition-all ${
         isReadOnly 
           ? 'opacity-60 cursor-not-allowed' 
+          : isDragging
+          ? 'border-emerald-400 bg-slate-700 cursor-grabbing shadow-lg'
           : 'hover:border-slate-600 hover:bg-slate-700 cursor-grab active:cursor-grabbing'
       }`}
-      draggable={!isReadOnly}
-      onDragStart={(e) => onDragStart(node, e)}
       title={isReadOnly ? 'Read-only mode' : `Drag to add: ${node.description}`}
+      onMouseDown={() => !isReadOnly && onDragStart(node)}
     >
-      <div className="flex items-start gap-2.5">
-        <div className={`w-8 h-8 ${node.color} rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-md`}>
+      <div className="flex items-start gap-3">
+        <div className={`w-9 h-9 ${node.color} rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-md ${isDragging ? 'shadow-lg shadow-emerald-400/30' : ''}`}>
           <IconComponent className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-xs font-medium text-slate-200 group-hover:text-white transition-colors">
+          <h4 className={`text-sm font-medium transition-colors ${
+            isDragging ? 'text-emerald-300' : 'text-slate-200 group-hover:text-white'
+          }`}>
             {node.name}
           </h4>
-          <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-tight">
+          <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
             {node.description}
           </p>
         </div>
       </div>
 
-      {/* Drag indicator - smaller */}
+      {/* Drag indicator */}
       {!isReadOnly && (
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-50 transition-opacity">
-          <div className="w-4 h-3 flex flex-col justify-center gap-0.5">
-            <div className="w-full h-0.5 bg-slate-500 rounded"></div>
-            <div className="w-full h-0.5 bg-slate-500 rounded"></div>
+        <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-opacity ${
+          isDragging ? 'opacity-75' : 'opacity-0 group-hover:opacity-50'
+        }`}>
+          <div className="w-4 h-4 flex flex-col justify-center gap-0.5">
+            <div className="w-full h-0.5 bg-slate-500 rounded-full"></div>
+            <div className="w-full h-0.5 bg-slate-500 rounded-full"></div>
+            <div className="w-full h-0.5 bg-slate-500 rounded-full"></div>
           </div>
         </div>
       )}

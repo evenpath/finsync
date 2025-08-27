@@ -19,7 +19,9 @@ import ReactFlow, {
   NodeTypes,
   MarkerType,
   Position,
-  Handle
+  Handle,
+  useReactFlow,
+  ReactFlowInstance
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from '@/components/ui/card';
@@ -28,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Settings, Trash2, Copy, Bot, Users, Mail, Globe, Target, 
          Database, FileText, CheckCircle, Clock, Filter, Phone, 
          MessageSquare, Calendar, Webhook, Play, Zap, Search } from 'lucide-react';
+import { useDroppable } from '@dnd-kit/core';
 import type { WorkflowBuilderNode, NodeConnection } from '@/lib/types/workflow-builder';
 
 interface WorkflowCanvasProps {
@@ -72,7 +75,7 @@ const getIconForNode = (node: WorkflowBuilderNode) => {
   return iconMap[node.subType as keyof typeof iconMap] || Zap;
 };
 
-// Custom Node Component with improved typography
+// Custom Node Component
 function WorkflowNodeComponent({ data, selected }: { data: any; selected: boolean }) {
   const node: WorkflowBuilderNode = data.nodeData;
   const IconComponent = getIconForNode(node);
@@ -82,7 +85,7 @@ function WorkflowNodeComponent({ data, selected }: { data: any; selected: boolea
       <Card className={`w-64 border-2 transition-all ${
         selected ? 'border-emerald-400 shadow-2xl' : 'border-slate-600 hover:border-slate-500'
       } bg-slate-800 overflow-hidden`}>
-        {/* Node Header - Reduced height and improved typography */}
+        {/* Node Header */}
         <div className={`h-10 ${node.color} flex items-center px-3 gap-2`}>
           <div className="w-6 h-6 bg-white bg-opacity-20 rounded-md flex items-center justify-center text-white">
             <IconComponent className="w-3.5 h-3.5" />
@@ -99,7 +102,7 @@ function WorkflowNodeComponent({ data, selected }: { data: any; selected: boolea
           </Button>
         </div>
 
-        {/* Node Content - Reduced padding and font sizes */}
+        {/* Node Content */}
         <div className="p-3 text-slate-300">
           <p className="text-xs text-slate-400 mb-2 line-clamp-2">{node.description}</p>
           {node.config?.model && (
@@ -137,7 +140,40 @@ const nodeTypes: NodeTypes = {
   workflowNode: WorkflowNodeComponent,
 };
 
-export default function WorkflowCanvas({
+// Droppable Canvas Component
+function DroppableCanvas({ 
+  children, 
+  onDrop 
+}: { 
+  children: React.ReactNode;
+  onDrop: (nodeType: string, position: { x: number; y: number }) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'workflow-canvas',
+    data: {
+      accepts: ['workflow-node']
+    }
+  });
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      className={`w-full h-full relative ${isOver ? 'bg-emerald-950/20' : ''}`}
+    >
+      {children}
+      {isOver && (
+        <div className="absolute inset-0 border-2 border-dashed border-emerald-400 bg-emerald-400/5 pointer-events-none flex items-center justify-center z-50">
+          <div className="bg-emerald-500 text-white px-4 py-2 rounded-lg shadow-lg">
+            <span className="text-sm font-medium">Drop node here</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Main Canvas Component
+function CanvasContent({
   nodes: workflowNodes,
   connections: workflowConnections,
   selectedNodeIds,
@@ -146,8 +182,8 @@ export default function WorkflowCanvas({
   onNodeDelete,
   onNodesConnect,
   onCanvasDrop
-}: WorkflowCanvasProps) {
-  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
+}: Omit<WorkflowCanvasProps, 'zoom' | 'pan' | 'onZoomChange' | 'onPanChange'>) {
+  const reactFlowInstance = useReactFlow();
 
   // Convert our workflow nodes to React Flow format
   const reactFlowNodes: Node[] = useMemo(() => 
@@ -233,114 +269,97 @@ export default function WorkflowCanvas({
     [onNodesChange, onNodeMove]
   );
 
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={handleNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onNodeClick={onNodeClick}
+      onSelectionChange={onSelectionChange}
+      nodeTypes={nodeTypes}
+      className="bg-slate-900"
+      fitView
+      attributionPosition="bottom-left"
+      proOptions={{ hideAttribution: true }}
+      defaultEdgeOptions={{
+        type: 'smoothstep',
+        animated: false,
+        style: { strokeWidth: 2, stroke: '#64748b' },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+      }}
+      isValidConnection={(connection) => {
+        // Prevent self-connections
+        if (connection.source === connection.target) {
+          return false;
+        }
+        
+        // Check for existing connection
+        const existingConnection = workflowConnections.some(
+          conn => conn.source === connection.source && conn.target === connection.target
+        );
+        
+        return !existingConnection;
+      }}
+    >
+      {/* Background pattern */}
+      <Background 
+        variant="dots" 
+        gap={24} 
+        size={1} 
+        color="#475569" 
+        className="opacity-40"
+      />
+      
+      {/* Controls */}
+      <Controls 
+        className="bg-slate-800 border-slate-600 text-slate-300" 
+        showInteractive={false}
+      />
+      
+      {/* Mini map */}
+      <MiniMap
+        className="bg-slate-800 border-slate-600"
+        nodeColor={(node) => {
+          const workflowNode = workflowNodes.find(n => n.id === node.id);
+          return workflowNode?.color.replace('bg-', '#').replace('500', '400') || '#64748b';
+        }}
+        maskColor="rgb(15, 23, 42, 0.8)"
+        position="top-left"
+      />
 
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-
-      const nodeType = event.dataTransfer.getData('application/workflow-node');
-      if (!nodeType || !reactFlowInstance) return;
-
-      // Get the correct position relative to the React Flow viewport
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      onCanvasDrop(nodeType, position);
-    },
-    [onCanvasDrop, reactFlowInstance]
+      {/* Empty state when no nodes */}
+      {workflowNodes.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-slate-500" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-300 mb-2">Start Building</h3>
+            <p className="text-slate-500 max-w-sm text-sm">
+              Drag nodes from the library to create your workflow, or use the AI generator to get started quickly.
+            </p>
+          </div>
+        </div>
+      )}
+    </ReactFlow>
   );
+}
 
-  const onInit = useCallback((instance: any) => {
-    setReactFlowInstance(instance);
-  }, []);
+export default function WorkflowCanvas(props: WorkflowCanvasProps) {
+  // Handle drop from @dnd-kit
+  const handleDrop = useCallback((nodeType: string, clientPosition: { x: number; y: number }) => {
+    // We'll get the canvas position from the DragEndEvent in the parent component
+    props.onCanvasDrop(nodeType, clientPosition);
+  }, [props]);
 
   return (
     <div className="w-full h-full">
       <ReactFlowProvider>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          onSelectionChange={onSelectionChange}
-          nodeTypes={nodeTypes}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onInit={onInit}
-          className="bg-slate-900"
-          fitView
-          attributionPosition="bottom-left"
-          proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{
-            type: 'smoothstep',
-            animated: false,
-            style: { strokeWidth: 2, stroke: '#64748b' },
-            markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
-          }}
-          // Improved connection validation
-          isValidConnection={(connection) => {
-            // Prevent self-connections
-            if (connection.source === connection.target) {
-              return false;
-            }
-            
-            // Check for existing connection
-            const existingConnection = workflowConnections.some(
-              conn => conn.source === connection.source && conn.target === connection.target
-            );
-            
-            return !existingConnection;
-          }}
-        >
-          {/* Improved background pattern */}
-          <Background 
-            variant="dots" 
-            gap={24} 
-            size={1} 
-            color="#475569" 
-            className="opacity-40"
-          />
-          
-          {/* Controls with better styling */}
-          <Controls 
-            className="bg-slate-800 border-slate-600 text-slate-300" 
-            showInteractive={false}
-          />
-          
-          {/* Mini map with improved styling */}
-          <MiniMap
-            className="bg-slate-800 border-slate-600"
-            nodeColor={(node) => {
-              const workflowNode = workflowNodes.find(n => n.id === node.id);
-              return workflowNode?.color.replace('bg-', '#').replace('500', '400') || '#64748b';
-            }}
-            maskColor="rgb(15, 23, 42, 0.8)"
-            position="top-left"
-          />
-
-          {/* Empty state when no nodes */}
-          {workflowNodes.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-8 h-8 text-slate-500" />
-                </div>
-                <h3 className="text-lg font-medium text-slate-300 mb-2">Start Building</h3>
-                <p className="text-slate-500 max-w-sm text-sm">
-                  Drag nodes from the library to create your workflow, or use the AI generator to get started quickly.
-                </p>
-              </div>
-            </div>
-          )}
-        </ReactFlow>
+        <DroppableCanvas onDrop={handleDrop}>
+          <CanvasContent {...props} />
+        </DroppableCanvas>
       </ReactFlowProvider>
     </div>
   );

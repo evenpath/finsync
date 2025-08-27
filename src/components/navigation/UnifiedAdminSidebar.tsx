@@ -12,7 +12,8 @@ import {
   Shield,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,6 +32,7 @@ import { getAuth, signOut } from "firebase/auth";
 const menuItems = [
   { id: "overview", label: "Overview", icon: BarChart3, href: "/admin" },
   { id: "partners", label: "Partners", icon: Building, href: "/admin/partners" },
+  { id: "workflows", label: "Workflows", icon: Zap, href: "/admin/workflows" },
   { id: "users", label: "Admins", icon: Users, href: "/admin/users", requiredRole: 'Super Admin' },
   { id: "settings", label: "Settings", icon: Settings, href: "/admin/settings" },
 ];
