@@ -102,7 +102,7 @@ export default function AdminLayout({
 }) {
   return (
     <AuthProvider>
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={false}>
         <AdminAuthWrapper>
             {children}
         </AdminAuthWrapper>

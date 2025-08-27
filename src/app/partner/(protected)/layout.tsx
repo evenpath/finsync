@@ -44,7 +44,7 @@ export default function ProtectedPartnerLayout({
   return (
     <AuthProvider>
       <MultiWorkspaceProvider>
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={true}>
           <PartnerAuthWrapper>
             <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
               <UnifiedPartnerSidebar />

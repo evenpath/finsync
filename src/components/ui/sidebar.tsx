@@ -23,8 +23,8 @@ export function useSidebar() {
   return context;
 }
 
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = React.useState(true);
+export function SidebarProvider({ children, defaultOpen = true }: { children: React.ReactNode, defaultOpen?: boolean }) {
+  const [open, setOpen] = React.useState(defaultOpen);
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
