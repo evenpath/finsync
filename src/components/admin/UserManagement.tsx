@@ -76,14 +76,6 @@ export default function UserManagement() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // currentUser is removed to prevent re-subscribing on every render
 
-  useEffect(() => {
-    if (users.length > 0 && !selectedUser) {
-        const defaultUser = users.find(u => u.email !== currentUser?.email);
-        setSelectedUser(defaultUser || users[0]);
-    }
-  }, [users, selectedUser, currentUser?.email]);
-
-
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser?.customClaims?.role !== 'Super Admin' && currentUser?.email !== 'core@socket.com') return [];
@@ -96,7 +88,13 @@ export default function UserManagement() {
         const otherUser = manageableUsers.find(u => u.email !== currentUser.email);
         setSelectedUser(otherUser || null);
     }
-  }, [selectedUser, currentUser, manageableUsers]);
+    // If the selected user is no longer in the list (e.g. deleted), select a new one.
+    if (selectedUser && !users.find(u => u.id === selectedUser.id)) {
+        const defaultUser = users.find(u => u.email !== currentUser?.email);
+        setSelectedUser(defaultUser || (users.length > 0 ? users[0] : null));
+    }
+  }, [selectedUser, currentUser, manageableUsers, users]);
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "Super Admin" | "Admin">("all");
