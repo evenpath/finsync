@@ -41,14 +41,14 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <>
+    <div className="h-full flex flex-col">
       <AdminHeader
-        title="Admin Internal"
+        title="User Management"
         subtitle="Manage internal admin users, roles, and permissions."
       />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="flex-1 overflow-auto">
         <UserManagement />
       </main>
-    </>
+    </div>
   );
 }

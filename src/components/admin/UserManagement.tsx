@@ -55,10 +55,10 @@ export default function UserManagement() {
         setUsers(adminUsers);
         setError(null);
         
-        // This logic ensures a user is selected on initial load, preferring one that isn't the current user.
+        const nonSuperAdmins = adminUsers.filter(u => u.role !== 'Super Admin');
         if (!selectedUser && adminUsers.length > 0) {
-            const defaultUser = adminUsers.find(u => u.email !== currentUser?.email);
-            setSelectedUser(defaultUser || adminUsers[0]);
+            const defaultUser = nonSuperAdmins.find(u => u.email !== currentUser?.email);
+            setSelectedUser(defaultUser || nonSuperAdmins[0] || adminUsers[0]);
         }
         setIsLoading(false);
     }, (err) => {
@@ -73,27 +73,25 @@ export default function UserManagement() {
     });
 
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // currentUser is removed to prevent re-subscribing on every render
+  }, [currentUser?.email]);
 
   const manageableUsers = useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser?.customClaims?.role !== 'Super Admin' && currentUser?.email !== 'core@socket.com') return [];
-    return users.filter(user => user.email.toLowerCase() !== currentUser.email?.toLowerCase());
+    // Super Admins can manage anyone except themselves
+    if (currentUser?.customClaims?.role === 'Super Admin' || currentUser?.email === 'core@suupe.com') {
+      return users;
+    }
+    // Admins can manage no one.
+    return [];
   }, [currentUser, users]);
 
   useEffect(() => {
-    // If the selected user is the current super admin, automatically select another user to display.
-    if (selectedUser && currentUser && selectedUser.email === currentUser.email) {
-        const otherUser = manageableUsers.find(u => u.email !== currentUser.email);
-        setSelectedUser(otherUser || null);
-    }
-    // If the selected user is no longer in the list (e.g. deleted), select a new one.
     if (selectedUser && !users.find(u => u.id === selectedUser.id)) {
-        const defaultUser = users.find(u => u.email !== currentUser?.email);
+        const nonSuperAdmins = users.filter(u => u.role !== 'Super Admin');
+        const defaultUser = nonSuperAdmins.find(u => u.email !== currentUser?.email);
         setSelectedUser(defaultUser || (users.length > 0 ? users[0] : null));
     }
-  }, [selectedUser, currentUser, manageableUsers, users]);
+  }, [selectedUser, currentUser?.email, users]);
 
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -111,7 +109,7 @@ export default function UserManagement() {
   }, [manageableUsers, searchTerm, filterRole, filterStatus]);
 
   const handleDeleteUser = async (user: AdminUser) => {
-    if (!currentUser) return;
+    if (!currentUser || user.role === 'Super Admin') return;
     
     if (user.email === currentUser.email) {
       toast({
@@ -124,13 +122,12 @@ export default function UserManagement() {
 
     if (window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
       try {
-        const result = await manageAdminUser(user.uid || user.id, "delete");
+        const result = await manageAdminUser({ ...user, uid: user.id }); // Assuming delete is handled within
         if (result.success) {
           toast({
             title: "User Deleted",
             description: `${user.name} has been successfully deleted.`,
           });
-          // The real-time listener will automatically update the users list
         } else {
           toast({
             variant: "destructive",
@@ -150,7 +147,7 @@ export default function UserManagement() {
   };
 
   const handleSuspendUser = async (user: AdminUser) => {
-    if (!currentUser) return;
+    if (!currentUser || user.role === 'Super Admin') return;
 
     if (user.email === currentUser.email) {
       toast({
@@ -163,14 +160,13 @@ export default function UserManagement() {
 
     try {
       const action = user.status === "suspended" ? "activate" : "suspend";
-      const result = await manageAdminUser(user.uid || user.id, action);
+      const result = await manageAdminUser({ ...user, uid: user.id });
       
       if (result.success) {
         toast({
           title: `User ${action === "suspend" ? "Suspended" : "Activated"}`,
           description: `${user.name} has been successfully ${action === "suspend" ? "suspended" : "activated"}.`,
         });
-        // The real-time listener will automatically update the users list
       } else {
         toast({
           variant: "destructive",
@@ -187,6 +183,33 @@ export default function UserManagement() {
       });
     }
   };
+  
+  const handleInviteUser = async (userData: { name: string; email: string; role: 'Admin' | 'Super Admin' }) => {
+    try {
+        const result = await manageAdminUser(userData);
+        if (result.success) {
+            toast({
+                title: "Invitation Sent",
+                description: `An invitation has been sent to ${userData.name}.`,
+            });
+            setIsInviteModalOpen(false);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Invitation Failed",
+                description: result.message,
+            });
+        }
+    } catch (error: any) {
+        console.error("Error inviting user:", error);
+        toast({
+            variant: "destructive",
+            title: "Invitation Failed",
+            description: error.message || "An unexpected error occurred.",
+        });
+    }
+  };
+
 
   if (error) {
     return (
@@ -221,13 +244,13 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-secondary/30">
       {/* Left panel - User list */}
-      <div className="w-1/2 border-r border-border p-6">
+      <div className="w-1/2 border-r border-border p-6 bg-card flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold">Team Management</h2>
-            <p className="text-muted-foreground">Manage admin users and their permissions</p>
+            <p className="text-muted-foreground">Manage admin users and permissions</p>
           </div>
           <Button onClick={() => setIsInviteModalOpen(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
@@ -270,7 +293,7 @@ export default function UserManagement() {
         </div>
 
         {/* User list */}
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
@@ -361,7 +384,7 @@ export default function UserManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleSuspendUser(selectedUser)}
-                  disabled={selectedUser.email === currentUser?.email}
+                  disabled={selectedUser.email === currentUser?.email || selectedUser.role === 'Super Admin'}
                 >
                   <Shield className="w-4 h-4 mr-2" />
                   {selectedUser.status === "suspended" ? "Activate" : "Suspend"}
@@ -371,7 +394,7 @@ export default function UserManagement() {
                   size="sm"
                   onClick={() => handleDeleteUser(selectedUser)}
                   className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
-                  disabled={selectedUser.email === currentUser?.email}
+                  disabled={selectedUser.email === currentUser?.email || selectedUser.role === 'Super Admin'}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -434,6 +457,7 @@ export default function UserManagement() {
       <InviteAdminModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
+        onInviteUser={handleInviteUser}
       />
     </div>
   );
