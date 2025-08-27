@@ -19,7 +19,6 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarTrigger,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -58,8 +57,10 @@ export default function UnifiedAdminSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-3 p-1">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
+          <div className={`flex items-center justify-center ${isExpanded ? 'w-10 h-10' : 'w-full'}`}>
+            <div className={`flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg ${isExpanded ? 'w-10 h-10' : 'w-8 h-8'}`}>
+              <Shield className={isExpanded ? 'w-6 h-6 text-white' : 'w-5 h-5 text-white'} />
+            </div>
           </div>
           {isExpanded && (
             <div>
@@ -73,7 +74,7 @@ export default function UnifiedAdminSidebar() {
       <SidebarContent className="flex-1">
         <SidebarMenu>
           {menuItems.map((item) => {
-            if (item.requiredRole && userRole !== item.requiredRole) {
+            if (item.requiredRole && userRole !== 'Super Admin' && user?.email !== 'core@suupe.com') {
               return null;
             }
 

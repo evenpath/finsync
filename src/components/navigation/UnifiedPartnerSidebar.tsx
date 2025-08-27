@@ -46,8 +46,10 @@ export default function UnifiedPartnerSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-3 p-1">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <div className="w-5 h-5 bg-white rounded-sm"></div>
+           <div className={`flex items-center justify-center ${isExpanded ? 'w-10 h-10' : 'w-full'}`}>
+              <div className={`flex items-center justify-center bg-blue-600 rounded-lg ${isExpanded ? 'w-10 h-10' : 'w-8 h-8'}`}>
+                  <div className={`bg-white rounded-sm ${isExpanded ? 'w-5 h-5' : 'w-4 h-4'}`}></div>
+              </div>
           </div>
           {isExpanded && (
             <div>
