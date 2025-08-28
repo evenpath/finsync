@@ -1,7 +1,9 @@
 // src/app/admin/workflows/page.tsx
 import AdminHeader from "../../../components/admin/AdminHeader";
 import { Card, CardContent } from "../../../components/ui/card";
-import { Zap } from "lucide-react";
+import { Zap, Plus } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import Link from 'next/link';
 
 export default function AdminWorkflowsPage() {
   return (
@@ -9,6 +11,14 @@ export default function AdminWorkflowsPage() {
       <AdminHeader
         title="Workflow Management"
         subtitle="Create and manage global workflow templates."
+        actions={
+          <Button asChild>
+            <Link href="/admin/workflows/builder">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Workflow
+            </Link>
+          </Button>
+        }
       />
       <main className="flex-1 overflow-auto p-6">
         <Card>
