@@ -1,5 +1,3 @@
-// src/components/workflow/builder/PromptWorkflowGenerator.tsx
-
 "use client";
 
 import React, { useState } from 'react';
@@ -19,7 +17,9 @@ import {
   Users,
   MessageSquare
 } from 'lucide-react';
+import { suggestWorkflowSteps } from '@/ai/flows/suggest-workflow-steps';
 import type { WorkflowBuilderNode, NodeConnection } from '@/lib/types/workflow-builder';
+import type { SuggestWorkflowStepsOutput, StepSchema } from '@/lib/types';
 
 interface PromptWorkflowGeneratorProps {
   onGenerateWorkflow: (nodes: WorkflowBuilderNode[], connections: NodeConnection[]) => void;
@@ -32,6 +32,7 @@ export default function PromptWorkflowGenerator({
 }: PromptWorkflowGeneratorProps) {
   const [prompt, setPrompt] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [isGeneratingFromPrompt, setIsGeneratingFromPrompt] = useState(false);
   const { toast } = useToast();
 
   // Pre-defined workflow templates for inspiration
@@ -80,220 +81,289 @@ export default function PromptWorkflowGenerator({
     }
   ];
 
-  // AI-powered workflow generation (simulated)
-  const generateWorkflowFromPrompt = async (promptText: string): Promise<{nodes: WorkflowBuilderNode[], connections: NodeConnection[]}> => {
-    // This would integrate with your AI service (OpenAI, Claude, etc.)
-    // For now, we'll simulate the process with intelligent parsing
-    
-    const keywords = promptText.toLowerCase();
+  // Generate unique IDs for nodes and connections
+  const generateNodeId = () => `ai_generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const generateConnectionId = (sourceId: string, targetId: string) => `conn_${sourceId}_${targetId}`;
+
+  // Convert AI steps to WorkflowBuilderNodes
+  const convertAIStepsToWorkflowNodes = (aiSteps: StepSchema[]): { nodes: WorkflowBuilderNode[], connections: NodeConnection[] } => {
     const nodes: WorkflowBuilderNode[] = [];
     const connections: NodeConnection[] = [];
-    
     let nodeCounter = 0;
-    const createNode = (type: string, subType: string, name: string, description: string, icon: string, color: string, x: number, y: number, config: any = {}) => {
+    const nodeSpacing = 350;
+    const startX = 100;
+    const startY = 100;
+
+    // Define node type mappings from AI step types to workflow builder types
+    const getNodeTypeMapping = (aiStepType: string, stepName: string, stepDescription: string) => {
+      const lowerName = stepName.toLowerCase();
+      const lowerDesc = stepDescription.toLowerCase();
+      
+      switch (aiStepType) {
+        case 'ai_agent':
+          if (lowerName.includes('classify') || lowerDesc.includes('classify')) {
+            return {
+              type: 'ai_processing' as const,
+              subType: 'text-classifier',
+              icon: 'Target',
+              color: 'bg-indigo-500'
+            };
+          } else if (lowerName.includes('sentiment') || lowerDesc.includes('sentiment')) {
+            return {
+              type: 'ai_processing' as const,
+              subType: 'sentiment-analyzer',
+              icon: 'MessageSquare',
+              color: 'bg-pink-500'
+            };
+          } else if (lowerName.includes('generate') || lowerDesc.includes('generate')) {
+            return {
+              type: 'ai_processing' as const,
+              subType: 'content-generator',
+              icon: 'FileText',
+              color: 'bg-violet-500'
+            };
+          }
+          return {
+            type: 'ai_processing' as const,
+            subType: 'ai-analyzer',
+            icon: 'Bot',
+            color: 'bg-purple-500'
+          };
+        
+        case 'human_input':
+          if (lowerName.includes('approval') || lowerDesc.includes('approval')) {
+            return {
+              type: 'human_action' as const,
+              subType: 'approval-gate',
+              icon: 'CheckCircle',
+              color: 'bg-yellow-500'
+            };
+          } else if (lowerName.includes('review') || lowerDesc.includes('review')) {
+            return {
+              type: 'human_action' as const,
+              subType: 'review-task',
+              icon: 'Search',
+              color: 'bg-amber-500'
+            };
+          }
+          return {
+            type: 'human_action' as const,
+            subType: 'human-task',
+            icon: 'Users',
+            color: 'bg-orange-500'
+          };
+        
+        case 'api_call':
+          return {
+            type: 'data_integration' as const,
+            subType: 'api-call',
+            icon: 'Globe',
+            color: 'bg-cyan-500'
+          };
+        
+        case 'notification':
+          if (lowerName.includes('email') || lowerDesc.includes('email')) {
+            return {
+              type: 'communication' as const,
+              subType: 'email-send',
+              icon: 'Mail',
+              color: 'bg-red-500'
+            };
+          } else if (lowerName.includes('slack') || lowerDesc.includes('slack')) {
+            return {
+              type: 'communication' as const,
+              subType: 'slack-message',
+              icon: 'MessageSquare',
+              color: 'bg-green-500'
+            };
+          }
+          return {
+            type: 'communication' as const,
+            subType: 'notification',
+            icon: 'MessageSquare',
+            color: 'bg-pink-500'
+          };
+        
+        case 'conditional_branch':
+          return {
+            type: 'condition' as const,
+            subType: 'condition-check',
+            icon: 'Target',
+            color: 'bg-teal-500'
+          };
+        
+        default:
+          // Default to manual trigger for first node or API call for others
+          if (nodeCounter === 0) {
+            return {
+              type: 'trigger' as const,
+              subType: 'manual-trigger',
+              icon: 'Play',
+              color: 'bg-emerald-500'
+            };
+          }
+          return {
+            type: 'data_integration' as const,
+            subType: 'api-call',
+            icon: 'Globe',
+            color: 'bg-cyan-500'
+          };
+      }
+    };
+
+    // Add a trigger node if the first step isn't a trigger
+    if (aiSteps.length > 0 && !aiSteps[0].type.includes('trigger')) {
+      const triggerNode: WorkflowBuilderNode = {
+        id: generateNodeId(),
+        type: 'trigger',
+        subType: 'manual-trigger',
+        name: 'Start Workflow',
+        description: 'Manually trigger the workflow',
+        position: { x: startX, y: startY },
+        config: { triggerLabel: 'Start Workflow' },
+        icon: 'Play',
+        color: 'bg-emerald-500',
+        category: 'trigger'
+      };
+      nodes.push(triggerNode);
+      nodeCounter++;
+    }
+
+    let previousNode: WorkflowBuilderNode | null = nodes.length > 0 ? nodes[0] : null;
+
+    // Convert AI steps to workflow nodes
+    aiSteps.forEach((step, index) => {
+      const nodeTypeMapping = getNodeTypeMapping(step.type, step.name, step.description);
+      
       const node: WorkflowBuilderNode = {
-        id: `generated_${nodeCounter++}_${Date.now()}`,
-        type: type,
-        subType,
-        name,
-        description,
-        position: { x, y },
-        config,
-        icon,
-        color,
-        category: type
+        id: step.id || generateNodeId(),
+        type: nodeTypeMapping.type,
+        subType: nodeTypeMapping.subType,
+        name: step.name,
+        description: step.description,
+        position: { 
+          x: startX + (nodeCounter * nodeSpacing), 
+          y: startY + (Math.sin(nodeCounter * 0.3) * 50)
+        },
+        config: {},
+        icon: nodeTypeMapping.icon,
+        color: nodeTypeMapping.color,
+        category: nodeTypeMapping.type
       };
+
+      // Set node-specific configuration
+      switch (nodeTypeMapping.subType) {
+        case 'ai-analyzer':
+        case 'text-classifier':
+        case 'sentiment-analyzer':
+        case 'content-generator':
+          node.config = {
+            provider: 'OpenAI',
+            model: 'gpt-4',
+            temperature: 0.7,
+            systemPrompt: `Process and analyze data for: ${step.description}`
+          };
+          break;
+        
+        case 'human-task':
+        case 'approval-gate':
+        case 'review-task':
+          node.config = {
+            instructions: step.description,
+            assignmentMethod: 'auto',
+            priority: 'medium'
+          };
+          break;
+        
+        case 'email-send':
+        case 'notification':
+        case 'slack-message':
+          node.config = {
+            channel: nodeTypeMapping.subType.includes('email') ? 'email' : 'notification',
+            template: `Automated message: ${step.description}`
+          };
+          break;
+        
+        case 'api-call':
+          node.config = {
+            url: 'https://api.example.com',
+            method: 'POST'
+          };
+          break;
+      }
+
       nodes.push(node);
-      return node;
-    };
 
-    const createConnection = (source: WorkflowBuilderNode, target: WorkflowBuilderNode, label = 'Next') => {
-      const connection: NodeConnection = {
-        id: `conn_${source.id}_${target.id}`,
-        source: source.id,
-        target: target.id,
-        label
-      };
-      connections.push(connection);
-      return connection;
-    };
-
-    // Parse prompt and generate appropriate workflow
-    let currentY = 100;
-    const nodeSpacing = 250;
-    let lastNode: WorkflowBuilderNode | null = null;
-
-    // 1. Determine trigger
-    let triggerNode: WorkflowBuilderNode;
-    if (keywords.includes('form') || keywords.includes('submit')) {
-      triggerNode = createNode('trigger', 'form-submission', 'Form Submission', 'Triggered when form is submitted', '📝', 'bg-green-500', 100, currentY);
-    } else if (keywords.includes('schedule') || keywords.includes('daily') || keywords.includes('weekly')) {
-      triggerNode = createNode('trigger', 'scheduled-trigger', 'Scheduled Trigger', 'Runs on schedule', '⏰', 'bg-purple-500', 100, currentY);
-    } else if (keywords.includes('customer') || keywords.includes('user') || keywords.includes('signup')) {
-      triggerNode = createNode('trigger', 'form-submission', 'Customer Signup', 'New customer registration', '👤', 'bg-blue-500', 100, currentY);
-    } else {
-      triggerNode = createNode('trigger', 'manual-trigger', 'Manual Trigger', 'Start workflow manually', '▶️', 'bg-blue-500', 100, currentY);
-    }
-    lastNode = triggerNode;
-    currentY += nodeSpacing;
-
-    // 2. Add AI processing if mentioned
-    if (keywords.includes('ai') || keywords.includes('analyze') || keywords.includes('classify') || keywords.includes('categorize')) {
-      const aiNode = createNode(
-        'ai_processing', 
-        'ai-analyzer', 
-        'AI Analysis', 
-        'Process and analyze data using AI',
-        '🧠', 
-        'bg-purple-600', 
-        100, 
-        currentY,
-        { model: 'gpt-4', prompt: `Analyze the incoming data based on: ${promptText}` }
-      );
-      if (lastNode) createConnection(lastNode, aiNode);
-      lastNode = aiNode;
-      currentY += nodeSpacing;
-    }
-
-    // 3. Add approval nodes if mentioned
-    if (keywords.includes('approval') || keywords.includes('approve') || keywords.includes('manager')) {
-      const approvalNode = createNode(
-        'human_action',
-        'approval-gate',
-        'Approval Required',
-        'Requires manager approval',
-        '✅',
-        'bg-yellow-500',
-        100,
-        currentY,
-        { approvalType: 'single', approvers: ['manager'] }
-      );
-      if (lastNode) createConnection(lastNode, approvalNode);
-      lastNode = approvalNode;
-      currentY += nodeSpacing;
-    }
-
-    // 4. Add human tasks
-    if (keywords.includes('assign') || keywords.includes('review') || keywords.includes('call') || keywords.includes('interview')) {
-      let taskName = 'Human Task';
-      let taskDescription = 'Assign task to team member';
-      
-      if (keywords.includes('call')) {
-        taskName = 'Schedule Call';
-        taskDescription = 'Schedule and conduct call';
-      } else if (keywords.includes('review')) {
-        taskName = 'Review Task';
-        taskDescription = 'Review and validate content';
-      } else if (keywords.includes('interview')) {
-        taskName = 'Conduct Interview';
-        taskDescription = 'Conduct exit or intro interview';
+      // Create connection to previous node
+      if (previousNode) {
+        const connection: NodeConnection = {
+          id: generateConnectionId(previousNode.id, node.id),
+          source: previousNode.id,
+          target: node.id,
+          label: ''
+        };
+        connections.push(connection);
       }
 
-      const taskNode = createNode(
-        'human_action',
-        'human-task',
-        taskName,
-        taskDescription,
-        '👤',
-        'bg-orange-500',
-        100,
-        currentY,
-        { assignmentMethod: 'auto', priority: 'medium' }
-      );
-      if (lastNode) createConnection(lastNode, taskNode);
-      lastNode = taskNode;
-      currentY += nodeSpacing;
-    }
+      // Handle conditional branches
+      if (step.branches && step.branches.length > 0) {
+        step.branches.forEach((branch, branchIndex) => {
+          // Create branch nodes
+          const branchNodes = branch.steps.map((branchStep, branchStepIndex) => {
+            const branchNodeTypeMapping = getNodeTypeMapping(branchStep.type, branchStep.name, branchStep.description);
+            
+            return {
+              id: branchStep.id || generateNodeId(),
+              type: branchNodeTypeMapping.type,
+              subType: branchNodeTypeMapping.subType,
+              name: branchStep.name,
+              description: branchStep.description,
+              position: { 
+                x: startX + ((nodeCounter + 1 + branchStepIndex) * nodeSpacing), 
+                y: startY + ((branchIndex + 1) * 150) + (Math.sin((nodeCounter + branchStepIndex) * 0.3) * 30)
+              },
+              config: {},
+              icon: branchNodeTypeMapping.icon,
+              color: branchNodeTypeMapping.color,
+              category: branchNodeTypeMapping.type
+            } as WorkflowBuilderNode;
+          });
 
-    // 5. Add notifications
-    if (keywords.includes('email') || keywords.includes('notify') || keywords.includes('alert')) {
-      let notificationType = 'notification';
-      let notificationName = 'Send Notification';
-      let icon = '🔔';
-      let color = 'bg-pink-500';
+          nodes.push(...branchNodes);
 
-      if (keywords.includes('email')) {
-        notificationType = 'email-send';
-        notificationName = 'Send Email';
-        icon = '📧';
-        color = 'bg-red-500';
+          // Connect condition node to first branch node
+          if (branchNodes.length > 0) {
+            const branchConnection: NodeConnection = {
+              id: generateConnectionId(node.id, branchNodes[0].id),
+              source: node.id,
+              target: branchNodes[0].id,
+              label: branch.condition
+            };
+            connections.push(branchConnection);
+
+            // Connect branch nodes to each other
+            for (let i = 0; i < branchNodes.length - 1; i++) {
+              const connection: NodeConnection = {
+                id: generateConnectionId(branchNodes[i].id, branchNodes[i + 1].id),
+                source: branchNodes[i].id,
+                target: branchNodes[i + 1].id,
+                label: ''
+              };
+              connections.push(connection);
+            }
+          }
+        });
       }
 
-      const notificationNode = createNode(
-        'communication',
-        notificationType,
-        notificationName,
-        'Send notification to stakeholders',
-        icon,
-        color,
-        100,
-        currentY,
-        { channel: 'email', template: 'Auto-generated notification template' }
-      );
-      if (lastNode) createConnection(lastNode, notificationNode);
-      lastNode = notificationNode;
-      currentY += nodeSpacing;
-    }
-
-    // 6. Add API calls or integrations
-    if (keywords.includes('crm') || keywords.includes('database') || keywords.includes('system') || keywords.includes('update')) {
-      const integrationNode = createNode(
-        'data_integration',
-        'api-call',
-        'Update System',
-        'Update external system or database',
-        '🌐',
-        'bg-cyan-500',
-        100,
-        currentY,
-        { method: 'POST', url: 'https://api.example.com/update' }
-      );
-      if (lastNode) createConnection(lastNode, integrationNode);
-      lastNode = integrationNode;
-      currentY += nodeSpacing;
-    }
-
-    // 7. Add conditions if there are branching scenarios
-    if (keywords.includes('if') || keywords.includes('when') || keywords.includes('escalate') || keywords.includes('condition')) {
-      const conditionNode = createNode(
-        'condition',
-        'condition-check',
-        'Check Conditions',
-        'Evaluate conditions and branch workflow',
-        '🔀',
-        'bg-teal-500',
-        300,
-        currentY - nodeSpacing,
-        { condition: 'status == "pending"', operator: 'equals' }
-      );
-      
-      // Connect condition to previous node
-      if (nodes.length > 1) {
-        const prevNode = nodes[nodes.length - 2];
-        createConnection(prevNode, conditionNode);
-      }
-      
-      // Create branch for escalation or alternative path
-      if (keywords.includes('escalate')) {
-        const escalationNode = createNode(
-          'human_action',
-          'human-task',
-          'Escalate to Manager',
-          'Escalate issue to management',
-          '🚨',
-          'bg-red-600',
-          500,
-          currentY,
-          { assignmentMethod: 'manual', priority: 'high' }
-        );
-        createConnection(conditionNode, escalationNode, 'Escalate');
-      }
-    }
+      previousNode = node;
+      nodeCounter++;
+    });
 
     return { nodes, connections };
   };
 
-  const handleGenerateWorkflow = async () => {
+  // Handle AI workflow generation from prompt
+  const handleGenerateFromPrompt = async () => {
     if (!prompt.trim()) {
       toast({
         variant: "destructive",
@@ -303,31 +373,90 @@ export default function PromptWorkflowGenerator({
       return;
     }
 
+    setIsGeneratingFromPrompt(true);
+
     try {
       toast({
         title: "Generating Workflow",
         description: "AI is creating your workflow...",
       });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the actual AI flow
+      const aiResult: SuggestWorkflowStepsOutput = await suggestWorkflowSteps({ 
+        workflowDescription: prompt.trim() 
+      });
 
-      const { nodes, connections } = await generateWorkflowFromPrompt(prompt);
+      // Convert AI result to workflow builder format
+      const { nodes, connections } = convertAIStepsToWorkflowNodes(aiResult.steps);
+
+      // Call the parent callback to update the canvas
       onGenerateWorkflow(nodes, connections);
 
       toast({
         title: "Workflow Generated!",
-        description: `Created workflow with ${nodes.length} nodes and ${connections.length} connections`,
+        description: `Created workflow "${aiResult.name}" with ${nodes.length} nodes and ${connections.length} connections`,
       });
 
       // Clear prompt after successful generation
       setPrompt('');
     } catch (error) {
+      console.error("Failed to generate workflow:", error);
       toast({
         variant: "destructive",
         title: "Generation Failed",
         description: "Unable to generate workflow. Please try again.",
       });
+    } finally {
+      setIsGeneratingFromPrompt(false);
+    }
+  };
+
+  // Handle template selection and generation
+  const handleGenerateFromTemplate = async () => {
+    const template = workflowTemplates.find(t => t.id === selectedTemplate);
+    if (!template) {
+      toast({
+        variant: "destructive",
+        title: "Template Required",
+        description: "Please select a template to generate from",
+      });
+      return;
+    }
+
+    setIsGeneratingFromPrompt(true);
+
+    try {
+      toast({
+        title: "Generating from Template",
+        description: `Creating ${template.name} workflow...`,
+      });
+
+      // Use template prompt to generate workflow
+      const aiResult: SuggestWorkflowStepsOutput = await suggestWorkflowSteps({ 
+        workflowDescription: template.prompt 
+      });
+
+      // Convert AI result to workflow builder format
+      const { nodes, connections } = convertAIStepsToWorkflowNodes(aiResult.steps);
+
+      // Call the parent callback to update the canvas
+      onGenerateWorkflow(nodes, connections);
+
+      toast({
+        title: "Template Generated!",
+        description: `Created ${template.name} workflow with ${nodes.length} nodes and ${connections.length} connections`,
+      });
+
+      setSelectedTemplate('');
+    } catch (error) {
+      console.error("Failed to generate from template:", error);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Unable to generate workflow from template. Please try again.",
+      });
+    } finally {
+      setIsGeneratingFromPrompt(false);
     }
   };
 
@@ -335,6 +464,8 @@ export default function PromptWorkflowGenerator({
     setPrompt(template.prompt);
     setSelectedTemplate(template.id);
   };
+
+  const isLoading = isGenerating || isGeneratingFromPrompt;
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -346,7 +477,7 @@ export default function PromptWorkflowGenerator({
           <div>
             <CardTitle className="text-xl">AI Workflow Generator</CardTitle>
             <p className="text-sm text-gray-600 mt-1">
-              Describe your workflow in natural language and let AI build it for you
+              Describe your business process and let AI build it for you
             </p>
           </div>
         </div>
@@ -371,6 +502,7 @@ export default function PromptWorkflowGenerator({
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={6}
                   className="resize-none"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -385,12 +517,12 @@ export default function PromptWorkflowGenerator({
               </div>
 
               <Button 
-                onClick={handleGenerateWorkflow}
-                disabled={isGenerating || !prompt.trim()}
+                onClick={handleGenerateFromPrompt}
+                disabled={isLoading || !prompt.trim()}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                 size="lg"
               >
-                {isGenerating ? (
+                {isLoading ? (
                   <>
                     <div className="animate-spin mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                     Generating Workflow...
@@ -440,12 +572,12 @@ export default function PromptWorkflowGenerator({
 
             {selectedTemplate && (
               <Button 
-                onClick={handleGenerateWorkflow}
-                disabled={isGenerating}
+                onClick={handleGenerateFromTemplate}
+                disabled={isLoading}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                 size="lg"
               >
-                {isGenerating ? (
+                {isLoading ? (
                   <>
                     <div className="animate-spin mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                     Generating Workflow...
