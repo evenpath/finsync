@@ -27,6 +27,222 @@ interface PromptWorkflowGeneratorProps {
   isGenerating: boolean;
 }
 
+// Generate unique IDs for nodes and connections
+const generateNodeId = () => `ai_generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+const generateConnectionId = (sourceId: string, targetId: string) => `conn_${sourceId}_${targetId}`;
+
+// Intelligent layout algorithms based on workflow patterns
+const analyzeWorkflowPattern = (steps: StepSchema[]) => {
+  const hasConditionals = steps.some(step => step.type === 'conditional_branch');
+  const hasMultipleBranches = steps.some(step => step.branches && step.branches.length > 2);
+  const hasParallelPaths = steps.filter(step => step.type === 'human_input').length > 1;
+  const hasApprovals = steps.some(step => step.name.toLowerCase().includes('approval') || step.name.toLowerCase().includes('review'));
+  const hasDifferentRoles = new Set(steps.map(step => {
+    if (step.type === 'human_input' || step.type === 'human_action') return 'human';
+    if (step.type === 'ai_agent') return 'ai';
+    if (step.type === 'api_call') return 'system';
+    if (step.type === 'notification') return 'communication';
+    return 'other';
+  })).size;
+
+  // Determine the best layout pattern
+  if (hasDifferentRoles >= 3) return 'swimlane';
+  if (hasMultipleBranches) return 'decision_tree';
+  if (hasApprovals && hasConditionals) return 'approval_chain';
+  if (hasParallelPaths) return 'parallel_flow';
+  return 'linear_flow';
+};
+
+// Swimlane Layout: Different roles in horizontal lanes
+const createSwimlaneLayout = (steps: StepSchema[]) => {
+  const lanes = {
+    trigger: { y: 100, color: 'emerald' },
+    human: { y: 300, color: 'orange' },
+    ai: { y: 500, color: 'purple' },
+    system: { y: 700, color: 'cyan' },
+    communication: { y: 900, color: 'pink' }
+  };
+  
+  const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
+  let xPosition = 200;
+  
+  steps.forEach((step, index) => {
+    const lane = step.type === 'human_input' || step.type === 'human_action' ? 'human' :
+                  step.type === 'ai_agent' ? 'ai' :
+                  step.type === 'api_call' ? 'system' :
+                  step.type === 'notification' ? 'communication' : 'trigger';
+    
+    nodes.push({
+      step,
+      position: { x: xPosition, y: lanes[lane as keyof typeof lanes].y },
+      lane
+    });
+    
+    xPosition += 400;
+  });
+  
+  return nodes;
+};
+
+// Decision Tree Layout: Central decision with radiating branches
+const createDecisionTreeLayout = (steps: StepSchema[]) => {
+  const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
+  const centerX = 600;
+  const centerY = 400;
+  let mainFlowX = 200;
+  
+  steps.forEach((step, index) => {
+    if (step.type === 'conditional_branch') {
+      // Place decision node at strategic center
+      nodes.push({
+        step,
+        position: { x: centerX, y: centerY },
+        lane: 'main'
+      });
+      
+      // Arrange branches in a fan pattern
+      if (step.branches) {
+        const angleStep = Math.PI / (step.branches.length + 1);
+        step.branches.forEach((branch, branchIndex) => {
+          const angle = angleStep * (branchIndex + 1) - Math.PI / 2;
+          const branchRadius = 300;
+          let branchX = centerX + Math.cos(angle) * branchRadius;
+          let branchY = centerY + Math.sin(angle) * branchRadius;
+          
+          branch.steps.forEach((branchStep, stepIndex) => {
+            nodes.push({
+              step: branchStep,
+              position: { 
+                x: branchX + (stepIndex * 250), 
+                y: branchY + (stepIndex * 50)
+              },
+              lane: `branch_${branchIndex}`
+            });
+          });
+        });
+      }
+    } else {
+      // Main flow nodes
+      nodes.push({
+        step,
+        position: { x: mainFlowX, y: centerY },
+        lane: 'main'
+      });
+      mainFlowX += 400;
+    }
+  });
+  
+  return nodes;
+};
+
+// Approval Chain Layout: Vertical hierarchy with escalation paths
+const createApprovalChainLayout = (steps: StepSchema[]) => {
+  const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
+  let currentX = 200;
+  const levels = {
+    trigger: 100,
+    processing: 250,
+    approval: 400,
+    senior_approval: 550,
+    execution: 700,
+    notification: 850
+  };
+  
+  steps.forEach((step, index) => {
+    const stepName = step.name.toLowerCase();
+    let level = 'processing';
+    
+    if (step.type === 'conditional_branch' || stepName.includes('trigger') || stepName.includes('start')) level = 'trigger';
+    else if (stepName.includes('senior') || stepName.includes('executive')) level = 'senior_approval';
+    else if (stepName.includes('approval') || stepName.includes('review')) level = 'approval';
+    else if (stepName.includes('execute') || stepName.includes('process')) level = 'execution';
+    else if (stepName.includes('notify') || stepName.includes('email')) level = 'notification';
+    
+    nodes.push({
+      step,
+      position: { x: currentX, y: levels[level as keyof typeof levels] },
+      lane: level
+    });
+    
+    currentX += 350;
+  });
+  
+  return nodes;
+};
+
+// Parallel Flow Layout: Multiple simultaneous paths
+const createParallelFlowLayout = (steps: StepSchema[]) => {
+  const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
+  const paths: {[key: string]: {x: number, y: number}} = {
+    main: { x: 200, y: 300 },
+    parallel_1: { x: 200, y: 150 },
+    parallel_2: { x: 200, y: 450 },
+    parallel_3: { x: 200, y: 600 }
+  };
+  
+  let pathIndex = 0;
+  
+  steps.forEach((step, index) => {
+    let pathName = 'main';
+    
+    // Assign parallel paths based on step type
+    if (step.type === 'human_input' && pathIndex === 0) {
+      pathName = 'parallel_1';
+      pathIndex++;
+    } else if (step.type === 'ai_agent' && pathIndex === 1) {
+      pathName = 'parallel_2';
+      pathIndex++;
+    } else if (step.type === 'notification' && pathIndex === 2) {
+      pathName = 'parallel_3';
+      pathIndex++;
+    }
+    
+    const path = paths[pathName];
+    nodes.push({
+      step,
+      position: { x: path.x, y: path.y },
+      lane: pathName
+    });
+    
+    path.x += 350;
+  });
+  
+  return nodes;
+};
+
+// Linear Flow Layout: Improved straight-line flow
+const createLinearFlowLayout = (steps: StepSchema[]) => {
+  const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
+  let xPosition = 200;
+  const yPosition = 350;
+  
+  steps.forEach((step, index) => {
+    nodes.push({
+      step,
+      position: { x: xPosition, y: yPosition },
+      lane: 'main'
+    });
+    
+    xPosition += 380;
+  });
+  
+  return nodes;
+};
+
+// Advanced layout algorithms
+const createProfessionalLayout = (steps: StepSchema[], pattern: string) => {
+  const layouts = {
+    swimlane: createSwimlaneLayout,
+    decision_tree: createDecisionTreeLayout,
+    approval_chain: createApprovalChainLayout,
+    parallel_flow: createParallelFlowLayout,
+    linear_flow: createLinearFlowLayout
+  };
+  
+  return layouts[pattern as keyof typeof layouts](steps);
+};
+
+
 export default function PromptWorkflowGenerator({ 
   onGenerateWorkflow, 
   isGenerating 
@@ -81,221 +297,6 @@ export default function PromptWorkflowGenerator({
       category: 'Finance'
     }
   ];
-
-  // Generate unique IDs for nodes and connections
-  const generateNodeId = () => `ai_generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const generateConnectionId = (sourceId: string, targetId: string) => `conn_${sourceId}_${targetId}`;
-
-  // Intelligent layout algorithms based on workflow patterns
-  const analyzeWorkflowPattern = (steps: StepSchema[]) => {
-    const hasConditionals = steps.some(step => step.type === 'conditional_branch');
-    const hasMultipleBranches = steps.some(step => step.branches && step.branches.length > 2);
-    const hasParallelPaths = steps.filter(step => step.type === 'human_input').length > 1;
-    const hasApprovals = steps.some(step => step.name.toLowerCase().includes('approval') || step.name.toLowerCase().includes('review'));
-    const hasDifferentRoles = new Set(steps.map(step => {
-      if (step.type === 'human_input' || step.type === 'human_action') return 'human';
-      if (step.type === 'ai_agent') return 'ai';
-      if (step.type === 'api_call') return 'system';
-      if (step.type === 'notification') return 'communication';
-      return 'other';
-    })).size;
-
-    // Determine the best layout pattern
-    if (hasDifferentRoles >= 3) return 'swimlane';
-    if (hasMultipleBranches) return 'decision_tree';
-    if (hasApprovals && hasConditionals) return 'approval_chain';
-    if (hasParallelPaths) return 'parallel_flow';
-    return 'linear_flow';
-  };
-
-  // Advanced layout algorithms
-  const createProfessionalLayout = (steps: StepSchema[], pattern: string) => {
-    const layouts = {
-      swimlane: createSwimlaneLayout,
-      decision_tree: createDecisionTreeLayout,
-      approval_chain: createApprovalChainLayout,
-      parallel_flow: createParallelFlowLayout,
-      linear_flow: createLinearFlowLayout
-    };
-    
-    return layouts[pattern as keyof typeof layouts](steps);
-  };
-
-  // Swimlane Layout: Different roles in horizontal lanes
-  const createSwimlaneLayout = (steps: StepSchema[]) => {
-    const lanes = {
-      trigger: { y: 100, color: 'emerald' },
-      human: { y: 300, color: 'orange' },
-      ai: { y: 500, color: 'purple' },
-      system: { y: 700, color: 'cyan' },
-      communication: { y: 900, color: 'pink' }
-    };
-    
-    const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
-    let xPosition = 200;
-    
-    steps.forEach((step, index) => {
-      const lane = step.type === 'human_input' || step.type === 'human_action' ? 'human' :
-                   step.type === 'ai_agent' ? 'ai' :
-                   step.type === 'api_call' ? 'system' :
-                   step.type === 'notification' ? 'communication' : 'trigger';
-      
-      nodes.push({
-        step,
-        position: { x: xPosition, y: lanes[lane as keyof typeof lanes].y },
-        lane
-      });
-      
-      xPosition += 400;
-    });
-    
-    return nodes;
-  };
-
-  // Decision Tree Layout: Central decision with radiating branches
-  const createDecisionTreeLayout = (steps: StepSchema[]) => {
-    const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
-    const centerX = 600;
-    const centerY = 400;
-    let mainFlowX = 200;
-    
-    steps.forEach((step, index) => {
-      if (step.type === 'conditional_branch') {
-        // Place decision node at strategic center
-        nodes.push({
-          step,
-          position: { x: centerX, y: centerY },
-          lane: 'main'
-        });
-        
-        // Arrange branches in a fan pattern
-        if (step.branches) {
-          const angleStep = Math.PI / (step.branches.length + 1);
-          step.branches.forEach((branch, branchIndex) => {
-            const angle = angleStep * (branchIndex + 1) - Math.PI / 2;
-            const branchRadius = 300;
-            let branchX = centerX + Math.cos(angle) * branchRadius;
-            let branchY = centerY + Math.sin(angle) * branchRadius;
-            
-            branch.steps.forEach((branchStep, stepIndex) => {
-              nodes.push({
-                step: branchStep,
-                position: { 
-                  x: branchX + (stepIndex * 250), 
-                  y: branchY + (stepIndex * 50)
-                },
-                lane: `branch_${branchIndex}`
-              });
-            });
-          });
-        }
-      } else {
-        // Main flow nodes
-        nodes.push({
-          step,
-          position: { x: mainFlowX, y: centerY },
-          lane: 'main'
-        });
-        mainFlowX += 400;
-      }
-    });
-    
-    return nodes;
-  };
-
-  // Approval Chain Layout: Vertical hierarchy with escalation paths
-  const createApprovalChainLayout = (steps: StepSchema[]) => {
-    const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
-    let currentX = 200;
-    const levels = {
-      trigger: 100,
-      processing: 250,
-      approval: 400,
-      senior_approval: 550,
-      execution: 700,
-      notification: 850
-    };
-    
-    steps.forEach((step, index) => {
-      const stepName = step.name.toLowerCase();
-      let level = 'processing';
-      
-      if (step.type === 'conditional_branch' || stepName.includes('trigger') || stepName.includes('start')) level = 'trigger';
-      else if (stepName.includes('senior') || stepName.includes('executive')) level = 'senior_approval';
-      else if (stepName.includes('approval') || stepName.includes('review')) level = 'approval';
-      else if (stepName.includes('execute') || stepName.includes('process')) level = 'execution';
-      else if (stepName.includes('notify') || stepName.includes('email')) level = 'notification';
-      
-      nodes.push({
-        step,
-        position: { x: currentX, y: levels[level as keyof typeof levels] },
-        lane: level
-      });
-      
-      currentX += 350;
-    });
-    
-    return nodes;
-  };
-
-  // Parallel Flow Layout: Multiple simultaneous paths
-  const createParallelFlowLayout = (steps: StepSchema[]) => {
-    const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
-    const paths: {[key: string]: {x: number, y: number}} = {
-      main: { x: 200, y: 300 },
-      parallel_1: { x: 200, y: 150 },
-      parallel_2: { x: 200, y: 450 },
-      parallel_3: { x: 200, y: 600 }
-    };
-    
-    let pathIndex = 0;
-    
-    steps.forEach((step, index) => {
-      let pathName = 'main';
-      
-      // Assign parallel paths based on step type
-      if (step.type === 'human_input' && pathIndex === 0) {
-        pathName = 'parallel_1';
-        pathIndex++;
-      } else if (step.type === 'ai_agent' && pathIndex === 1) {
-        pathName = 'parallel_2';
-        pathIndex++;
-      } else if (step.type === 'notification' && pathIndex === 2) {
-        pathName = 'parallel_3';
-        pathIndex++;
-      }
-      
-      const path = paths[pathName];
-      nodes.push({
-        step,
-        position: { x: path.x, y: path.y },
-        lane: pathName
-      });
-      
-      path.x += 350;
-    });
-    
-    return nodes;
-  };
-
-  // Linear Flow Layout: Improved straight-line flow
-  const createLinearFlowLayout = (steps: StepSchema[]) => {
-    const nodes: Array<{step: StepSchema, position: {x: number, y: number}, lane: string}> = [];
-    let xPosition = 200;
-    const yPosition = 350;
-    
-    steps.forEach((step, index) => {
-      nodes.push({
-        step,
-        position: { x: xPosition, y: yPosition },
-        lane: 'main'
-      });
-      
-      xPosition += 380;
-    });
-    
-    return nodes;
-  };
 
   // Convert AI steps to WorkflowBuilderNodes with intelligent layout
   const convertAIStepsToWorkflowNodes = (aiSteps: StepSchema[]): { nodes: WorkflowBuilderNode[], connections: NodeConnection[] } => {
