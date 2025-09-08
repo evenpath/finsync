@@ -15,8 +15,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Floz - AI Workflow Automation',
-  description: 'AI-powered agentic workflows by Floz',
+  title: 'tryExp.com - AI Workflow Automation',
+  description: 'AI-powered agentic workflows by tryExp.com',
 };
 
 export default function RootLayout({
