@@ -513,7 +513,7 @@ function FlozHomepage() {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <div className="w-5 h-5 bg-white rounded"></div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 font-headline">doneLite.com</h1>
+            <h1 className="text-2xl font-bold text-gray-900 font-headline">flowpod</h1>
           </Link>
           <div className="hidden md:flex items-center space-x-6">
             <Link href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</Link>
@@ -541,7 +541,7 @@ function FlozHomepage() {
              <div className="text-gray-900">That Run Your Business</div>
            </div>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mt-6 mb-8">
-            doneLite.com automates your business operations with intelligent AI agents.
+            flowpod automates your business operations with intelligent AI agents.
             Stop managing tasks manually – let our platform handle routine processes while you focus on growth.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -564,7 +564,7 @@ function FlozHomepage() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-white mb-4 font-headline">Ready to Automate Your Operations?</h2>
           <p className="text-xl text-purple-100 mb-8">
-            Join hundreds of businesses that have streamlined their workflows with doneLite.com.
+            Join hundreds of businesses that have streamlined their workflows with flowpod.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Link href="/partner/signup">
@@ -585,7 +585,7 @@ function FlozHomepage() {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <div className="w-4 h-4 bg-white rounded"></div>
                 </div>
-                <h3 className="text-xl font-bold font-headline">doneLite.com</h3>
+                <h3 className="text-xl font-bold font-headline">flowpod</h3>
               </div>
               <p className="text-gray-400">AI-powered workflow automation for modern businesses.</p>
             </div>
@@ -615,7 +615,7 @@ function FlozHomepage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 doneLite.com. All rights reserved.</p>
+            <p>&copy; 2025 flowpod. All rights reserved.</p>
           </div>
         </div>
       </footer>

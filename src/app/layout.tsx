@@ -15,8 +15,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'doneLite.com - AI Workflow Automation',
-  description: 'AI-powered agentic workflows by doneLite.com',
+  title: 'flowpod - AI Workflow Automation',
+  description: 'AI-powered agentic workflows by flowpod',
 };
 
 export default function RootLayout({
