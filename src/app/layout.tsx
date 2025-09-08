@@ -15,8 +15,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'tryExp.com - AI Workflow Automation',
-  description: 'AI-powered agentic workflows by tryExp.com',
+  title: 'doneLite.com - AI Workflow Automation',
+  description: 'AI-powered agentic workflows by doneLite.com',
 };
 
 export default function RootLayout({
